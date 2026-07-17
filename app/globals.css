@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #14212e;
+
+  /* Brand — from the biglietto da visita. */
+  --brand-primary: #004e8f; /* deep blue  — headings, CTAs, ground */
+  --brand-secondary: #edab39; /* warm gold  — accents, hero ground */
+  --brand-emphasis: #a10050; /* magenta    — sparing highlight (Olimpiadi) */
+  --brand-ink: #14212e; /* near-black blue for body copy */
+  --brand-mist: #eef5fb; /* very light blue tint for alternating panels */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--brand-primary);
+  --color-secondary: var(--brand-secondary);
+  --color-emphasis: var(--brand-emphasis);
+  --color-ink: var(--brand-ink);
+  --color-mist: var(--brand-mist);
+  --font-display: var(--font-fraunces);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-contact: var(--font-quicksand);
+}
+
+/* Hide the scrollbar while keeping the element scrollable. */
+@utility no-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none; /* IE and old Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Hero line-art draw-in. Paths carry pathLength="1", so one dash spans the whole
+   stroke and offset 1 → 0 draws it on regardless of the path's true length. Runs
+   once on load (independent of scroll) — a reliable first impression. Per-path
+   `animation-delay` (set inline) staggers the strokes. */
+@keyframes fisio-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.fisio-draw path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: fisio-draw 1.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+/* On-load fade-up for hero content (which is visible at scroll 0, so it can't use
+   the scroll-gated SDiv reveals the later panels use). Stagger via inline
+   `animationDelay`. */
+@keyframes fisio-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fisio-rise {
+  opacity: 0;
+  animation: fisio-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Respect reduced-motion: show everything settled, skip the entrance animations. */
+@media (prefers-reduced-motion: reduce) {
+  .fisio-draw path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .fisio-rise {
+    opacity: 1;
+    animation: none;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
