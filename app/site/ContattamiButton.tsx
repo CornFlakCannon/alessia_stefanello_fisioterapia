@@ -20,14 +20,13 @@ export default function ContattamiButton({
     <a
       href={appointmentMailto({})}
       className={
-        "inline-flex items-center justify-center gap-2 rounded-full px-7 py-3 " +
+        "inline-flex items-center justify-center rounded-full px-7 py-3 " +
         "font-sans text-sm font-semibold tracking-wide transition-transform " +
         "hover:-translate-y-0.5 active:translate-y-0 " +
         className
       }
     >
       {children}
-      <span aria-hidden="true">→</span>
     </a>
   );
 }

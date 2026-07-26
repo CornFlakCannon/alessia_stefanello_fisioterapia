@@ -8,9 +8,14 @@
 export default function HeroFigure({
   className = "",
   stroke = "var(--brand-primary)",
+  draw = true,
 }: {
   className?: string;
   stroke?: string;
+  /** Play the on-load stroke-in. Turn it OFF where the figure appears far down the
+   *  page (e.g. the footer): the load-time draw would be long finished by the time
+   *  you scroll there, so the figure should just fade in with its panel instead. */
+  draw?: boolean;
 }) {
   const d = (delay: number) => ({ style: { animationDelay: `${delay}s` } });
   return (
@@ -21,7 +26,7 @@ export default function HeroFigure({
       strokeWidth={3}
       strokeLinecap="round"
       strokeLinejoin="round"
-      className={`fisio-draw ${className}`}
+      className={`${draw ? "fisio-draw" : ""} ${className}`}
       aria-hidden="true"
     >
       {/* head */}

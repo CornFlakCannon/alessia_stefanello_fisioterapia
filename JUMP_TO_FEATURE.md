@@ -171,35 +171,68 @@ change to `SDiv`/`SMask`/`anim.ts`.
 
 ---
 
-## Appendix — related seam: native-interaction opt-out (`[data-native]`)
+## Appendix — related seam: touch drags commit before they're understood
 
 Same category of problem (the engine needs to expose a hook the site can't otherwise
-reach), surfaced by the contact **form**: `ScrollShell` sets `touch-action: none`,
-pointer-captures touch, and `preventDefault`s the wheel — so on mobile a form region
-can't be scrolled and its inputs are hard to focus.
+reach), surfaced by the contact **form** on panel 5.
 
-This repo works around it **site-side** (the form region attaches its own native
-`wheel`/`pointerdown` listeners that `stopPropagation` before the event bubbles to the
-container, plus `touch-action: pan-y`), so **no engine change is required** to ship.
-But if you'd rather formalize it in the library, the clean version is a `[data-native]`
-opt-out in `ScrollShell`'s handlers:
+### The seam
+
+`handlePointerDown` sets `dragging = true` and calls `setPointerCapture` on the **first**
+`pointerdown` — the instant the finger lands, before any travel has happened. At that
+moment a touch on a form field is genuinely ambiguous: it could be a tap that should focus
+the field, or the first pixel of a swipe that should scroll the page. The engine commits to
+"scroll" immediately, and site code gets no say.
+
+The tempting workaround is the trap. If the site `stopPropagation`s the `pointerdown`
+whenever it lands on a control (to protect taps), the swipe that starts there reaches
+**nothing**: not the shell (no drag ever starts, so every `pointermove` early-returns on
+`!dragging`), and not the browser either (`touch-action: none` on the container is
+inherited by every control). Meanwhile `stopPropagation` doesn't stop the browser's *own*
+touch defaults on that control — caret placement, selection drag + magnifier, focus and its
+scroll-into-view. That last one writes `container.scrollTop`, which the rAF loop overwrites
+the next frame. The result is a panel that won't scroll and visibly jitters. This repo
+shipped that bug and removed it.
+
+### What the site does now (no engine change required)
+
+`ContactForm`'s `useTapVsSwipe` resolves the ambiguity **after the fact** instead of at
+`pointerdown`: it never blocks the pointerdown (so the shell drags and the page scrolls
+exactly as it does anywhere else), and on `pointerup` — only if the finger never travelled
+past an 8px slop — it focuses the tapped field with `focus({ preventScroll: true })`.
+Note it must listen on `window`, since `setPointerCapture` retargets every later event for
+that pointer to the container.
+
+### The library-side version
+
+Give the engine the same deferral, once, for everything inside it:
 
 ```ts
-const isNative = (e: Event) =>
-  e.target instanceof Element && !!e.target.closest("[data-native]");
-
-const handleWheel = (e: WheelEvent) => {
-  if (isNative(e)) return;                 // let the inner region scroll natively
-  scrollAccumulator.current += Math.max(-100, Math.min(100, e.deltaY));
-  e.preventDefault();
-};
+const SLOP = 8; // px of travel before a touch is committed to being a scroll
 
 const handlePointerDown = (e: PointerEvent) => {
   if (e.pointerType === "mouse") return;
-  if (isNative(e)) return;                 // let inputs focus / the region pan
-  /* …existing drag/capture… */
+  pending = { id: e.pointerId, y: e.clientY };   // armed, NOT yet dragging
+  // no setPointerCapture here — the gesture hasn't earned it
+};
+
+const handlePointerMove = (e: PointerEvent) => {
+  if (pending && Math.abs(e.clientY - pending.y) > SLOP) {
+    dragging = true;                              // now it's a scroll
+    lastPointerY = pending.y;                     // measure from the touch-down point
+    mainContainer.current?.setPointerCapture(e.pointerId);
+    pending = null;
+  }
+  if (!dragging) return;
+  /* …existing accumulate… */
 };
 ```
 
-Then any element marked `data-native` (e.g. the form's scroll container) keeps native
-scroll and focus. If you add this, the site's local workaround can be removed.
+A touch that lifts before `SLOP` never becomes a drag, never captures the pointer, and is
+left entirely to the browser — so buttons, links and inputs behave natively everywhere,
+with no per-component hook. A `[data-native]` attribute opt-out (skip the handlers for
+anything under `e.target.closest("[data-native]")`) is still worth having for genuinely
+scrollable inner regions, but it solves a *different* problem from this one and is not a
+substitute. `ContactForm` already carries the `data-native` marker for that day.
+
+If the slop deferral lands, delete `useTapVsSwipe` from `ContactForm.tsx`.

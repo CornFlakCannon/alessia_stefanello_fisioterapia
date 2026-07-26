@@ -30,6 +30,14 @@ pavimento pelvico/post parto · anziani & fisioterapia a domicilio (Padova centr
   and `global` (whole-page) scroll integrals — read a value off it to author a keyframe
   `at`. Click anywhere to copy `x,y`; Alt-click to copy an element's `width,height`.
 
+## Visual checks are the user's job
+
+**Never ask to install/use the Claude in Chrome extension** (or any browser-driving
+tool) on this project. Matti runs the site and looks at it himself. Verify what you
+can headlessly — `npx tsc --noEmit`, `npx eslint .`, `npm run build`, `curl` the dev
+server and inspect the served markup — then hand over a short, concrete list of what
+to eyeball and which constant to tune if something looks off.
+
 ## Dev performance (keep the machine cool)
 
 `next dev` (Turbopack HMR + file-watching) is inherently heavy; `next start` is light.
@@ -67,6 +75,15 @@ instead of patching here.
 - `<SMask>` punches an animated clip-path hole (wipe reveals). `<ImageSequence frames
   frameSrc>` scrubs a PNG sequence (both `frames` and `frameSrc` are required).
 - Progress is smoothed before it becomes style (`app/_scroll/smoothing.ts`).
+- **Every panel must FIT inside `100svh`.** `sectionScrollTop` pins the container's
+  `scrollTop` to the active panel's `offsetTop` on every frame, so a panel that grows
+  taller than the viewport has its overflow **permanently unreachable** — you cannot
+  scroll to it. Content centred inside an `overflow-hidden` box is worse: it's sheared at
+  *both* ends. Budget vertical space with the `short:` variant (`@media (max-height:
+  740px)`, defined in `globals.css`) rather than letting a panel grow — iPhone SE (667)
+  and 1366x768 laptops are the cases that bite. `short:` keys off height alone, so where a
+  class list already varies the same property by width, compose (`max-lg:short:gap-6`)
+  instead of letting two variants race for precedence.
 
 ### Authoring conventions used on this site
 
@@ -89,8 +106,11 @@ instead of patching here.
 - `HeroFigure.tsx` — hand-authored SVG line figure (approximation of the biglietto da
   visita; swap for the real asset when available).
 - `PadovaMap.tsx` — self-contained stylised map with an SDiv radius ring (no tiles/API).
-- `ContactForm.tsx` — **full 7-field form on desktop, parallel 3-field UI on mobile**,
-  submit opens a prefilled `mailto:` (no backend, see `contact.ts`).
+- `ContactForm.tsx` — **one minimal 3-field form** (Nome · Telefono · Messaggio), same on
+  every viewport; submit opens a prefilled `mailto:` (no backend, see `contact.ts`). The
+  wider 7-field shape survives only as `AppointmentFields` in `contact.ts`, which
+  `appointmentMailto` composes and filters — add a field to the form and the email picks
+  it up with no other change. The form must stay short: panel 5 has to fit `100svh`.
 - `ContactBar.tsx` — always-visible quick-contact badge, **portaled to `<body>`** (like
   DevHud) so it escapes the panel layout while still living under the scroll context.
 - `ContattamiButton.tsx` — primary CTA.
@@ -100,9 +120,27 @@ instead of patching here.
 1. **No scroll-to-section API.** So "Contattami" currently opens a prefilled email.
    When the engine ships `useScrollNav().jumpTo(index)`, switch `ContattamiButton` to
    `jumpTo(SECTION.CONTATTI)` — that's the single place to change.
-2. **Scroll-jack vs. form input.** `ScrollShell` sets `touch-action:none` + captures
-   touch, which fights form fields on mobile. `ContactForm` marks its scroll region
-   `data-native` and attaches its own native `wheel`/`pointerdown` listeners that
-   `stopPropagation` before the shell sees them (boundary-aware, so the panel still
-   advances at the form's scroll edges) — a **site-side** fix, no engine change. If the
-   engine later adds a `[data-native]` opt-out, delete that local hook.
+2. **Scroll-jack vs. form input — tap vs. swipe.** `ScrollShell` sets `touch-action:none`
+   and pointer-captures the container on the *first* `pointerdown`, before anyone can know
+   whether that touch is a tap on a field or the start of a scroll. **Never resolve this by
+   `stopPropagation`ing the pointerdown off a control**: the swipe then reaches neither the
+   shell (no drag starts) nor the browser (`touch-action:none`), while the browser's own
+   touch defaults — caret drag, selection magnifier, focus scroll-into-view — keep running
+   and fight the shell's per-frame `scrollTop` write. That combination is what made the
+   Contatti panel jitter. `ContactForm`'s `useTapVsSwipe` instead decides **by gesture,
+   after the fact**: the pointerdown always reaches the shell (so swipes scroll normally),
+   and only on `pointerup`, if the finger never travelled past `SLOP` (8px), does it focus
+   the tapped field with `focus({ preventScroll: true })`. Clicks stay fully native. Its
+   `pointermove`/`pointerup` listeners live on `window` **because** the shell's
+   `setPointerCapture` retargets them off the form. A **site-side** fix, no engine change;
+   `data-native` is still just a marker (nothing reads it yet).
+
+   **The shell's `touch-action: none` does not reach every descendant.** A gesture
+   intersects `touch-action` from the touched element only *up to the first containing
+   scrolling element* — so any **scroll container** in the tree (a `<textarea>` is one by
+   default; so is anything with `overflow:auto/scroll`) terminates the walk at itself, and
+   the shell's value is never consulted. The browser then scrolls it natively and
+   scroll-chains into the shell container, fighting the rAF loop's per-frame `scrollTop`
+   write — a jitter that looks identical to the seam above but has a different cause. Any
+   scrollable element inside a panel therefore needs `touch-none` **on itself**
+   (`ContactForm`'s `inputBase` does this). Don't delete it as redundant with the shell's.

@@ -18,6 +18,10 @@ export const CONTACT = {
     city: "Padova (PD)",
   },
   note: "Solo su prenotazione",
+  /** Studio address on Google Maps — the "apri in Google Maps" link on PadovaMap. */
+  mapsUrl:
+    "https://www.google.com/maps/search/?api=1&query=" +
+    encodeURIComponent("Viale della Navigazione Interna 51, Padova PD"),
 } as const;
 
 /** Action radius for home visits, around Padova centre. */

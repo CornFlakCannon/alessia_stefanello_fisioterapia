@@ -47,7 +47,7 @@ export default function ContactBar() {
               <PinIcon />
             </span>
             <span>
-              {CONTACT.address.line1}, {CONTACT.address.line2} — {CONTACT.address.city}
+              {CONTACT.address.line1} <br/> {CONTACT.address.line2} — {CONTACT.address.city}
             </span>
           </div>
         </div>

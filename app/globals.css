@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Viewport-HEIGHT variant. Every panel must fit inside 100svh — the engine pins the
+   container's scrollTop to the active panel's offsetTop every frame (sectionScrollTop),
+   so anything past the fold is unreachable. `short:` trims the fixed vertical budget on
+   screens that can't afford it: iPhone SE (667), 1366x768 laptops (~660 after chrome).
+   It keys off height only, so it can match at the same time as `sm:`/`lg:` — where a
+   class list already varies the SAME property by width, compose (`max-lg:short:gap-6`)
+   rather than letting two variants race for precedence. */
+@custom-variant short (@media (max-height: 740px));
+
 :root {
   --background: #ffffff;
   --foreground: #14212e;
@@ -7,7 +16,9 @@
   /* Brand — from the biglietto da visita. */
   --brand-primary: #004e8f; /* deep blue  — headings, CTAs, ground */
   --brand-secondary: #edab39; /* warm gold  — accents, hero ground */
-  --brand-emphasis: #a10050; /* magenta    — sparing highlight (Olimpiadi) */
+  --brand-emphasis: #b31270; /* magenta    — sparing highlight (Olimpiadi); matches the
+                                Milano Cortina 2026 logo's own ground exactly, so the
+                                logo sits on the berry slab with no visible box */
   --brand-ink: #14212e; /* near-black blue for body copy */
   --brand-mist: #eef5fb; /* very light blue tint for alternating panels */
 }
@@ -68,6 +79,121 @@
   animation: fisio-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* ── Hero portrait arrival ────────────────────────────────────────────────────
+   The photo swings in as a card in 3D: it starts edge-on and far back, rotates
+   toward the viewer around its vertical axis, overshoots flat and settles with a
+   couple of decaying turns into its resting -3° tilt. THEN the surrounding lines
+   arrive — the offset frame first, the corner brackets after (see below).
+
+   `perspective` lives on the still wrapper in HeroPortrait (the property applies to
+   an element's CHILDREN); the shorter the value, the more dramatic the 3D. That
+   wrapper's `[perspective:700px]` is the main knob for how strong this reads.
+
+   On-load like the rest of the hero — NOT scroll-gated. It must sit on its own
+   element, never on an SDiv (which writes transform channels every frame).
+
+   All four animations use `both`, so the from-state already applies during the delay
+   (no flash at load). Timings:
+     0.15s  the swing begins   (delay)
+     0.77s  it reaches flat    (= 0.15 + 1.0 × 62%) → offset frame starts
+     0.88s  corner brackets snap in, staggered 60ms apart (inline animationDelay)
+   Every stop declares the full transform, in one fixed channel order, so each
+   interval interpolates predictably and per-stop timing functions apply cleanly. */
+@keyframes fisio-arrive {
+  0% {
+    transform: translateZ(-220px) rotateY(-72deg) rotateX(8deg) rotate(5deg);
+    opacity: 0;
+    filter: blur(2px);
+    animation-timing-function: cubic-bezier(0.3, 0, 0.4, 1);
+  }
+  30% {
+    /* transform: translateZ(-120px) rotateY(-38deg) rotateX(4deg) rotate(2deg); */
+    opacity: 1;
+    /* filter: blur(0.6px); */
+    /* animation-timing-function: cubic-bezier(0.16, 0.7, 0.3, 1); */
+  }
+  62% {
+    /* swings just past flat */
+    transform: translateZ(0) rotateY(9deg) rotateX(0deg) rotate(-4.5deg);
+    filter: blur(0);
+    animation-timing-function: ease-in-out;
+  }
+  82% {
+    transform: translateZ(0) rotateY(-4deg) rotateX(0deg) rotate(-2deg);
+    animation-timing-function: ease-in-out;
+  }
+  93% {
+    transform: translateZ(0) rotateY(1.6deg) rotateX(0deg) rotate(-3.4deg);
+    animation-timing-function: ease-out;
+  }
+  100% {
+    transform: translateZ(0) rotateY(0deg) rotateX(0deg) rotate(-3deg);
+  }
+}
+.fisio-arrive {
+  transform: rotate(-3deg); /* resting pose (also the reduced-motion pose) */
+  will-change: transform;
+  animation: fisio-arrive 1s 0.15s both;
+}
+
+/* Ground shadow — lives OUTSIDE the swinging element on purpose: it stays put and
+   only widens/darkens as the card turns flat and comes forward, which is what sells
+   the depth. Narrow while the photo is edge-on, full width once it faces us. */
+@keyframes fisio-shadow {
+  0% {
+    opacity: 0.06;
+    transform: scale(0.45, 0.8);
+    animation-timing-function: cubic-bezier(0.16, 0.7, 0.3, 1);
+  }
+  62% {
+    opacity: 0.34;
+    transform: scale(1.04, 1);
+  }
+  82% {
+    opacity: 0.3;
+    transform: scale(0.98, 1);
+  }
+  100% {
+    opacity: 0.32;
+    transform: scale(1, 1);
+  }
+}
+.fisio-shadow {
+  animation: fisio-shadow 1s 0.15s both;
+}
+
+/* The offset outline slides out from under the photo once it has landed. It owns
+   its own transform, so no `translate-*` utility may be set on that element. */
+@keyframes fisio-frame-in {
+  from {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate(25px, 25px);
+  }
+}
+.fisio-frame-in {
+  animation: fisio-frame-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.8s both;
+}
+
+/* Corner brackets snap in one after another (stagger via inline animationDelay,
+   same technique as HeroFigure's stroke-in). */
+@keyframes fisio-corner-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.fisio-corner-in {
+  animation: fisio-corner-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.88s both;
+}
+
 /* Respect reduced-motion: show everything settled, skip the entrance animations. */
 @media (prefers-reduced-motion: reduce) {
   .fisio-draw path {
@@ -77,6 +203,29 @@
   .fisio-rise {
     opacity: 1;
     animation: none;
+  }
+  /* The portrait is shown already arrived: settled pose, frame and brackets in place. */
+  .fisio-arrive {
+    animation: none;
+    transform: rotate(-3deg);
+  }
+  .fisio-shadow {
+    animation: none;
+    opacity: 0.32;
+  }
+  .fisio-frame-in {
+    animation: none;
+    opacity: 1;
+    transform: translate(14px, 14px);
+  }
+  .fisio-corner-in {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  /* The travelling mascot is motion by definition — hide it for opt-out users. */
+  .fisio-travel {
+    display: none;
   }
 }
 
