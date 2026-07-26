@@ -35,6 +35,29 @@ const RIGHT = [
   { at: 0, opacity: 0, x: -50 },
   { at: 1, opacity: 1, x: 0, ease: easeOutCubic },
 ];
+/* UP without the fade — for items whose PARENT SDiv already owns the opacity
+   (nested opacities multiply). Used inside the pelvico panel's swinging column. */
+const LIFT = [
+  { at: 0, y: 14 },
+  { at: 1, y: 0, ease: easeOutCubic },
+];
+
+/* A slight overshoot for the muscolo panel's entrance. `Easing` is just
+   `(t: number) => number`, so a site-side curve needs no engine change. Raise the
+   coefficients for more bounce (1.70158/2.70158 is the textbook easeOutBack). */
+const easeOutBack = (t: number) => 1 + 2.1 * (t - 1) ** 3 + 1.1 * (t - 1) ** 2;
+
+/* Panel 1's entrance: everything sweeps in FROM THE LEFT, out of focus, and lands
+   with a small bounce. The split at 0.7 is deliberate — channels have independent
+   stop lists, and `easeOutBack` overshoots past 1: on `x` that's the bounce, but on
+   `blur` it would emit `blur(-0.4px)`, an invalid declaration the browser drops
+   whole (a one-frame flicker). Closing `blur`/`opacity` early on their own keyframe
+   leaves the overshoot to `x` alone. */
+const IN_LEFT = [
+  { at: 0, opacity: 0, x: -90, blur: 8 },
+  { at: 0.7, opacity: 1, blur: 0, ease: easeOutCubic },
+  { at: 1, x: 0, ease: easeOutBack },
+];
 /** Staggered reveal window for the i-th item after the panel lands. */
 const rev = (i: number) => ({ start: SNAP + 30 + i * 70, budget: 300 });
 /** Section hand-off point for a snap panel whose furthest reveal is rev(lastRev):
@@ -42,12 +65,21 @@ const rev = (i: number) => ({ start: SNAP + 30 + i * 70, budget: 300 });
  *  before snapping to the next. */
 const holdEnd = (lastRev: number) => rev(lastRev).start + rev(lastRev).budget + DWELL;
 
-/* Sport panel (index 2): how far the centred sport block slides left when the
-   Olimpiadi slab arrives — a share of the PANEL's width (the wrapper is full-width,
-   and CSS resolves a translate `%` against the element's own width). The slab starts
-   at 45% and its clip-path uncovers to ~51%, so the free strip's centre is ~25% in.
-   Tune by eye with the DevHud. */
-const SPORT_SHIFT = "-25%";
+/* Pelvico panel (index 3): the points card is uncovered by an SMask iris opening
+   from its BOTTOM-LEFT corner — same grammar as the footer wipe below, rotated to a
+   corner. `x`/`y` pin the circle's top-left, so keeping `x` at IRIS_LEFT and setting
+   `y = cy - r` grows it from that corner without ever re-covering what it passed.
+   The final radius overshoots the box on purpose: clip-path cuts on the border box,
+   so anything short of full coverage would shave a corner off for good. */
+const IRIS_START = 560;
+const IRIS_END = 1000;
+const IRIS_LEFT = -40; // circle left edge, just past the card's own left
+const IRIS_RADIUS = 680; // final radius (px) — overshoots the card so it ends fully open
+const IRIS_CY = 200; // circle centre, low in the card (px from its top ≈ its height)
+const irisReveal = [
+  { at: 0, x: IRIS_LEFT, y: IRIS_CY, width: 0, height: 0, rounding: 0 },
+  { at: 1, x: IRIS_LEFT, y: IRIS_CY - IRIS_RADIUS, width: 2 * IRIS_RADIUS, height: 2 * IRIS_RADIUS, rounding: 9999, ease: easeInCubic },
+];
 
 /* Circular wipe for the footer contact table: an SMask spotlight circle whose LEFT edge
    sits just past the box's left and grows rightward, so it ends fully open (a plain
@@ -149,11 +181,17 @@ export default function Home() {
         <div className={`${shell} bg-secondary`}>
           <Corners color="rgba(255,255,255,0.7)" topLeft={false} />
           <div className="grid w-full max-w-6xl items-center gap-12 max-lg:short:gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
-            {/* portrait — swings in on load (.fisio-arrive, inside HeroPortrait). This
-                SDiv is only the whole-group base drift: the frame, photo and corner
-                brackets each add their own departure on top of it (see HeroPortrait),
-                and DOM nesting composes the two, so a part's travel ADDS to this. No
-                opacity here — the parts own their own fades. */}
+            {/* portrait — surfaces through its line on load (.fisio-line/.fisio-emerge,
+                inside HeroPortrait). This SDiv is only the whole-group base drift: the
+                photo and the line each add their own departure on top of it (see
+                HeroPortrait), and DOM nesting composes the two, so a part's travel ADDS
+                to this. No opacity here — the parts own their own fades.
+                It sits FIRST in the grid on every viewport (no `order-*`): on mobile the
+                photo leads, above the name and the role. That order is also why it
+                shrinks on short phones (`max-lg:short:w-40`, composed with the width
+                variants so they don't race): the panel is centred inside an
+                overflow-hidden box, so anything past 100svh is sheared at BOTH ends —
+                and with the photo on top, the thing sheared off the top is her head. */}
             <SDiv
               start={0}
               budget={600}
@@ -161,7 +199,7 @@ export default function Home() {
                 { at: 0, y: 0 },
                 { at: 1, y: -14 },
               ]}
-              className="order-1 mx-auto w-52 sm:w-64 lg:order-none lg:w-80"
+              className="mx-auto w-52 max-lg:short:w-40 sm:w-64 lg:w-80"
             >
               <HeroPortrait />
             </SDiv>
@@ -204,50 +242,57 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* ── 1 · MUSCOLOSCHELETRICO ───────────────────────────────────────── */}
+      {/* ── 1 · MUSCOLOSCHELETRICO (entra da sinistra) ───────────────────────
+          The whole panel reads as ONE sweep left-to-right: the three text lines come
+          in on IN_LEFT with the usual stagger, then the card follows on a shorter
+          run so it trails the text instead of crossing it. */}
       <Section index={1} snap={SNAP} end={PANEL_END[1]}>
         <div className={`${shell} bg-white`}>
           <div className="grid w-full max-w-6xl gap-12 max-lg:short:gap-6 lg:grid-cols-2 lg:items-center lg:gap-16">
             <div>
-              <SDiv {...rev(0)} anim={UP} className="mb-4">
+              <SDiv {...rev(0)} anim={IN_LEFT} className="mb-4">
                 <p className={eyebrow}>{SERVICES.muscolo.eyebrow}</p>
               </SDiv>
-              <SDiv {...rev(1)} anim={UP} className="mb-6">
+              <SDiv {...rev(1)} anim={IN_LEFT} className="mb-6">
                 <h2 className={heading}>{SERVICES.muscolo.title}</h2>
               </SDiv>
-              <SDiv {...rev(2)} anim={UP}>
+              <SDiv {...rev(2)} anim={IN_LEFT}>
                 <p className={body}>{SERVICES.muscolo.body}</p>
               </SDiv>
             </div>
-            <SDiv {...rev(3)} anim={UP}>
-              <div className="rounded-3xl border-l-4 border-secondary bg-mist p-8 shadow-sm sm:p-9">
-                <Points items={SERVICES.muscolo.points} />
-              </div>
+            {/* The card's own box IS this SDiv: `rounding` writes borderRadius inline,
+                which an inner div's `rounded-3xl` class would never see. It lands on
+                24px — exactly `rounded-3xl` — so the class and the inline value agree
+                once the run is over. */}
+            <SDiv
+              {...rev(3)}
+              anim={[
+                { at: 0, opacity: 0, x: -40, rounding: 96 },
+                { at: 1, opacity: 1, x: 0, rounding: 24, ease: easeOutCubic },
+              ]}
+              className="rounded-3xl border-l-4 border-secondary bg-mist p-8 shadow-sm sm:p-9"
+            >
+              <Points items={SERVICES.muscolo.points} />
             </SDiv>
           </div>
         </div>
       </Section>
 
-      {/* ── 2 · SPORTIVI / GIOVANI (+ Olimpiadi berry slab, enters from right) ─
-          Sport text reveals CENTRED; then a full-height berry (emphasis) container
-          slides in from the right (~55% on desktop, full-width on mobile) and the
-          sport block slides left to make room for it, over the same window. `end`
-          gives the landed slab reading dwell before handing off. */}
+      {/* ── 2 · SPORTIVI / GIOVANI (+ Olimpiadi berry slab, enters from below) ─
+          Sport text reveals CENTRED; then a FULL-SCREEN berry (emphasis) container
+          rises from the bottom and takes the whole panel over. `end` gives the landed
+          slab reading dwell before handing off. */}
       <Section index={2} snap={SNAP} end={PANEL_END[2]}>
         <div className={`${panel} bg-mist`}>
-          {/* Sport — centred, then shifted left by the slab (same start/budget).
-              The wrapper spans the whole panel, and CSS resolves a translate `%`
-              against the element's OWN width (see anim.ts), so SPORT_SHIFT reads as
-              a share of the viewport: the block moves from the panel's centre to the
-              centre of the strip left of the slab — no per-device coordinates. On
-              mobile the slab is full-width and covers this by then, so the shift
-              simply isn't seen. */}
+          {/* Sport — centred, and slipping gently upward as the slab climbs over it
+              (same start/budget), so the two reads move together rather than one
+              simply being covered. It's fully hidden by the time the slab lands. */}
           <SDiv
             start={960}
             budget={340}
             anim={[
-              { at: 0, x: 0 },
-              { at: 1, x: SPORT_SHIFT, ease: easeOutCubic },
+              { at: 0, y: 0 },
+              { at: 1, y: -28, ease: easeOutCubic },
             ]}
             className="relative z-10 flex w-full justify-center"
           >
@@ -267,16 +312,19 @@ export default function Home() {
             </div>
           </SDiv>
 
-          {/* Olimpiadi — full-height berry container sliding in from the right.
-              `x: "100%"` on a right-0 box = fully off-screen right → 0 = home. */}
+          {/* Olimpiadi — full-screen berry container rising from the bottom.
+              `y: "100%"` on an inset-0 box = a full panel-height below (CSS resolves a
+              translate `%` against the element's OWN height, and this one is as tall as
+              the panel) → 0 = home. It covers the panel edge to edge on every viewport,
+              so it needs no width/clip-path of its own. */}
           <SDiv
             start={960}
             budget={340}
             anim={[
-              { at: 0, x: "100%" },
-              { at: 1, x: 0, ease: easeOutCubic },
+              { at: 0, y: "100%" },
+              { at: 1, y: 0, ease: easeOutCubic },
             ]}
-            className="absolute inset-y-0 right-0 z-20 flex w-full flex-col items-center justify-center gap-8 overflow-hidden bg-emphasis px-8 py-16 text-center text-white shadow-2xl short:gap-4 short:py-8 sm:px-12 lg:w-[55%] lg:pl-24 lg:pr-16 lg:[clip-path:polygon(12%_0,100%_0,100%_100%,0_100%)]"
+            className="absolute inset-0 z-20 flex w-full flex-col items-center justify-center gap-8 overflow-hidden bg-emphasis px-8 py-16 text-center text-white shadow-2xl short:gap-4 short:py-8 sm:px-12"
           >
             {/* Milano Cortina 2026 — the JPEG's own ground is exactly --brand-emphasis
                 (see globals.css), so it sits on the slab with no visible box. */}
@@ -323,9 +371,27 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* ── 3 · PAVIMENTO PELVICO / POST PARTO ───────────────────────────── */}
+      {/* ── 3 · PAVIMENTO PELVICO / POST PARTO ───────────────────────────────
+          The panel's own entrance, in three overlapping beats: a berry wash that
+          burns off, the copy swinging open on its bottom-left corner, and the points
+          card uncovered by an iris opening from that same corner. */}
       <Section index={3} snap={SNAP} end={PANEL_END[3]}>
         <div className={`${shell} isolate bg-white`}>
+          {/* The wash — the `background` channel interpolating a bare two-stop
+              linear-gradient (anim.ts mixes it stop by stop in oklab). It arrives
+              tinted and clears to nothing while the copy settles, so the panel warms
+              up on entry instead of just being white. First child, so the Bridge
+              below paints over it inside the same `isolate`. */}
+          <SDiv
+            start={SNAP}
+            budget={700}
+            anim={[
+              { at: 0, background: "linear-gradient(rgba(179,18,112,0.16), rgba(179,18,112,0))" },
+              { at: 1, background: "linear-gradient(rgba(179,18,112,0), rgba(179,18,112,0))", ease: easeOutCubic },
+            ]}
+            className="pointer-events-none absolute inset-0 -z-10"
+          />
+
           {/* Bridge exercise — half-page background figure bleeding off the bottom-right
               corner (the shell's overflow-hidden clips it). `isolate` on the panel is what
               makes `-z-10` land ABOVE the bg-white and below the content; without a stacking
@@ -337,7 +403,10 @@ export default function Home() {
               ends at holdEnd(3) = 1360), native colours — this panel is white. */}
           <SDiv
             {...rev(2)}
-            anim={UP}
+            anim={[
+              { at: 0, opacity: 0, scale: 1.12, rotate: 3 },
+              { at: 1, opacity: 1, scale: 1, rotate: 0, ease: easeOutCubic },
+            ]}
             className="pointer-events-none absolute -bottom-10 -right-10 -z-10 w-3/4 sm:w-1/2"
           >
             <ScrollLottie
@@ -349,19 +418,45 @@ export default function Home() {
           </SDiv>
 
           <div className="grid w-full max-w-6xl gap-12 max-lg:short:gap-6 lg:grid-cols-2 lg:items-center lg:gap-16">
-            <div>
-              <SDiv {...rev(0)} anim={UP} className="mb-4">
+            {/* The copy swings open like a page: `anchor` pins transform-origin to the
+                bottom-left corner (written once, never per frame), so the rotate and
+                scale hinge there instead of around the centre. This wrapper owns the
+                fade and the blur for the whole column — the three lines inside keep
+                only their stagger, because a second nested `opacity` would MULTIPLY
+                with this one and leave the text washed out for most of the run. */}
+            <SDiv
+              start={SNAP + 10}
+              budget={420}
+              anchor={{ x: "start", y: "end" }}
+              anim={[
+                { at: 0, opacity: 0, x: -40, y: 36, rotate: -5, scale: 0.94, blur: 10 },
+                { at: 1, opacity: 1, x: 0, y: 0, rotate: 0, scale: 1, blur: 0, ease: easeOutCubic },
+              ]}
+            >
+              <SDiv {...rev(0)} anim={LIFT} className="mb-4">
                 <p className={eyebrow}>{SERVICES.pelvico.eyebrow}</p>
               </SDiv>
-              <SDiv {...rev(1)} anim={UP} className="mb-6">
+              <SDiv {...rev(1)} anim={LIFT} className="mb-6">
                 <h2 className={heading}>{SERVICES.pelvico.title}</h2>
               </SDiv>
-              <SDiv {...rev(2)} anim={UP}>
+              <SDiv {...rev(2)} anim={LIFT}>
                 <p className={body}>{SERVICES.pelvico.body}</p>
               </SDiv>
-            </div>
-            <SDiv {...rev(3)} anim={UP}>
-              <div className="rounded-3xl border-l-4 border-emphasis/60 bg-mist p-8 shadow-sm sm:p-9">
+            </SDiv>
+
+            {/* The card is uncovered by the iris, not by a fade — so this SDiv carries
+                no opacity, only a settle. `shadow-sm` is gone on purpose: clip-path
+                cuts on the border box, so the shadow would be eaten for the whole run
+                and pop in at the end. */}
+            <SDiv
+              {...rev(3)}
+              anim={[
+                { at: 0, y: 16, scale: 0.96 },
+                { at: 1, y: 0, scale: 1, ease: easeOutCubic },
+              ]}
+            >
+              <div className="relative overflow-hidden rounded-3xl border-l-4 border-emphasis/60 bg-mist p-8 sm:p-9">
+                <SMask invert start={IRIS_START} end={IRIS_END} anim={irisReveal} />
                 <Points items={SERVICES.pelvico.points} />
               </div>
             </SDiv>
