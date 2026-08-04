@@ -23,6 +23,26 @@ c. riabilitazione domiciliare.
 
 In realtà si potrebbe pensare di mettere un ‘focus a destra’ anche per le altre due sezioni
 
+- FATTO (branch `sezioni-focus`): la sequenza è esattamente quella chiesta — muscolo­scheletrica,
+  pavimento pelvico, domiciliare — e **la parte sportiva non è più una sezione a sé**: è il focus
+  a destra della muscoloscheletrica, con dentro il logo Milano Cortina e l'atleta a firmare il
+  percorso. Il focus a destra c'è anche sulle altre due: **post parto** per il pavimento pelvico
+  (con l'esercizio del ponte, che prima faceva da sfondo), **la mappa di Padova col raggio** per
+  il domicilio. I tre focus hanno colori diversi (fucsia, blu, oro) così tre fasce di fila non
+  stancano l'occhio.
+
 3. Le foto in studio, secondo te le mettiamo dove? Sotto alla spiegazione di quello che faccio (tipo dove c’è la gif per intenderci)? Rispetto a questo mi piacerebbe capire anche con te come farle, con che caratteristiche (sfondo chiaro, vestiti dei pz neutri\scuri, cosa fare io durante la foto).
 
+- FATTO: le foto vanno **dentro le fasce colorate dei focus**, non sotto alla spiegazione: la
+  fascia è già una cornice a tutta altezza e il colore fa da passe-partout, mentre sotto al testo
+  non c'è spazio (ogni schermata deve stare in una videata). Dove ora c'è il disegno animato
+  andrà la foto — o l'una o l'altro. Il "come farle" è scritto in **`FOTO_BRIEF.md`**: sfondo,
+  luce, abbigliamento, cosa fare durante lo scatto, la questione consenso, e la lista dei 3+2
+  scatti con le proporzioni giuste. È scritto per essere girato ad Alessia così com'è.
+
 4. Alla fine, o a ‘destra’ della parte dei contatti o dove tu ritieni sia più consono, metterei un posto in cui si vede la mia formazione, tipo cv. Perché credo sia importante far vedere la mia formazione e le mie esperienze. Ma appunto lo metterei alla fine di tutto.
+
+- FATTO: pannello **Formazione** dopo i contatti e prima del footer — "alla fine di tutto" come
+  chiedeva. Timeline compatta (anno · titolo · ente), due colonne su desktop.
+  ⚠️ **Le voci sono segnaposto con dei trattini**: servono i dati veri di Alessia (laurea, master,
+  corsi, esperienze) prima di pubblicare — non si inventano titoli di studio di una persona reale.

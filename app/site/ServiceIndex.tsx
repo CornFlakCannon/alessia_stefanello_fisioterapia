@@ -25,11 +25,11 @@ export default function ServiceIndex({ className = "" }: { className?: string })
   return (
     <nav aria-label="Sezioni del sito" className={className}>
       <ul className="grid grid-cols-2 gap-x-6 gap-y-1 short:gap-y-0.5">
-        {HERO_INDEX.map(({ n, label, section }) => (
+        {HERO_INDEX.map(({ n, label, section, land }) => (
           <li key={n} className="border-t border-primary/15">
             <button
               type="button"
-              onClick={(e) => jumpTo(section, e.currentTarget)}
+              onClick={(e) => jumpTo(section, e.currentTarget, land)}
               aria-label={`Vai alla sezione ${label}`}
               className="group flex w-full items-baseline gap-2 py-2 text-left transition-transform hover:translate-x-0.5 focus-visible:translate-x-0.5 focus-visible:outline-none short:py-1.5"
             >

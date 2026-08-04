@@ -9,8 +9,14 @@ built on an **in-house scroll-driven animation engine** (`app/_scroll` + `app/wi
 authored by the studio. Next.js 16 (App Router, Turbopack) · React 19 · Tailwind v4 ·
 TypeScript. One responsive page (`app/page.tsx`) covers mobile + desktop.
 
-Services presented: muscoloscheletrico · sportivi/giovani (+ *Olimpiadi* beat) ·
-pavimento pelvico/post parto · anziani & fisioterapia a domicilio (Padova centro).
+Services presented, in the client's own order: muscoloscheletrico (+ *ritorno allo sport*
+and the *Olimpiadi* signature as its focus) · pavimento pelvico/post parto (+ *post parto*
+focus) · anziani & fisioterapia a domicilio, Padova centro (+ *mappa* focus). Then the
+contact form, a *formazione/CV* panel, and the footer.
+
+`CLIENTE_TODO.md` holds the client's own notes and, under each, what was actually done —
+read it before changing the page's structure. `FOTO_BRIEF.md` is the shooting brief for
+the studio photos, written to be forwarded to Alessia as-is.
 
 ### Brand & contact (single source of truth: `app/site/data.ts`)
 
@@ -101,9 +107,20 @@ instead of patching here.
 
 ## Site code (`app/site/`)
 
-- `data.ts` — all copy + contact + `SECTION` indices + `HERO_INDEX` + `HOME_RADIUS_KM`.
-- `page.tsx` — the 7 panels (Hero, Muscolo, Sport+Olimpiadi, Pelvico, Domiciliare+map,
-  Contatti, Footer) composed from `<Section>`/`<SDiv>`.
+- `data.ts` — all copy + contact + `SECTION` indices + `HERO_INDEX` + `FORMAZIONE` +
+  `HOME_RADIUS_KM`. **`FORMAZIONE.items` are placeholders**, not Alessia's real
+  qualifications — they must be replaced before this goes live.
+- `page.tsx` — the 7 panels, composed from `<Section>`/`<SDiv>`:
+  Hero · Muscolo *(focus sport+Olimpiadi)* · Pelvico *(focus post parto)* ·
+  Domiciliare *(focus mappa)* · Contatti · Formazione · Footer.
+  The order and the "focus a destra" on each service are the client's own sequencing
+  (`CLIENTE_TODO.md` §2) — sport is **not** a panel, it's the muscolo panel's focus.
+- `FocusPanel.tsx` — that device, extracted: the explanation reveals centred, then a
+  full-height coloured slab slides in from the right with a sub-beat while the text
+  slides left. Both motions share one window (`FOCUS_IN`/`FOCUS_SPAN`). A panel using
+  it needs `end` past `FOCUS_LANDED` + dwell, or the slab never finishes arriving.
+- `panelBox.ts` — `PANEL_BOX`, the one full-viewport box string, shared by `page.tsx`'s
+  `shell` and by `FocusPanel` so the 100svh budget can only be tuned in one place.
 - `HeroPortrait.tsx` — the photo, **dead straight** (the client asked for it), surfacing
   from a drawn horizontal rule that is really the bottom edge of its clip box
   (`.fisio-line` / `.fisio-emerge`). The hero's gold is a **slab**, not the whole panel:
@@ -114,7 +131,10 @@ instead of patching here.
   panel via `useSectionJump` (see seam 1 below).
 - `HeroFigure.tsx` — hand-authored SVG line figure (approximation of the biglietto da
   visita; swap for the real asset when available).
-- `PadovaMap.tsx` — self-contained stylised map with an SDiv radius ring (no tiles/API).
+- `PadovaMap.tsx` — a Google Maps `<iframe>` embed (no library, no API key) with the
+  home-visit radius drawn over it. The iframe is `pointer-events-none` on purpose: a
+  gesture inside an iframe never reaches `ScrollShell`. `revealAt` moves the ring's
+  reveal — it rides in on the domiciliare slab, so the default would play off-stage.
 - `ContactForm.tsx` — **one minimal 3-field form** (Nome · Telefono · Messaggio), same on
   every viewport; submit opens a prefilled `mailto:` (no backend, see `contact.ts`). The
   wider 7-field shape survives only as `AppointmentFields` in `contact.ts`, which

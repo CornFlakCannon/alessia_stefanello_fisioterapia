@@ -53,7 +53,17 @@ const ring = (start: number) => ({
   ],
 });
 
-export default function PadovaMap({ className = "" }: { className?: string }) {
+export default function PadovaMap({
+  className = "",
+  revealAt = 560,
+}: {
+  className?: string;
+  /** Scroll position (section-local) where the radius overlay starts expanding. It
+   *  must be past the moment the map is actually ON screen: inside a `FocusPanel` the
+   *  map rides in on the slab, so a reveal at the default would play off-stage and the
+   *  ring would already be open by the time the slab lands. */
+  revealAt?: number;
+}) {
   return (
     <div
       className={`relative aspect-[4/3] w-full overflow-hidden rounded-3xl bg-mist ring-1 ring-primary/10 short:aspect-[16/10] ${className}`}
@@ -72,9 +82,9 @@ export default function PadovaMap({ className = "" }: { className?: string }) {
             map's metres-per-pixel), with both rings filling it. */}
         <div className="absolute aspect-square" style={{ height: `${RING_PCT}%` }}>
           {/* soft filled catchment */}
-          <SDiv {...ring(560)} className="absolute inset-0 rounded-full bg-primary/15" />
+          <SDiv {...ring(revealAt)} className="absolute inset-0 rounded-full bg-primary/15" />
           {/* dashed action radius */}
-          <SDiv {...ring(620)} className="absolute inset-0 rounded-full border-2 border-dashed border-secondary" />
+          <SDiv {...ring(revealAt + 60)} className="absolute inset-0 rounded-full border-2 border-dashed border-secondary" />
         </div>
         {/* Padova centre */}
         <div className="relative flex flex-col items-center gap-1">

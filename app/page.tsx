@@ -9,7 +9,9 @@ import SDiv from "./widgets/SDiv";
 import SMask from "./widgets/SMask";
 import DevHud from "./widgets/DevHud";
 
-import { CONTACT, CONTACT_COPY, HERO, HOME_RADIUS_KM, SERVICES } from "./site/data";
+import { CONTACT, CONTACT_COPY, FORMAZIONE, HERO, HOME_RADIUS_KM, SERVICES } from "./site/data";
+import FocusPanel, { FOCUS_LANDED } from "./site/FocusPanel";
+import { PANEL_BOX } from "./site/panelBox";
 import Logo from "./site/Logo";
 import HeroFigure from "./site/HeroFigure";
 import HeroPortrait from "./site/HeroPortrait";
@@ -43,12 +45,12 @@ const rev = (i: number) => ({ start: SNAP + 30 + i * 70, budget: 300 });
  *  before snapping to the next. */
 const holdEnd = (lastRev: number) => rev(lastRev).start + rev(lastRev).budget + DWELL;
 
-/* Sport panel (index 2): how far the centred sport block slides left when the
-   Olimpiadi slab arrives — a share of the PANEL's width (the wrapper is full-width,
-   and CSS resolves a translate `%` against the element's own width). The slab starts
-   at 45% and its clip-path uncovers to ~51%, so the free strip's centre is ~25% in.
-   Tune by eye with the DevHud. */
-const SPORT_SHIFT = "-25%";
+/* The animated figure inside a focus slab (the athlete, the bridge) scrubs over the
+   slab's LANDED window: it starts just after the slab is home (FOCUS_LANDED, see
+   FocusPanel) and must finish before its panel hands off — hence the PANEL_END values
+   below. Tune with the DevHud `scroll` readout on that panel's index. */
+const FIGURE_IN = FOCUS_LANDED + 60;
+const FIGURE_OUT = FIGURE_IN + 690;
 
 /* Circular wipe for the footer contact table: an SMask spotlight circle whose LEFT edge
    sits just past the box's left and grows rightward, so it ends fully open (a plain
@@ -74,7 +76,15 @@ const tableReveal = [
  *  truth shared by the <Section>s below and the figure's beats, so tuning a panel's
  *  budget keeps them in sync. Panel 6 has no `end`; its furthest child window
  *  (MASK_END) stands in for the boundary math only. */
-const PANEL_END = [600 + DWELL, holdEnd(3), 1700 + DWELL, holdEnd(3), holdEnd(3), holdEnd(3), MASK_END] as const;
+const PANEL_END = [
+  600 + DWELL, // 0 hero
+  FIGURE_OUT + 150, // 1 muscolo + focus sport — the athlete has to finish scrubbing
+  FIGURE_OUT + 150, // 2 pelvico + focus post parto — same, for the bridge
+  FOCUS_LANDED + DWELL, // 3 domiciliare + focus mappa — no scrubbed figure, just dwell
+  holdEnd(4), // 4 contatti (rev(4) is the form)
+  holdEnd(3), // 5 formazione
+  MASK_END, // 6 footer
+] as const;
 /** Global-scroll position where panel `i` begins — the prefix sum of prior ceilings. */
 const boundAt = (i: number) => PANEL_END.slice(0, i).reduce((a, b) => a + b, 0);
 
@@ -85,25 +95,26 @@ const JOURNEY = [
   { at: 0, opacity: 0, y: 24, scale: 0.9, rotate: 0 },                                    // hero: hidden (the hero has its own figure)
   { at: boundAt(1) - 200, opacity: 0, y: 24, scale: 0.9 },                                // stay hidden until the hero hands off
   { at: boundAt(1), opacity: 1, y: 0, scale: 1, rotate: -2, ease: easeOutCubic },         // panel 1: fade + rise in
-  { at: boundAt(2), opacity: 1, y: -8, scale: 1.04, rotate: 3, ease: easeInOutCubic },    // panel 2: little hop + lean
-  { at: boundAt(3), opacity: 1, y: 0, scale: 1, rotate: -3, ease: easeInOutCubic },       // panel 3
-  { at: boundAt(4), opacity: 1, y: -6, scale: 1.03, rotate: 2, ease: easeInOutCubic },    // panel 4
-  { at: boundAt(5), opacity: 0.3, y: 10, scale: 0.85, rotate: 0, ease: easeInCubic },     // panel 5 (contact): duck back out of the way
+  { at: boundAt(2), opacity: 1, y: -8, scale: 1.04, rotate: 3, ease: easeInOutCubic },    // panel 2 (pelvico): little hop + lean
+  { at: boundAt(3), opacity: 1, y: 0, scale: 1, rotate: -3, ease: easeInOutCubic },       // panel 3 (domiciliare)
+  { at: boundAt(4), opacity: 0.3, y: 10, scale: 0.85, rotate: 0, ease: easeInCubic },     // panel 4 (contatti): duck back out of the way
+  { at: boundAt(5), opacity: 1, y: -6, scale: 1.03, rotate: 2, ease: easeInOutCubic },    // panel 5 (formazione): back up for the CV
   { at: boundAt(6), opacity: 0, y: 20, scale: 0.8, ease: easeInCubic },                   // panel 6 (footer): bow out
 ];
 
-/* Every panel must FIT inside 100svh: the engine pins the container's scrollTop to the
-   active panel's offsetTop every frame (sectionScrollTop, app/_scroll/sections.ts), so
-   anything past the fold is unreachable — and anything centred in an overflow-hidden box
-   is sheared at BOTH ends. Hence `short:` (see globals.css), which trims the fixed
-   vertical budget on screens that can't afford it. `panel` is the bare box (panel 2 lays
-   its children out in a ROW); `shell` is the same box stacked, used by every other panel. */
-const panel =
-  "relative flex min-h-[100svh] w-full items-center justify-center overflow-hidden px-6 py-24 short:py-12 sm:px-10";
-const shell = `${panel} flex-col`;
+/* The shared panel box (and why it's shared) lives in site/panelBox.ts — the focus
+   panels are built on the same one. `shell` is that box stacked: every panel authored
+   here uses it; the three service panels get theirs from <FocusPanel>. */
+const shell = `${PANEL_BOX} flex-col`;
 const eyebrow = "font-mono text-sm uppercase tracking-[0.22em] text-primary";
 const heading = "font-display text-4xl font-semibold leading-tight text-primary sm:text-5xl lg:text-6xl";
 const body = "text-lg leading-relaxed text-ink/90 sm:text-xl";
+/* Inside a focus slab the type is one step down from the panel's own (it's a sub-beat,
+   not a second headline) and inherits the slab's colour, so it works on every ground.
+   `short:` trims the heading: the slab is the tallest thing on those panels. */
+const focusEyebrow = "font-mono text-[0.72rem] uppercase tracking-[0.2em] opacity-80";
+const focusHeading = "mt-2 font-display text-3xl font-semibold leading-tight short:text-2xl sm:text-4xl";
+const focusBody = "mt-3 text-base leading-relaxed opacity-90 sm:text-lg";
 
 function Check() {
   return (
@@ -241,200 +252,155 @@ export default function Home() {
         </div>
       </Section>
 
-      {/* ── 1 · MUSCOLOSCHELETRICO ───────────────────────────────────────── */}
+      {/* ── 1 · MUSCOLOSCHELETRICO (+ focus sport, entra da destra) ───────────
+          La sequenza dei servizi e il "focus a destra" sono richiesta del cliente
+          (CLIENTE_TODO.md §2): la parte sportiva non è più un pannello a sé, è il
+          focus di questo. Il device sta in FocusPanel — qui si autora solo il
+          contenuto delle due metà. */}
       <Section index={1} snap={SNAP} end={PANEL_END[1]}>
-        <div className={`${shell} bg-white`}>
-          <div className="grid w-full max-w-6xl gap-12 max-lg:short:gap-6 lg:grid-cols-2 lg:items-center lg:gap-16">
-            <div>
-              <SDiv {...rev(0)} anim={UP} className="mb-4">
-                <p className={eyebrow}>{SERVICES.muscolo.eyebrow}</p>
-              </SDiv>
-              <SDiv {...rev(1)} anim={UP} className="mb-6">
-                <h2 className={heading}>{SERVICES.muscolo.title}</h2>
-              </SDiv>
-              <SDiv {...rev(2)} anim={UP}>
-                <p className={body}>{SERVICES.muscolo.body}</p>
-              </SDiv>
-            </div>
-            <SDiv {...rev(3)} anim={UP}>
-              <div className="rounded-3xl border-l-4 border-secondary bg-mist p-8 shadow-sm sm:p-9">
-                <Points items={SERVICES.muscolo.points} />
+        <FocusPanel
+          ground="bg-white"
+          slab="bg-emphasis text-white"
+          focus={
+            <>
+              <div className="max-w-md">
+                <p className={focusEyebrow}>{SERVICES.sport.eyebrow}</p>
+                <h3 className={focusHeading}>{SERVICES.sport.title}</h3>
+                <p className={focusBody}>{SERVICES.sport.body}</p>
               </div>
-            </SDiv>
-          </div>
-        </div>
-      </Section>
 
-      {/* ── 2 · SPORTIVI / GIOVANI (+ Olimpiadi berry slab, enters from right) ─
-          Sport text reveals CENTRED; then a full-height berry (emphasis) container
-          slides in from the right (~55% on desktop, full-width on mobile) and the
-          sport block slides left to make room for it, over the same window. `end`
-          gives the landed slab reading dwell before handing off. */}
-      <Section index={2} snap={SNAP} end={PANEL_END[2]}>
-        <div className={`${panel} bg-mist`}>
-          {/* Sport — centred, then shifted left by the slab (same start/budget).
-              The wrapper spans the whole panel, and CSS resolves a translate `%`
-              against the element's OWN width (see anim.ts), so SPORT_SHIFT reads as
-              a share of the viewport: the block moves from the panel's centre to the
-              centre of the strip left of the slab — no per-device coordinates. On
-              mobile the slab is full-width and covers this by then, so the shift
-              simply isn't seen. */}
-          <SDiv
-            start={960}
-            budget={340}
-            anim={[
-              { at: 0, x: 0 },
-              { at: 1, x: SPORT_SHIFT, ease: easeOutCubic },
-            ]}
-            className="relative z-10 flex w-full justify-center"
-          >
-            <div className="w-full max-w-2xl">
-              <SDiv {...rev(0)} anim={UP} className="mb-4">
-                <p className={eyebrow}>{SERVICES.sport.eyebrow}</p>
-              </SDiv>
-              <SDiv {...rev(1)} anim={UP} className="mb-6">
-                <h2 className={heading}>{SERVICES.sport.title}</h2>
-              </SDiv>
-              <SDiv {...rev(2)} anim={UP} className="mb-6">
-                <p className={body}>{SERVICES.sport.body}</p>
-              </SDiv>
-              <SDiv {...rev(3)} anim={UP}>
-                <Points items={SERVICES.sport.points} />
-              </SDiv>
-            </div>
-          </SDiv>
-
-          {/* Olimpiadi — full-height berry container sliding in from the right.
-              `x: "100%"` on a right-0 box = fully off-screen right → 0 = home. */}
-          <SDiv
-            start={960}
-            budget={340}
-            anim={[
-              { at: 0, x: "100%" },
-              { at: 1, x: 0, ease: easeOutCubic },
-            ]}
-            className="absolute inset-y-0 right-0 z-20 flex w-full flex-col items-center justify-center gap-8 overflow-hidden bg-emphasis px-8 py-16 text-center text-white shadow-2xl short:gap-4 short:py-8 sm:px-12 lg:w-[55%] lg:pl-24 lg:pr-16 lg:[clip-path:polygon(12%_0,100%_0,100%_100%,0_100%)]"
-          >
-            {/* Milano Cortina 2026 — the JPEG's own ground is exactly --brand-emphasis
-                (see globals.css), so it sits on the slab with no visible box. */}
-            <Image
-              src="/olimpiadi_cortina.jpeg"
-              alt="Milano Cortina 2026"
-              width={399}
-              height={501}
-              className="h-28 w-auto"
-            />
-
-            <div className="max-w-md">
-              <p className="font-mono text-[0.72rem] uppercase tracking-[0.2em] text-white/80">
-                {SERVICES.sport.olimpiadi.eyebrow}
-              </p>
-              <h3 className="mt-2 font-display text-4xl font-semibold sm:text-5xl">
-                {SERVICES.sport.olimpiadi.title}
-              </h3>
-              <p className="mt-4 text-lg leading-relaxed text-white/90">
-                {SERVICES.sport.olimpiadi.body}
-              </p>
-            </div>
-
-            {/* Athlete — white, scrubbed by scroll over the slab's LANDED window: the
-                slab lands at ~1300 (start 960 + budget 340) and section 2 ends at 2200
-                (PANEL_END[2]). Tune start/end with the DevHud `scroll` readout on index 2.
-                Size: below `md` it scales with the viewport instead of sitting at a fixed
-                600px — 125vw/-18vw is the SAME ratio the old `w-150 -ml-25` had against a
-                375px phone, so the left-bleed reads identically while costing ~65px less
-                height (the slab is overflow-hidden and centred: overspill shears the LOGO
-                off the top). `md:` restores the fixed desktop values. */}
-            <ScrollLottie
-              src="/Athlete.lottie"
-              white
-              start={1360}
-              end={2050}
-              className="w-[125vw] -ml-[18vw] md:w-150 md:ml-0 rotate-y-180"
-            />
-
-            <span aria-hidden="true" className="pointer-events-none absolute -bottom-10 -right-4 font-display text-[11rem] leading-none text-white/10">
-              ◎
-            </span>
-          </SDiv>
-        </div>
-      </Section>
-
-      {/* ── 3 · PAVIMENTO PELVICO / POST PARTO ───────────────────────────── */}
-      <Section index={3} snap={SNAP} end={PANEL_END[3]}>
-        <div className={`${shell} isolate bg-white`}>
-          {/* Bridge exercise — half-page background figure bleeding off the bottom-right
-              corner (the shell's overflow-hidden clips it). `isolate` on the panel is what
-              makes `-z-10` land ABOVE the bg-white and below the content; without a stacking
-              context here it would sink behind the background and vanish. The 50% opacity
-              lives on the ScrollLottie, not this SDiv — SDiv writes `opacity` inline every
-              frame for the reveal and would override a class. The width belongs on this
-              (absolute) wrapper, where % resolves against the panel; a % width inside a
-              shrink-to-fit box is circular. Scrubbed over this panel's landed window (it
-              ends at holdEnd(3) = 1360), native colours — this panel is white. */}
-          <SDiv
-            {...rev(2)}
-            anim={UP}
-            className="pointer-events-none absolute -bottom-10 -right-10 -z-10 w-3/4 sm:w-1/2"
-          >
-            <ScrollLottie
-              src="/Bridge.lottie"
-              start={520}
-              end={1300}
-              className="aspect-[12/11] w-full opacity-50"
-            />
-          </SDiv>
-
-          <div className="grid w-full max-w-6xl gap-12 max-lg:short:gap-6 lg:grid-cols-2 lg:items-center lg:gap-16">
-            <div>
-              <SDiv {...rev(0)} anim={UP} className="mb-4">
-                <p className={eyebrow}>{SERVICES.pelvico.eyebrow}</p>
-              </SDiv>
-              <SDiv {...rev(1)} anim={UP} className="mb-6">
-                <h2 className={heading}>{SERVICES.pelvico.title}</h2>
-              </SDiv>
-              <SDiv {...rev(2)} anim={UP}>
-                <p className={body}>{SERVICES.pelvico.body}</p>
-              </SDiv>
-            </div>
-            <SDiv {...rev(3)} anim={UP}>
-              <div className="rounded-3xl border-l-4 border-emphasis/60 bg-mist p-8 shadow-sm sm:p-9">
-                <Points items={SERVICES.pelvico.points} />
-              </div>
-            </SDiv>
-          </div>
-        </div>
-      </Section>
-
-      {/* ── 4 · ANZIANI / DOMICILIARE (+ Padova radius map) ──────────────── */}
-      <Section index={4} snap={SNAP} end={PANEL_END[4]}>
-        <div className={`${shell} bg-mist`}>
-          <div className="grid w-full max-w-6xl gap-12 max-lg:short:gap-6 lg:grid-cols-2 lg:items-center lg:gap-16">
-            <div>
-              <SDiv {...rev(0)} anim={UP} className="mb-4">
-                <p className={eyebrow}>{SERVICES.domiciliare.eyebrow}</p>
-              </SDiv>
-              <SDiv {...rev(1)} anim={UP} className="mb-6">
-                <h2 className={heading}>{SERVICES.domiciliare.title}</h2>
-              </SDiv>
-              <SDiv {...rev(2)} anim={UP} className="mb-4">
-                <p className={body}>{SERVICES.domiciliare.body}</p>
-              </SDiv>
-              <SDiv {...rev(3)} anim={UP}>
-                <p className="font-mono text-sm text-primary">
-                  Domicilio nel raggio di ~{HOME_RADIUS_KM} km da Padova centro.
+              {/* Milano Cortina 2026 — the JPEG's own ground is exactly --brand-emphasis
+                  (see globals.css), so it sits on the slab with no visible box. The
+                  Olimpiadi beat signs the focus off rather than owning a panel. */}
+              <div className="flex flex-col items-center gap-2">
+                <Image
+                  src="/olimpiadi_cortina.jpeg"
+                  alt="Milano Cortina 2026"
+                  width={399}
+                  height={501}
+                  className="h-20 w-auto short:h-14"
+                />
+                <p className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-white/75">
+                  {SERVICES.sport.olimpiadi.caption}
                 </p>
-              </SDiv>
-            </div>
-            <SDiv {...rev(2)} anim={UP}>
-              <PadovaMap />
-            </SDiv>
-          </div>
-        </div>
+              </div>
+
+              {/* Athlete — white, scrubbed over the slab's landed window. Size: below
+                  `md` it scales with the viewport instead of sitting at a fixed 600px —
+                  125vw/-18vw is the SAME ratio the old `w-150 -ml-25` had against a
+                  375px phone, so the left-bleed reads identically while costing ~65px
+                  less height (the slab is overflow-hidden and centred: overspill shears
+                  the content off the top). `md:` restores the fixed desktop values. */}
+              <ScrollLottie
+                src="/Athlete.lottie"
+                white
+                start={FIGURE_IN}
+                end={FIGURE_OUT}
+                className="w-[125vw] -ml-[18vw] md:w-150 md:ml-0 rotate-y-180"
+              />
+
+              <span aria-hidden="true" className="pointer-events-none absolute -bottom-10 -right-4 font-display text-[11rem] leading-none text-white/10">
+                ◎
+              </span>
+            </>
+          }
+        >
+          <SDiv {...rev(0)} anim={UP} className="mb-4">
+            <p className={eyebrow}>{SERVICES.muscolo.eyebrow}</p>
+          </SDiv>
+          <SDiv {...rev(1)} anim={UP} className="mb-6">
+            <h2 className={heading}>{SERVICES.muscolo.title}</h2>
+          </SDiv>
+          <SDiv {...rev(2)} anim={UP} className="mb-6">
+            <p className={body}>{SERVICES.muscolo.body}</p>
+          </SDiv>
+          <SDiv {...rev(3)} anim={UP}>
+            <Points items={SERVICES.muscolo.points} />
+          </SDiv>
+        </FocusPanel>
       </Section>
 
-      {/* ── 5 · CONTATTAMI ───────────────────────────────────────────────── */}
-      <Section index={5} snap={SNAP} end={PANEL_END[5]}>
+      {/* ── 2 · PAVIMENTO PELVICO (+ focus post parto) ────────────────────── */}
+      <Section index={2} snap={SNAP} end={PANEL_END[2]}>
+        <FocusPanel
+          ground="bg-mist"
+          slab="bg-primary text-white"
+          focus={
+            <>
+              <div className="max-w-md">
+                <p className={focusEyebrow}>{SERVICES.pelvico.postParto.eyebrow}</p>
+                <h3 className={focusHeading}>{SERVICES.pelvico.postParto.title}</h3>
+                <p className={focusBody}>{SERVICES.pelvico.postParto.body}</p>
+              </div>
+
+              {/* The bridge exercise used to be a decorative figure behind this panel's
+                  text; the slab would have covered exactly where it sat, and it belongs
+                  to this beat anyway (it IS a pelvic-floor exercise), so it moved onto
+                  the slab as a white silhouette — same role the athlete plays for sport. */}
+              <ScrollLottie
+                src="/Bridge.lottie"
+                white
+                start={FIGURE_IN}
+                end={FIGURE_OUT}
+                className="aspect-[12/11] w-full max-w-md opacity-90 short:max-w-xs"
+              />
+            </>
+          }
+        >
+          <SDiv {...rev(0)} anim={UP} className="mb-4">
+            <p className={eyebrow}>{SERVICES.pelvico.eyebrow}</p>
+          </SDiv>
+          <SDiv {...rev(1)} anim={UP} className="mb-6">
+            <h2 className={heading}>{SERVICES.pelvico.title}</h2>
+          </SDiv>
+          <SDiv {...rev(2)} anim={UP} className="mb-6">
+            <p className={body}>{SERVICES.pelvico.body}</p>
+          </SDiv>
+          <SDiv {...rev(3)} anim={UP}>
+            <Points items={SERVICES.pelvico.points} />
+          </SDiv>
+        </FocusPanel>
+      </Section>
+
+      {/* ── 3 · ANZIANI / DOMICILIARE (+ focus mappa) ─────────────────────── */}
+      <Section index={3} snap={SNAP} end={PANEL_END[3]}>
+        <FocusPanel
+          ground="bg-white"
+          slab="bg-secondary text-primary"
+          focus={
+            <>
+              <div className="max-w-md">
+                <p className={focusEyebrow}>{SERVICES.domiciliare.zona.eyebrow}</p>
+                <h3 className={focusHeading}>{SERVICES.domiciliare.zona.title}</h3>
+                <p className={focusBody}>{SERVICES.domiciliare.zona.body}</p>
+              </div>
+
+              {/* The map rides in ON the slab, so its ring must reveal AFTER the slab
+                  lands — otherwise it plays off-stage and arrives already open. Its own
+                  rounded, light box reads as a card on the gold, no extra frame needed. */}
+              <PadovaMap className="max-w-md" revealAt={FIGURE_IN} />
+            </>
+          }
+        >
+          <SDiv {...rev(0)} anim={UP} className="mb-4">
+            <p className={eyebrow}>{SERVICES.domiciliare.eyebrow}</p>
+          </SDiv>
+          <SDiv {...rev(1)} anim={UP} className="mb-6">
+            <h2 className={heading}>{SERVICES.domiciliare.title}</h2>
+          </SDiv>
+          <SDiv {...rev(2)} anim={UP} className="mb-4">
+            <p className={body}>{SERVICES.domiciliare.body}</p>
+          </SDiv>
+          <SDiv {...rev(3)} anim={UP}>
+            <p className="font-mono text-sm text-primary">
+              Domicilio nel raggio di ~{HOME_RADIUS_KM} km da Padova centro.
+            </p>
+          </SDiv>
+        </FocusPanel>
+      </Section>
+
+      {/* ── 4 · CONTATTAMI ───────────────────────────────────────────────── */}
+      <Section index={4} snap={SNAP} end={PANEL_END[4]}>
         <div className={`${shell} bg-white`}>
           <div className="w-full max-w-3xl">
             <SDiv {...rev(0)} anim={UP} className="mb-4 text-center">
@@ -451,6 +417,42 @@ export default function Home() {
             </SDiv>
             <SDiv {...rev(4)} anim={UP}>
               <ContactForm />
+            </SDiv>
+          </div>
+        </div>
+      </Section>
+
+      {/* ── 5 · FORMAZIONE / CV ──────────────────────────────────────────────
+          Chiude la pagina prima del footer, come chiesto ("alla fine di tutto",
+          CLIENTE_TODO.md §4): chi è già convinto ha appena visto il form, chi vuole
+          verificare le credenziali le trova qui.
+          ⚠️ Le voci in data.ts sono PLACEHOLDER — vanno riempite da Alessia prima di
+          pubblicare (i titoli di studio di una persona reale non si inventano). */}
+      <Section index={5} snap={SNAP} end={PANEL_END[5]}>
+        <div className={`${shell} bg-mist`}>
+          <div className="w-full max-w-4xl">
+            <SDiv {...rev(0)} anim={UP} className="mb-4 text-center">
+              <p className={eyebrow}>{FORMAZIONE.eyebrow}</p>
+            </SDiv>
+            <SDiv {...rev(1)} anim={UP} className="mb-4 text-center">
+              <h2 className={heading}>{FORMAZIONE.title}</h2>
+            </SDiv>
+            <SDiv {...rev(2)} anim={UP} className="mb-10 text-center short:mb-6">
+              <p className={`${body} mx-auto max-w-2xl`}>{FORMAZIONE.intro}</p>
+            </SDiv>
+            {/* Timeline: due colonne su desktop, una su telefono. Ogni voce è un filetto
+                orizzontale + anno in mono + titolo — compatta perché il pannello deve
+                stare in 100svh: un CV più lungo si accorcia, non allunga il pannello. */}
+            <SDiv {...rev(3)} anim={UP}>
+              <ul className="grid gap-x-12 gap-y-5 short:gap-y-3 sm:grid-cols-2">
+                {FORMAZIONE.items.map(({ year, title, place }) => (
+                  <li key={`${year}-${title}`} className="border-t border-primary/15 pt-3 short:pt-2">
+                    <p className="font-mono text-xs uppercase tracking-[0.18em] text-secondary">{year}</p>
+                    <p className="mt-1 font-display text-lg leading-snug text-primary">{title}</p>
+                    <p className="mt-0.5 text-sm text-ink/70">{place}</p>
+                  </li>
+                ))}
+              </ul>
             </SDiv>
           </div>
         </div>
@@ -486,13 +488,13 @@ export default function Home() {
             <div className="relative mx-auto grid max-w-3xl overflow-hidden rounded-2xl border border-white/25 font-contact text-base text-white/90 sm:grid-cols-2 sm:text-left sm:text-lg">
               <SMask invert start={MASK_START} end={MASK_END} anim={tableReveal} />
               <a
-                href={`tel:${CONTACT.phoneHref}`}
+                href={`mailto:${CONTACT.email}`}
                 className="flex min-w-0 items-center gap-3 border-b border-white/15 px-7 py-5 transition-colors hover:text-secondary sm:border-r"
               >
                 <MailIcon className="h-5 w-5 shrink-0" /> {CONTACT.email}
               </a>
               <a
-                href={`mailto:${CONTACT.email}`}
+                href={`tel:${CONTACT.phoneHref}`}
                 className="flex min-w-0 items-center gap-3 border-b border-white/15 px-7 py-5 transition-colors hover:text-secondary"
               >
                 <PhoneIcon className="h-5 w-5 shrink-0" /> <span className="break-words">{CONTACT.phoneDisplay}</span>

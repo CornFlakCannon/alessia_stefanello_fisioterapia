@@ -50,13 +50,12 @@ import { useScrollStore } from "../_scroll";
 const UNITS_PER_FRAME = 70;
 /** Under `prefers-reduced-motion` the travel itself is the motion — get it over with. */
 const REDUCED_UNITS_PER_FRAME = 400;
-/** Units fed into the target after arriving forward: enough to finish the snap glide
- *  (SNAP = 320 in page.tsx) and play the staggered reveals (the last ends at ~860).
- *  MUST stay below the smallest PANEL_END (1360) or the landing scrolls straight past
- *  the panel we just travelled to.
- *  Panel 2 is the one exception worth knowing: its Olimpiadi slab is a staged beat that
- *  starts at 960, so a jump there lands with the sport block told and the slab still
- *  off-stage — it arrives as the visitor scrolls on, which is the panel's own story. */
+/** Default units fed into the target after arriving forward: enough to finish the snap
+ *  glide (SNAP = 320 in page.tsx) and play the staggered reveals (the last ends at ~860).
+ *  A panel whose story is STAGED wants more than this — the three service panels only
+ *  start sliding their focus slab in at 960 — so `jumpTo` takes a per-call override and
+ *  HERO_INDEX carries one per entry. Whatever the value, it must stay below the target's
+ *  own PANEL_END or the landing scrolls straight past the panel it just travelled to. */
 const LAND = 900;
 /** Units fed back after arriving backward, to sit off the hand-off edge without
  *  unwinding the panel's reveals (which finish ~500 units below its threshold). */
@@ -71,7 +70,9 @@ const MAX_FRAMES = 600;
 /** ScrollShell's per-event clamp; we split a frame's travel into events this size. */
 const WHEEL_CLAMP = 100;
 
-export default function useSectionJump(): { jumpTo: (target: number, from: Element) => void } {
+export default function useSectionJump(): {
+  jumpTo: (target: number, from: Element, land?: number) => void;
+} {
   const store = useScrollStore();
   /** Cancels the jump currently in flight (at most one), so a second click — or an
    *  unmount — never leaves two rAF loops feeding the accumulator against each other. */
@@ -80,13 +81,13 @@ export default function useSectionJump(): { jumpTo: (target: number, from: Eleme
   useEffect(() => () => cancelRef.current?.(), []);
 
   const jumpTo = useCallback(
-    (target: number, from: Element) => {
+    (target: number, from: Element, land = LAND) => {
       cancelRef.current?.();
 
       const origin = store.state.sectionIndex;
       if (origin === target) return;
       const dir = target > origin ? 1 : -1;
-      const landUnits = dir > 0 ? LAND : BACK_OFF;
+      const landUnits = dir > 0 ? land : BACK_OFF;
       const step = window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? REDUCED_UNITS_PER_FRAME
         : UNITS_PER_FRAME;
