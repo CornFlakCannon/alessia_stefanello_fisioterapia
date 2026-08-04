@@ -103,6 +103,17 @@ export const HERO = {
   scrollHint: "scorri",
 } as const;
 
+/** The hero's index of services (see `ServiceIndex`): the page's table of contents.
+ *  Labels are short on purpose — the full titles live in SERVICES, these only have to
+ *  name the beat. `section` is the panel each entry scrolls to (`useSectionJump`), and
+ *  is the reason SECTION above is a real dependency and not just documentation. */
+export const HERO_INDEX = [
+  { n: "01", label: "Muscoloscheletrico", section: SECTION.MUSCOLO },
+  { n: "02", label: "Sportivi & giovani", section: SECTION.SPORT },
+  { n: "03", label: "Pavimento pelvico", section: SECTION.PELVICO },
+  { n: "04", label: "A domicilio", section: SECTION.DOMICILIARE },
+] as const;
+
 export const CONTACT_COPY = {
   eyebrow: "05 — Contatti",
   title: "Contattami",

@@ -5,32 +5,29 @@ import { easeInCubic } from "../_scroll/easing";
 import SDiv from "../widgets/SDiv";
 
 /**
- * The hero portrait — Alessia's photo inside the "biglietto da visita" line motif:
- * an offset thin frame behind it plus four corner brackets, same grammar as the
- * panel-level `Corners` in page.tsx.
+ * The hero portrait — Alessia rising out of a single horizontal line.
  *
- * ## The arrival
- * The photo swings in as a card in 3D (`.fisio-arrive`, see globals.css: edge-on and
- * far back → turns toward the viewer → settles with decaying overshoots). Three
- * structural details make the depth work:
+ * ## The idea
+ * One rule (`.fisio-line`) is drawn across the panel, and the photo slides UP from
+ * behind it: the line is not decoration but the *edge of a mask*. Mechanically that
+ * mask is an `overflow-hidden` box whose BOTTOM edge is exactly where the line sits,
+ * so everything below the line is clipped and the photo appears to surface through it.
  *
- * 1. the animation lives HERE, not on the enclosing `<SDiv>` — SDiv writes
- *    `translate`/`opacity` inline every frame, so a CSS animation on that same
- *    element would fight it. Separate elements let the photo turn *and* parallax;
- * 2. `perspective` sits on the outer (still) wrapper, since the property applies to
- *    an element's CHILDREN — it's what makes the rotation read as 3D rather than a
- *    flat squash. Shorter value = more dramatic;
- * 3. the shadow is a sibling OUTSIDE the turning element, so it stays put and just
- *    widens as the card comes forward.
+ * The photo stops with its last `--emerge-rest` still submerged (a deliberate choice:
+ * she reads as *emerging*, not as standing on a shelf). Consequence to know before
+ * tuning it: the reserved box stays as tall as the photo, so that same fraction shows
+ * up as a transparent strip ABOVE the image. It's invisible, it just adds a little
+ * breathing room over the portrait — and `--emerge-rest` is the single knob for both.
  *
- * The frame line and the brackets sit INSIDE the turning element so they inherit its
- * resting -3° rotation and stay aligned; they're transparent until the photo is flat,
- * then arrive in their own beat (`.fisio-frame-in` / `.fisio-corner-in`).
+ * ## The beats
+ *   0.10s  the line draws itself out from the centre  (.fisio-line, scaleX 0 → 1)
+ *   0.50s  the photo starts surfacing                 (.fisio-emerge, translateY 100% → rest)
+ * On-load like the rest of the hero — NOT scroll-gated: the hero is on screen at
+ * scroll 0, so an `at: 0, opacity: 0` reveal would leave it blank on arrival.
  *
  * ## The departure
- * On scroll each part leaves on its OWN window (see the constants below): the corners
- * fly out diagonally one after another, the offset frame drifts further out and dims,
- * the photo lifts. Page.tsx keeps a small whole-group drift under all of it — DOM
+ * On scroll the photo sinks back down and is re-swallowed by the same mask, while the
+ * line stays put and dims. page.tsx keeps a small whole-group drift under both — DOM
  * nesting composes the two, so a part's travel ADDS to the group's.
  *
  * Two rules that shape the markup, both learned the hard way:
@@ -38,103 +35,70 @@ import SDiv from "../widgets/SDiv";
  * - **one element per animation owner.** The scroll layer (an `<SDiv>` wrapper) and
  *   the entrance layer (a `<span>` with the CSS animation) are always separate
  *   elements. A filled (`both`) CSS animation outranks inline styles in the cascade
- *   permanently, so its `opacity: 1` would beat everything SDiv writes;
+ *   permanently, so its `transform` would beat everything SDiv writes;
  * - **SDiv takes no `style`/`aria-*`.** Its props are the scroll window + `anim` +
  *   `className` and nothing else — anything else is dropped on the floor, silently
- *   (TS doesn't check JSX spreads or hyphenated attributes). So the `animationDelay`
- *   stagger and `aria-hidden` live on the inner span.
+ *   (TS doesn't check JSX spreads or hyphenated attributes). So `aria-hidden` and any
+ *   custom-property override live on the inner span.
  *
  * These SDivs carry no `index`: rendered inside the hero `<Section index={0}>` they
  * inherit it, like PadovaMap's rings inherit the domiciliare panel's.
  */
 
-/** Scroll window (index-0 units) over which the portrait comes apart as the hero
+/** Scroll window (index-0 units) over which the portrait sinks back as the hero
  *  leaves. Must finish well inside the hero's ceiling (PANEL_END[0] = 1100 in
  *  page.tsx) or the beat never completes before the panel hands off. */
 const DRIFT_START = 60;
 const DRIFT_BUDGET = 420;
-/** Scroll units each successive corner waits — the scroll-side twin of the
- *  on-load `animationDelay` stagger. */
-const DRIFT_STAGGER = 45;
-/** How far a corner flies out on each axis (px). */
-const SPREAD = 26;
-
-/** The four brackets: where they sit, which borders they draw, where they fly. */
-const CORNERS = [
-  { pos: "-left-2 -top-2",     edge: "border-l-2 border-t-2", dx: -SPREAD, dy: -SPREAD },
-  { pos: "-right-2 -top-2",    edge: "border-r-2 border-t-2", dx:  SPREAD, dy: -SPREAD },
-  { pos: "-bottom-2 -left-2",  edge: "border-b-2 border-l-2", dx: -SPREAD, dy:  SPREAD },
-  { pos: "-bottom-2 -right-2", edge: "border-b-2 border-r-2", dx:  SPREAD, dy:  SPREAD },
-] as const;
+/** How far the photo sinks (px) — enough to read as "going back under", not so far
+ *  that it clears the mask and leaves an empty box. */
+const SINK = 70;
 
 export default function HeroPortrait({ className = "" }: { className?: string }) {
   return (
-    <div className={`relative [perspective:700px] ${className}`}>
-      {/* ground shadow — never turns with the photo, only widens under it */}
-      <span
-        aria-hidden="true"
-        className="fisio-shadow pointer-events-none absolute inset-x-4 -bottom-2 -z-10 h-5 rounded-[50%] bg-primary/30 blur-lg"
-      />
-
-      <div className="fisio-arrive relative">
-        {/* offset outline — the "design line". The SDiv drifts it away on scroll; the
-            span keeps the CSS slide-out, whose final translate(25px,25px) IS the
-            resting offset, so no translate-* utility may go on it. */}
+    <div className={`relative ${className}`}>
+      {/* THE MASK. Its bottom edge is the line: everything below is clipped, both on
+          the way up (the entrance) and on the way back down (the scroll departure). */}
+      <div className="overflow-hidden">
         <SDiv
           start={DRIFT_START}
           budget={DRIFT_BUDGET}
           anim={[
-            { at: 0, x: 0, y: 0, opacity: 1 },
-            { at: 1, x: 18, y: 18, opacity: 0.2, ease: easeInCubic },
-          ]}
-          className="pointer-events-none absolute inset-0 -z-10"
-        >
-          <span
-            aria-hidden="true"
-            className="fisio-frame-in block h-full w-full border-2 border-primary/35"
-          />
-        </SDiv>
-
-        {/* the photo still sets the card's box, so this SDiv stays in flow */}
-        <SDiv
-          start={DRIFT_START}
-          budget={DRIFT_BUDGET}
-          anim={[
-            { at: 0, y: 0, scale: 1 },
-            { at: 1, y: -28, scale: 0.98, ease: easeInCubic },
+            { at: 0, y: 0, opacity: 1 },
+            { at: 1, y: SINK, opacity: 0.5, ease: easeInCubic },
           ]}
         >
-          <Image
-            src="/fotoalessia.png"
-            alt="Alessia Stefanello, fisioterapista"
-            width={448}
-            height={637}
-            priority
-            className="h-auto w-full object-cover shadow-xl shadow-primary/20"
-          />
-        </SDiv>
-
-        {/* corner brackets, just outside the photo's edges: they snap in one after
-            another on load, then fly out diagonally in the same order on scroll */}
-        {CORNERS.map(({ pos, edge, dx, dy }, i) => (
-          <SDiv
-            key={pos}
-            start={DRIFT_START + i * DRIFT_STAGGER}
-            budget={DRIFT_BUDGET}
-            anim={[
-              { at: 0, x: 0, y: 0, opacity: 1 },
-              { at: 1, x: dx, y: dy, opacity: 0, ease: easeInCubic },
-            ]}
-            className={`pointer-events-none absolute h-8 w-8 ${pos}`}
-          >
-            <span
-              aria-hidden="true"
-              className={`fisio-corner-in block h-full w-full border-primary ${edge}`}
-              style={{ animationDelay: `${0.88 + i * 0.2}s` }}
+          {/* the span owns the entrance transform; no translate-* utility may go on it */}
+          <span className="fisio-emerge block">
+            <Image
+              src="/fotoalessia.png"
+              alt="Alessia Stefanello, fisioterapista"
+              width={448}
+              height={637}
+              priority
+              className="h-auto w-full object-cover"
             />
-          </SDiv>
-        ))}
+          </span>
+        </SDiv>
       </div>
+
+      {/* THE LINE — after the mask in the DOM so it paints over the clipped edge, and
+          wider than the photo (`inset-x-[-6%]`) so it bleeds past it and reads as a
+          drawn rule rather than the bottom border of a box. */}
+      <SDiv
+        start={DRIFT_START}
+        budget={DRIFT_BUDGET}
+        anim={[
+          { at: 0, y: 0, opacity: 1 },
+          { at: 1, y: 8, opacity: 0.25, ease: easeInCubic },
+        ]}
+        className="pointer-events-none absolute inset-x-[-6%] bottom-0"
+      >
+        <span
+          aria-hidden="true"
+          className="fisio-line block h-[2px] w-full origin-center bg-primary/70"
+        />
+      </SDiv>
     </div>
   );
 }

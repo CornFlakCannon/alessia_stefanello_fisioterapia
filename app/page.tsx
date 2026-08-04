@@ -15,6 +15,7 @@ import HeroFigure from "./site/HeroFigure";
 import HeroPortrait from "./site/HeroPortrait";
 import PadovaMap from "./site/PadovaMap";
 import ContactForm from "./site/ContactForm";
+import ServiceIndex from "./site/ServiceIndex";
 import ContactBar from "./site/ContactBar";
 import TravellingFigure from "./site/TravellingFigure";
 import ScrollLottie from "./site/ScrollLottie";
@@ -146,44 +147,80 @@ export default function Home() {
     <ScrollShell>
       {/* ── 0 · HERO ─────────────────────────────────────────────────────── */}
       <Section index={0} end={PANEL_END[0]}>
-        <div className={`${shell} bg-secondary`}>
-          <Corners color="rgba(255,255,255,0.7)" topLeft={false} />
-          <div className="grid w-full max-w-6xl items-center gap-12 max-lg:short:gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
-            {/* portrait — swings in on load (.fisio-arrive, inside HeroPortrait). This
-                SDiv is only the whole-group base drift: the frame, photo and corner
-                brackets each add their own departure on top of it (see HeroPortrait),
-                and DOM nesting composes the two, so a part's travel ADDS to this. No
-                opacity here — the parts own their own fades. */}
-            <SDiv
-              start={0}
-              budget={600}
-              anim={[
-                { at: 0, y: 0 },
-                { at: 1, y: -14 },
-              ]}
-              className="order-1 mx-auto w-52 sm:w-64 lg:order-none lg:w-80"
-            >
-              <HeroPortrait />
-            </SDiv>
+        <div className={`${shell} bg-white`}>
+          {/* was white-on-gold; on the white ground white brackets would vanish */}
+          <Corners color="rgba(0,78,143,0.22)" topLeft={false} />
+          <div className="relative z-10 grid w-full max-w-6xl items-center gap-10 max-lg:short:gap-4 lg:grid-cols-[1.05fr_0.85fr] lg:gap-16">
+            {/* Portrait cell. The photo is DEAD STRAIGHT (the client asked for it) and
+                surfaces from a drawn line — see HeroPortrait. It sits FIRST in the DOM
+                so on phones it leads, above the name; on lg it moves to the right, onto
+                the slab. The SDiv is only the whole-group base drift: the photo and the
+                line each add their own departure on top of it, and DOM nesting composes
+                the two, so a part's travel ADDS to this. */}
+            <div className="relative order-first lg:order-last">
+              {/* THE GOLD GROUND — the panel used to be gold edge to edge, which read as
+                  heavy and left the other half empty. Now the gold is a ground the
+                  portrait stands on (the Olimpiadi panel's device, so the page keeps one
+                  grammar) and the composition, not the colour, carries the panel.
+
+                  Both are anchored to the PHOTO's cell, never to the viewport: the grid
+                  is capped at max-w-6xl while the viewport isn't, so a `w-[42%]`-of-screen
+                  slab drifts away from the column as the screen widens — past ~2500px the
+                  photo starts overhanging its edge. Hanging them off the cell keeps the
+                  gold margin around the photo constant at every width, and the panel's
+                  overflow-hidden clips whatever bleeds out.
+
+                  Phones: a band whose `bottom-0` is exactly the portrait's own line, so
+                  the drawn rule doubles as the gold/white boundary. */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-[-50vw] -top-8 bottom-0 bg-secondary lg:hidden"
+              />
+              {/* Desktop: a full-height slab starting just left of the photo and bleeding
+                  off the right edge. The 100vh over/under is clipped by the panel. */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute -bottom-[100vh] -left-8 -right-[50vw] -top-[100vh] hidden bg-secondary lg:block"
+              />
+              <SDiv
+                start={0}
+                budget={600}
+                anim={[
+                  { at: 0, y: 0 },
+                  { at: 1, y: -14 },
+                ]}
+                className="relative mx-auto w-52 max-lg:short:w-36 sm:w-64 lg:w-full lg:max-w-[21rem]"
+              >
+                <HeroPortrait />
+              </SDiv>
+            </div>
 
             <div className="text-center lg:text-left">
-              <p className="fisio-rise font-mono text-sm uppercase tracking-[0.28em] text-primary/80" style={{ animationDelay: "0.05s" }}>
+              <p className="fisio-rise font-mono text-xs uppercase tracking-[0.28em] text-primary/70 sm:text-sm" style={{ animationDelay: "0.05s" }}>
                 {HERO.kicker}
               </p>
-              <h1 className="fisio-rise mt-3 font-display text-5xl font-semibold leading-[1.05] text-primary sm:text-6xl lg:text-7xl" style={{ animationDelay: "0.15s" }}>
+              <h1 className="fisio-rise mt-3 font-display text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-primary max-lg:short:text-4xl sm:text-6xl lg:text-7xl" style={{ animationDelay: "0.15s" }}>
                 {HERO.name}
               </h1>
-              <p className="fisio-rise mt-2 font-display text-2xl italic text-primary/90 sm:text-3xl" style={{ animationDelay: "0.28s" }}>
+              {/* the role hangs off a short gold rule — the one place the gold reaches
+                  into the text column, so the two halves read as one composition */}
+              <p className="fisio-rise mt-3 flex items-center justify-center gap-3 font-display text-xl italic text-primary/90 short:mt-2 sm:text-2xl lg:justify-start" style={{ animationDelay: "0.28s" }}>
+                <span aria-hidden="true" className="h-px w-8 shrink-0 bg-secondary sm:w-10" />
                 {HERO.role}
               </p>
-              <p className="fisio-rise mx-auto mt-5 max-w-lg text-lg text-primary/90 sm:text-xl lg:mx-0" style={{ animationDelay: "0.42s" }}>
+              <p className="fisio-rise mx-auto mt-5 max-w-md text-base leading-relaxed text-ink/85 short:mt-3 sm:text-lg lg:mx-0" style={{ animationDelay: "0.42s" }}>
                 {HERO.tagline}
               </p>
-              <div className="fisio-rise mt-8 flex flex-wrap items-center justify-center gap-4 lg:justify-start" style={{ animationDelay: "0.56s" }}>
+              <div className="fisio-rise mt-7 flex flex-wrap items-center justify-center gap-4 short:mt-4 lg:justify-start" style={{ animationDelay: "0.56s" }}>
                 <ContattamiButton className="bg-primary text-white shadow-lg shadow-primary/20" />
                 <a href={`tel:${CONTACT.phoneHref}`} className="font-sans text-sm font-medium text-primary underline-offset-4 hover:underline">
                   oppure chiama {CONTACT.phoneDisplay}
                 </a>
+              </div>
+              {/* the page's index — gives the panel a bottom edge and a hierarchy, and
+                  each entry scrolls to its panel (see useSectionJump) */}
+              <div className="fisio-rise mt-8 short:mt-5" style={{ animationDelay: "0.7s" }}>
+                <ServiceIndex className="mx-auto max-w-md lg:mx-0" />
               </div>
             </div>
           </div>

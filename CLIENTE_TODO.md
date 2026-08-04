@@ -4,6 +4,16 @@
 
 - SVILUPPATORE: Per dare uniformità e occupare lo spazio correttamente, dobbiamo fornire una gerarchia degli elementi e suddividere lo spazio in maniera opportuna. 
 
+- FATTO (branch `hero-restyle`): il giallo non è più il fondo della pagina ma una **fascia**
+  su cui poggia la foto — a destra su desktop, dietro alla foto su telefono; il resto è
+  bianco. Restano in oro solo gli accenti (il filetto accanto a "Fisioterapista", le spunte,
+  i numeri dell'indice). La **foto è dritta** ed emerge da una linea orizzontale disegnata,
+  che fa anche da confine tra l'oro e il bianco. Contro il vuoto: gerarchia rifatta
+  (titolo più grande, testo più stretto e leggibile) e un **indice delle quattro sezioni**
+  in fondo alla colonna — cliccando una voce la pagina scorre fino a quella sezione.
+  Le foto in studio (punto 3) entrano volentieri qui: lo spazio è già suddiviso, basta
+  sostituire la fascia oro con un'immagine o affiancarne una seconda.
+
 2. Come sequenza delle cose che faccio metterei:
 a. riabilitazione muscolo scheletrica,
 a.1. E come Focus a ‘destra’ della riabilitazione muscolo scheletrica, la parte sportiva – con il ritorno allo sport in sicurezza. (per intenderci quella che ora è sulle olimpiadi e hai fatto in fucsia).

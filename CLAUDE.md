@@ -14,9 +14,10 @@ pavimento pelvico/post parto · anziani & fisioterapia a domicilio (Padova centr
 
 ### Brand & contact (single source of truth: `app/site/data.ts`)
 
-- Colors — primary `#004E8F`, secondary `#EDAB39`, emphasis `#A10050`
+- Colors — primary `#004E8F`, secondary `#EDAB39`, emphasis `#B31270` (the Milano
+  Cortina ground, so the logo sits on the berry slab with no visible box)
   (exposed as Tailwind tokens `primary`/`secondary`/`emphasis`/`ink`/`mist` via
-  `app/globals.css` `@theme inline`).
+  `app/globals.css` `@theme inline` — that file is the real source for the values).
 - Alessia Stefanello · +39 342 752 2370 · alessiastefanello.fisio@gmail.com ·
   Viale della Navigazione Interna 51, scala 8, 3° piano, Padova (PD) · *solo su prenotazione*.
 - Logo = a **filled blue circle placeholder** (`app/site/Logo.tsx`) — swap for the real
@@ -100,9 +101,17 @@ instead of patching here.
 
 ## Site code (`app/site/`)
 
-- `data.ts` — all copy + contact + `SECTION` indices + `HOME_RADIUS_KM`.
+- `data.ts` — all copy + contact + `SECTION` indices + `HERO_INDEX` + `HOME_RADIUS_KM`.
 - `page.tsx` — the 7 panels (Hero, Muscolo, Sport+Olimpiadi, Pelvico, Domiciliare+map,
   Contatti, Footer) composed from `<Section>`/`<SDiv>`.
+- `HeroPortrait.tsx` — the photo, **dead straight** (the client asked for it), surfacing
+  from a drawn horizontal rule that is really the bottom edge of its clip box
+  (`.fisio-line` / `.fisio-emerge`). The hero's gold is a **slab**, not the whole panel:
+  a right-hand slab on desktop, a band hanging off the photo on phones. Two elements,
+  one per viewport, both `absolute` — an abspos child resolves against the padding box,
+  so the panel's own padding never insets them.
+- `ServiceIndex.tsx` — the hero's index of the four services; each entry scrolls to its
+  panel via `useSectionJump` (see seam 1 below).
 - `HeroFigure.tsx` — hand-authored SVG line figure (approximation of the biglietto da
   visita; swap for the real asset when available).
 - `PadovaMap.tsx` — self-contained stylised map with an SDiv radius ring (no tiles/API).
@@ -117,9 +126,22 @@ instead of patching here.
 
 ### Two engine seams the site works around (see `JUMP_TO_FEATURE.md`)
 
-1. **No scroll-to-section API.** So "Contattami" currently opens a prefilled email.
-   When the engine ships `useScrollNav().jumpTo(index)`, switch `ContattamiButton` to
-   `jumpTo(SECTION.CONTATTI)` — that's the single place to change.
+1. **No scroll-to-section API.** So "Contattami" still opens a prefilled email.
+   The hero's `ServiceIndex` does jump, via **`app/site/useSectionJump.ts`** — a
+   site-side workaround that drives the engine **from its own input**: a rAF loop
+   dispatching synthetic `wheel` events on the clicked element (they bubble to the
+   shell's container listener), watching the public `store.state.sectionIndex` until it
+   reaches the target, then feeding `LAND` more units so the panel seats and its reveals
+   play. No engine file is touched.
+   Why not just write the positions (what the `JUMP_TO_FEATURE.md` patch does): the
+   **global** scroll counter only advances from the accumulator, and every `rawAnim` is
+   measured against it — the travelling mascot above all. Feeding the accumulator keeps
+   section, snap glide, reveals and global counter in phase for free; setting per-index
+   positions leaves the global counter behind. If that patch ever lands, it needs to
+   move the global counter too.
+   When the engine ships `useScrollNav().jumpTo(index)`, rewrite the **body of that
+   hook** (callers don't change) and switch `ContattamiButton` to
+   `jumpTo(SECTION.CONTATTI)`.
 2. **Scroll-jack vs. form input — tap vs. swipe.** `ScrollShell` sets `touch-action:none`
    and pointer-captures the container on the *first* `pointerdown`, before anyone can know
    whether that touch is a tap on a field or the start of a scroll. **Never resolve this by
