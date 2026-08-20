@@ -100,7 +100,11 @@ const PANEL_END = [
    here uses it; the three service panels get theirs from <FocusPanel>. */
 const shell = `${PANEL_BOX} flex-col`;
 const eyebrow = "font-mono text-sm uppercase tracking-[0.22em] text-primary";
-const heading = "font-display text-4xl font-semibold leading-tight text-primary sm:text-5xl lg:text-6xl";
+/* `xl:` and not `lg:` for the biggest step: from 1024 the service panels' text column is
+   only the ~42% the focus slab leaves it (see FocusPanel), and a 60px heading in ~400px
+   wraps into a tower that pushes the panel past its 100svh. It gets its full size once
+   there is width to spend. */
+const heading = "font-display text-4xl font-semibold leading-tight text-primary sm:text-5xl xl:text-6xl";
 const body = "text-lg leading-relaxed text-ink/90 sm:text-xl";
 /* Inside a focus slab the type is one step down from the panel's own (it's a sub-beat,
    not a second headline) and inherits the slab's colour, so it works on every ground.

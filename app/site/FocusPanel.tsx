@@ -32,7 +32,7 @@ import useIsDesktop from "./useIsDesktop";
  * | | desktop (≥1024) | phone |
  * |---|---|---|
  * | slab | already home, static | slides in, `x: 100% → 0` |
- * | text column | already at `SHIFT` (a class) | slides left to `SHIFT` |
+ * | text column | laid out INSIDE the free strip | slides left by `SHIFT` |
  * | slab content | rides in from the right | static inside the sliding slab |
  * | backdrop (photos) | always visible, cycling with scroll | idem |
  *
@@ -40,6 +40,26 @@ import useIsDesktop from "./useIsDesktop";
  * every frame, so no `lg:` class can override it. The keyframe arrays are module
  * constants because `SDiv` memoises its compiled anim on the array's IDENTITY — inline
  * literals here would recompile every frame.
+ *
+ * ## On desktop the text column is LAID OUT, not translated
+ * `lg:pr-[58%]` on the wrapper, with the block still `justify-center`ed inside what is
+ * left: the column is literally the strip the slab does not cover, so the text is centred
+ * in the white half the way the hero's copy is centred in its own.
+ *
+ * It is not a translate, and that distinction is the bug this shipped with once. A `%`
+ * translate resolves against the ELEMENT'S OWN border box, so the same `-25%` means 25%
+ * of the viewport on the full-width wrapper and 25% of `max-w-2xl` (168px) on the block
+ * inside it — put it on the wrong element and the text stops well short of where it
+ * should be and runs under the slab. Worse, even on the right element the shift is a
+ * fixed fraction while the block's width is a fixed 42rem, so the two only agree above
+ * ~1780px: below that the block's bottom-right corner slid under the slab anyway.
+ * Padding has neither problem — the strip and the column are the same measurement.
+ *
+ * The number: the slab is `w-[55%]` of the panel's padding box and the wrapper sits
+ * inside the panel's own `px`, so 58% leaves a visible margin at every width (~24px at
+ * 1024, ~50px at 1920) instead of the ~5px an exact 56% would. The slab's diagonal only
+ * ever moves its painted edge further right, so the bottom of the panel is the binding
+ * case and the top has ~10% of the viewport to spare.
  *
  * ## Two things that will break it if moved
  * - **The flex/gap/padding live on the inner wrapper, not on the slab.** They have to sit
@@ -67,10 +87,12 @@ export const FOCUS_SPAN = 340;
 /** Where the focus is home — the earliest a panel can be considered "told", and what a
  *  jump's `land` in HERO_INDEX aims just past. */
 export const FOCUS_LANDED = FOCUS_IN + FOCUS_SPAN;
-/** How far the text block sits left of centre once the slab is there (share of the
- *  viewport: the wrapper spans the whole panel, so a `%` reads as a share of the screen
- *  and needs no per-device coordinate). The slab lands at 45% and its clip-path uncovers
- *  back to ~51%, so the free strip's centre is ~25% in. */
+/** PHONE ONLY: how far the text block slides left as the slab arrives. A share of the
+ *  viewport, because it is applied to the full-width wrapper and a `%` translate resolves
+ *  against the element's own box. On phones the slab is full-width and has covered the
+ *  text by the time this finishes, so it reads as "explanation, then focus" rather than
+ *  as a shift — it is the motion that matters, not the destination. Desktop does not use
+ *  it at all: there the column is laid out inside the strip (see the docblock). */
 const SHIFT = "-25%";
 
 /** Nothing to animate — the element keeps whatever CSS gives it (no inline pose). */
@@ -119,13 +141,9 @@ export default function FocusPanel({
         start={FOCUS_IN}
         budget={FOCUS_SPAN}
         anim={desktop ? STATIC : TEXT_OUT}
-        className="relative z-10 flex w-full justify-center"
+        className={`relative z-10 flex w-full justify-center${desktop ? " lg:pr-[58%]" : ""}`}
       >
-        {/* on desktop the slab never moves, so the text is simply parked where the phone
-            animation would have left it — same number, expressed as a class */}
-        <div className={`w-full max-w-2xl${desktop ? " lg:-translate-x-[25%]" : ""}`}>
-          {children}
-        </div>
+        <div className="w-full max-w-2xl">{children}</div>
       </SDiv>
 
       <SDiv
