@@ -9,7 +9,7 @@ import SDiv from "./widgets/SDiv";
 import SMask from "./widgets/SMask";
 import DevHud from "./widgets/DevHud";
 
-import { CONTACT, CONTACT_COPY, FORMAZIONE, HERO, HOME_RADIUS_KM, SERVICES } from "./site/data";
+import { CONTACT, CONTACT_COPY, FORMAZIONE, HERO, SERVICES } from "./site/data";
 import FocusPanel, { FOCUS_LANDED } from "./site/FocusPanel";
 import { PANEL_BOX } from "./site/panelBox";
 import Logo from "./site/Logo";
@@ -19,7 +19,6 @@ import PadovaMap from "./site/PadovaMap";
 import ContactForm from "./site/ContactForm";
 import ServiceIndex from "./site/ServiceIndex";
 import ContactBar from "./site/ContactBar";
-import ScrollLottie from "./site/ScrollLottie";
 import PhotoSlab from "./site/PhotoSlab";
 import DuotonePhoto from "./site/DuotonePhoto";
 import { PHOTOS, type Photo } from "./site/photos";
@@ -46,12 +45,19 @@ const rev = (i: number) => ({ start: SNAP + 30 + i * 70, budget: 300 });
  *  before snapping to the next. */
 const holdEnd = (lastRev: number) => rev(lastRev).start + rev(lastRev).budget + DWELL;
 
-/* The animated figure inside a focus slab (the athlete, the bridge) scrubs over the
-   slab's LANDED window: it starts just after the slab is home (FOCUS_LANDED, see
-   FocusPanel) and must finish before its panel hands off — hence the PANEL_END values
-   below. Tune with the DevHud `scroll` readout on that panel's index. */
-const FIGURE_IN = FOCUS_LANDED + 60;
-const FIGURE_OUT = FIGURE_IN + 690;
+/* The slab's photos are the thing that moves on the service panels now. On desktop the
+   slab is already home when the panel lands (see FocusPanel), so they start cycling
+   straight away — "teniamola gia' in view e cicliamo solamente le foto con lo scroll"
+   (NUOVA_TODO.md). They used to be squeezed into what a scrubbed figure left over, which
+   is why they only began at 1360.
+
+   PHOTO_CYCLE is how much scroll a panel keeps AFTER its focus has landed, i.e. how slow
+   the dissolve is. It is the panel's whole reason to be long: raise it for a more
+   leisurely read, lower it to make the page shorter. */
+const PHOTO_CYCLE = 900;
+/** The photo window for a panel: from the moment it is seated to a beat before it hands
+ *  off, so the last photo is not still fading as the next panel takes over. */
+const photoWindow = (panelEnd: number) => ({ start: SNAP, end: panelEnd - 150 });
 
 /* Circular wipe for the footer contact table: an SMask spotlight circle whose LEFT edge
    sits just past the box's left and grows rightward, so it ends fully open (a plain
@@ -80,9 +86,9 @@ const tableReveal = [
  *  `end`; its furthest child window (MASK_END) stands in for it. */
 const PANEL_END = [
   600 + DWELL, // 0 hero
-  FIGURE_OUT + 150, // 1 muscolo + focus sport — the slab photos reuse the athlete's window
-  FIGURE_OUT + 150, // 2 pelvico + focus post parto — same, for the bridge
-  FOCUS_LANDED + DWELL, // 3 domiciliare + focus mappa — no scrubbed figure, just dwell
+  FOCUS_LANDED + PHOTO_CYCLE, // 1 muscolo + focus sport — three photos to get through
+  FOCUS_LANDED + PHOTO_CYCLE, // 2 pelvico + focus post parto — two
+  FOCUS_LANDED + DWELL, // 3 domiciliare — two photos, but the map is the beat here
   holdEnd(4), // 4 contatti (rev(4) is the form)
   holdEnd(3), // 5 formazione
   MASK_END, // 6 footer
@@ -315,21 +321,19 @@ export default function Home() {
         <FocusPanel
           ground="bg-white"
           slab="bg-emphasis text-white"
+          backdrop={
+            /* Quello che la fascia indossa mentre il testo e' ancora fuori scena: su
+               desktop e' l'unica cosa che si vede all'arrivo del pannello. Ordine del
+               racconto: valutazione, terapia manuale, ritorno al gesto sportivo. */
+            <PhotoSlab
+              photos={[PHOTOS.spalla, PHOTOS.manuale, PHOTOS.equilibrio]}
+              tint="emphasis"
+              intensity={0.42}
+              {...photoWindow(PANEL_END[1])}
+            />
+          }
           focus={
             <>
-              {/* The slab's ground. It runs over exactly the window the athlete used to
-                  scrub (FIGURE_IN..FIGURE_OUT), so PANEL_END[1] — and with it the
-                  TravellingFigure's JOURNEY, built from prefix sums of PANEL_END —
-                  never moves. Story order: valutazione, terapia manuale, ritorno al
-                  gesto sportivo, closing on the Olimpiadi beat below. */}
-              <PhotoSlab
-                photos={[PHOTOS.spalla, PHOTOS.manuale, PHOTOS.equilibrio]}
-                tint="emphasis"
-                intensity={0.42}
-                start={FIGURE_IN}
-                end={FIGURE_OUT}
-              />
-
               <div className="relative z-10 max-w-md">
                 <p className={focusEyebrow}>{SERVICES.sport.eyebrow}</p>
                 <h3 className={focusHeading}>{SERVICES.sport.title}</h3>
@@ -345,7 +349,7 @@ export default function Home() {
                   alt="Milano Cortina 2026"
                   width={399}
                   height={501}
-                  className="h-20 w-auto short:h-14"
+                  className="h-28 w-auto short:h-20"
                 />
                 <p className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-white/75">
                   {SERVICES.sport.olimpiadi.caption}
@@ -378,25 +382,28 @@ export default function Home() {
         <FocusPanel
           ground="bg-mist"
           slab="bg-primary text-white"
+          backdrop={
+            /* Finalmente due foto anche qui: era l'unica fascia senza, e teneva ancora
+               il disegno animato del ponte. Il gesto prima, poi il luogo — e il lettino
+               vuoto e' anche l'unico scatto dello studio senza pazienti dentro.
+               `multiply` (il default) perche' il testo sopra e' bianco: vedi la tabella
+               di contrasto in DuotonePhoto prima di cambiarlo. */
+            <PhotoSlab
+              photos={[PHOTOS.pelvico, PHOTOS.lettino]}
+              tint="primary"
+              intensity={0.42}
+              {...photoWindow(PANEL_END[2])}
+            />
+          }
           focus={
             <>
-              <div className="max-w-md">
+              {/* `relative z-10`: prima non serviva, questa fascia non aveva fondo
+                  fotografico. Ora si'. */}
+              <div className="relative z-10 max-w-md">
                 <p className={focusEyebrow}>{SERVICES.pelvico.postParto.eyebrow}</p>
                 <h3 className={focusHeading}>{SERVICES.pelvico.postParto.title}</h3>
                 <p className={focusBody}>{SERVICES.pelvico.postParto.body}</p>
               </div>
-
-              {/* The bridge exercise used to be a decorative figure behind this panel's
-                  text; the slab would have covered exactly where it sat, and it belongs
-                  to this beat anyway (it IS a pelvic-floor exercise), so it moved onto
-                  the slab as a white silhouette — same role the athlete plays for sport. */}
-              <ScrollLottie
-                src="/Bridge.lottie"
-                white
-                start={FIGURE_IN}
-                end={FIGURE_OUT}
-                className="aspect-[12/11] w-full max-w-md opacity-90 short:max-w-xs"
-              />
             </>
           }
         >
@@ -420,37 +427,34 @@ export default function Home() {
         <FocusPanel
           ground="bg-white"
           slab="bg-secondary text-primary"
+          backdrop={
+            /* The only slab with DARK text on it, so it screens instead of multiplying
+               — gold multiplied by a photo goes brown and takes text-primary down to
+               ~1:1. Screened it floors at 4.25:1, which is the flat gold's own value,
+               and that is what buys the low `intensity`: the photo can carry the slab
+               here more than it does on the fuchsia one. */
+            <PhotoSlab
+              photos={[PHOTOS.palla, PHOTOS.step]}
+              tint="secondary"
+              intensity={0.3}
+              blend="screen"
+              {...photoWindow(PANEL_END[3])}
+            />
+          }
           focus={
             <>
-              {/* The only slab with DARK text on it, so it screens instead of multiplying
-                  — gold multiplied by a photo goes brown and takes text-primary down to
-                  ~1:1. Screened it floors at 4.25:1, which is the flat gold's own value,
-                  and that is what buys the low `intensity`: the photo can carry the slab
-                  here more than it does on the fuchsia one. Its window is what the panel
-                  has spare after the slab lands — no scrubbed figure to share it with. */}
-              <PhotoSlab
-                photos={[PHOTOS.palla, PHOTOS.step]}
-                tint="secondary"
-                intensity={0.3}
-                blend="screen"
-                start={FOCUS_LANDED}
-                end={PANEL_END[3]}
-              />
-
               <div className="relative z-10 max-w-md">
                 <p className={focusEyebrow}>{SERVICES.domiciliare.zona.eyebrow}</p>
                 <h3 className={focusHeading}>{SERVICES.domiciliare.zona.title}</h3>
                 <p className={focusBody}>{SERVICES.domiciliare.zona.body}</p>
               </div>
 
-              {/* The map rides in ON the slab, so its ring must reveal AFTER the slab
-                  lands — otherwise it plays off-stage and arrives already open. Now that
-                  the slab wears a photo the map is an inset card, not the main event:
-                  its light rounded box is what lifts it off the photo. */}
-              <PadovaMap
-                className="relative z-10 max-w-[25rem] shadow-xl shadow-primary/20 short:max-w-[12rem]"
-                revealAt={FIGURE_IN}
-              />
+              {/* Una card appoggiata sulla fascia, non il piatto forte: la fascia ha gia'
+                  le sue foto, e il box chiaro con l'ombra e' cio' che la stacca da sotto.
+                  Il cap `short:` sale da 12rem a 16rem — a 12 i controlli dell'embed
+                  (zoom, fullscreen, pegman, il marchio Google) coprivano la mappa invece
+                  di stare in un angolo, ed e' quello che il cliente ha visto sul telefono. */}
+              <PadovaMap className="relative z-10 max-w-[25rem] shadow-xl shadow-primary/20 short:max-w-[16rem]" />
             </>
           }
         >
@@ -463,10 +467,11 @@ export default function Home() {
           <SDiv {...rev(2)} anim={UP} className="mb-4">
             <p className={body}>{SERVICES.domiciliare.body}</p>
           </SDiv>
+          {/* Il raggio d'azione si dice QUI, a parole. Era un anello tratteggiato
+              disegnato sulla mappa, che per stare dentro voleva un'inquadratura da 120 km
+              — a quello zoom la mappa era una forma del Veneto senza una via leggibile. */}
           <SDiv {...rev(3)} anim={UP}>
-            <p className="font-mono text-sm text-primary">
-              Domicilio nel raggio di ~{HOME_RADIUS_KM} km da Padova centro.
-            </p>
+            <p className="font-mono text-sm text-primary">{SERVICES.domiciliare.zona.range}</p>
           </SDiv>
         </FocusPanel>
       </Section>

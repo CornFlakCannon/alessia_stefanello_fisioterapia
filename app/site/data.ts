@@ -24,9 +24,6 @@ export const CONTACT = {
     encodeURIComponent("Viale della Navigazione Interna 51, Padova PD"),
 } as const;
 
-/** Action radius for home visits, around Padova centre. */
-export const HOME_RADIUS_KM = 8;
-
 /** Section (panel) indices — the order of the top-level <Section>s in page.tsx.
  *  There is no SPORT panel: the sport beat is the *focus slab* of the muscolo panel
  *  (the client's own sequencing — see CLIENTE_TODO.md §2), so it has no index of its
@@ -90,7 +87,6 @@ export const SERVICES = {
       body:
         "Dopo il parto il corpo chiede del tempo e una guida. Valutiamo insieme diastasi, cicatrice e " +
           "funzionalità del pavimento pelvico. Costruiamo un ritorno graduale al movimento.",
-      // TODO METTERE DUE FOTO SOTTO
     },
   },
   domiciliare: {
@@ -105,6 +101,11 @@ export const SERVICES = {
       body:
         "Il domicilio copre Padova centro e i quartieri intorno. Se abiti poco fuori dall'area, " +
         "scrivimi lo stesso: si valuta caso per caso.",
+      /** The reach, in words. It used to be a dashed ring drawn over the map, scaled from
+       *  a `HOME_RADIUS_KM` constant — which forced the map to frame ~120 km of Veneto to
+       *  fit the ring, and at that zoom nothing on it was legible. Said here instead, the
+       *  map is free to sit on the studio's own street. */
+      range: "Padova centro e quartieri limitrofi.",
     },
   },
 } as const;
