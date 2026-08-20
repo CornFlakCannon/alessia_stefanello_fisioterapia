@@ -34,6 +34,9 @@ const OUT = join(ROOT, "public", "foto");
 const TALL = 1200;
 const WIDE = 2200;
 
+/** Default WebP quality. A photo can override it with `q` — see `lettino`. */
+const Q = 82;
+
 const PHOTOS = [
   // --- muscoloscheletrico / sport -------------------------------------------------
   // Hand on the shoulder blade, patient seen from behind at the rack. No faces at all,
@@ -66,7 +69,11 @@ const PHOTOS = [
   { id: "pelvico", src: "PELVICO_CROPPATA.jpg", crop: { left: 1870, top: 0, width: 3000, height: 4000 }, w: TALL },
   // Lo studio col lettino, vuoto: nessun paziente, nessun consenso da chiedere, e fa da
   // secondo tempo alla foto sopra (il gesto, poi il luogo).
-  { id: "lettino", src: "LETTINO.jpg", crop: { left: 1600, top: 0, width: 3000, height: 4000 }, w: TALL },
+  // `q` piu' basso solo qui: il pavimento piastrellato e' dettaglio ad alta frequenza e a
+  // 82 pesava 343 KB, il doppio di ogni altra. Va sotto un duotone desaturato e tinto al
+  // 42%, quindi quel dettaglio non arriva comunque allo schermo — 70 lo riporta a 177 KB,
+  // in linea con le altre. Alzalo se un giorno la foto dovesse comparire non filtrata.
+  { id: "lettino", src: "LETTINO.jpg", crop: { left: 1600, top: 0, width: 3000, height: 4000 }, w: TALL, q: 70 },
 
   // --- ritratto e ambiente --------------------------------------------------------
   // Shot #4 of FOTO_BRIEF.md: she looks at the lens, white ground. Tight on head+torso.
@@ -80,12 +87,12 @@ const PHOTOS = [
 await mkdir(OUT, { recursive: true });
 
 let total = 0;
-for (const { id, src, crop, w } of PHOTOS) {
+for (const { id, src, crop, w, q = Q } of PHOTOS) {
   const dest = join(OUT, `${id}.webp`);
   const { size } = await sharp(join(SRC, src))
     .extract(crop)
     .resize(w)
-    .webp({ quality: 82 })
+    .webp({ quality: q })
     .toFile(dest);
   total += size;
   const h = Math.round((crop.height / crop.width) * w);
