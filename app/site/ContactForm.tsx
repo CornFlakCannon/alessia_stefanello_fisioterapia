@@ -124,9 +124,29 @@ function useTapVsSwipe<T extends HTMLElement>() {
 // `select-none focus:select-text`: the other native artefact is a caret/selection drag
 // starting on an UNfocused field (touch-action doesn't suppress selection). Blocking
 // user-select stops that drag from beginning; focus restores normal editing/selection.
+/**
+ * The fields have no box: they are transparent inputs on the panel's own ground, with a
+ * hairline underneath and the PLACEHOLDER as their only label. That works on a flat
+ * ground; panel 4 now carries a photo behind it (see PanelTexture in page.tsx), so both
+ * faint values had to come up to survive it:
+ *
+ *   placeholder /40 -> /70   2.45:1 on the old plain white  ->  4.72:1 on the photo
+ *   border      /20 -> /30   1.51:1 on the old plain white  ->  1.75:1 on the photo
+ *
+ * i.e. both end up BETTER than they were before the photo existed, not merely no worse.
+ * The placeholder was already under 4.5:1 on white — the photo is what forced the fix.
+ *
+ * ⚠️ The underline is still under the 3:1 WCAG asks of an input's border. Getting there
+ * means roughly `/55`, which is a visibly heavier form than the one that was signed off;
+ * left as a deliberate, recorded compromise rather than a silent redesign.
+ *
+ * `touch-none` is NOT decoration — a <textarea> is its own scroll container, so it
+ * terminates the touch-action walk before the shell's value is ever consulted. See the
+ * second engine seam in CLAUDE.md before removing it.
+ */
 const inputBase =
-  "w-full touch-none select-none rounded-none border-0 border-b border-ink/20 bg-transparent px-0 py-2.5 " +
-  "font-sans text-ink outline-none transition-colors placeholder:text-ink/40 " +
+  "w-full touch-none select-none rounded-none border-0 border-b border-ink/30 bg-transparent px-0 py-2.5 " +
+  "font-sans text-ink outline-none transition-colors placeholder:text-ink/70 " +
   "focus:select-text focus:border-primary";
 
 function MinimalForm() {

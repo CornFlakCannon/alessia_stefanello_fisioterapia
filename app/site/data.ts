@@ -8,7 +8,7 @@
 
 export const CONTACT = {
   name: "Alessia Stefanello",
-  role: "Fisioterapista",
+  role: "Fisioterapista, OMPT",
   phoneDisplay: "+39 342 752 2370",
   phoneHref: "+393427522370",
   email: "alessiastefanello.fisio@gmail.com",
@@ -47,13 +47,12 @@ export const SERVICES = {
     eyebrow: "01 — Muscoloscheletrico",
     title: "Riabilitazione muscoloscheletrica",
     body:
-      "Valutazione e trattamento di dolori e disfunzioni di muscoli, articolazioni e colonna. " +
-      "Un percorso costruito sul tuo caso — terapia manuale, esercizio terapeutico ed educazione — " +
-      "per ridurre il dolore e restituirti movimento.",
+      "Valutazione e trattamento di problematiche muscolo-tendinee e articolari. " +
+        "Un percorso costruito su misura per ridurre il dolore e restituirti movimento sia nella gestione del dolore acuto/cronico che nei casi d'infortunio.",
     points: [
-      "Terapia manuale mirata",
+      "Terapia manuale",
       "Esercizio terapeutico personalizzato",
-      "Gestione del dolore acuto e cronico",
+      "Educazione alla gestione del dolore",
     ],
   },
   /** The sport beat is a FOCUS, not a panel: it lives in the muscolo panel's slab
@@ -62,9 +61,7 @@ export const SERVICES = {
     eyebrow: "Focus",
     title: "Ritorno allo sport, in sicurezza",
     body:
-      "Accompagno atleti e giovani nel percorso post-chirurgico e post-infortunio, fino al ritorno " +
-      "in campo. Riatletizzazione progressiva, criteri oggettivi di return-to-play e prevenzione " +
-      "delle recidive.",
+      "Accompagno atleti di qualsiasi livello nel percorso post-chirurgico e post-infortunio, fino alla riatletizzazione, ritorno in campo e prevenzione delle recidive.",
     points: [
       "Percorso post-chirurgico",
       "Recupero post-infortunio",
@@ -73,27 +70,27 @@ export const SERVICES = {
     /** The Olimpiadi beat is no longer a section of its own: it signs off the sport
      *  focus, as a caption under the Milano Cortina logo at the foot of the slab. */
     olimpiadi: {
-      caption: "Verso le Olimpiadi — Milano Cortina 2026",
+      caption: "Milano Cortina 2026",
     },
   },
   pelvico: {
     eyebrow: "02 — Pavimento pelvico",
-    title: "Pavimento pelvico & post parto",
+    title: "Riabilitazione del pavimento pelvico",
     body:
-      "Un supporto delicato e competente per la salute del pavimento pelvico: percorsi pre e post " +
-      "parto, incontinenza, dolore e recupero della funzionalità — con ascolto e riservatezza.",
+      "Un supporto delicato e competente per la salute del pavimento pelvico. " +
+      "Un percorso che ti accompagna alla gestione del dolore e al recupero della funzionalità — con ascolto e riservatezza.",
     points: [
       "Percorsi pre e post parto",
-      "Incontinenza e dolore pelvico",
-      "Recupero della funzionalità",
+      "Disfunzioni sessuali e dolore pelvico",
+      "Problematiche di incontinenza",
     ],
     postParto: {
       eyebrow: "Focus",
       title: "Il percorso post parto",
       body:
-        "Dopo il parto il corpo chiede tempo e una guida. Valutiamo insieme diastasi, cicatrice e " +
-        "pavimento pelvico, e costruiamo un ritorno graduale al movimento — dai gesti di ogni giorno " +
-        "con il bambino in braccio fino allo sport, senza forzare i tempi.",
+        "Dopo il parto il corpo chiede del tempo e una guida. Valutiamo insieme diastasi, cicatrice e " +
+          "funzionalità del pavimento pelvico. Costruiamo un ritorno graduale al movimento.",
+      // TODO METTERE DUE FOTO SOTTO
     },
   },
   domiciliare: {
@@ -101,7 +98,7 @@ export const SERVICES = {
     title: "Fisioterapia a domicilio",
     body:
       "Quando spostarsi è difficile, vengo io da te. Trattamenti a domicilio per anziani e persone " +
-      "con mobilità ridotta, nella zona del centro di Padova.",
+        "con mobilità ridotta, nella zona del centro di Padova.",
     zona: {
       eyebrow: "Focus",
       title: "Dove arrivo",
@@ -143,7 +140,7 @@ export const HERO = {
   kicker: "Fisioterapia a Padova",
   name: CONTACT.name,
   role: CONTACT.role,
-  tagline: "Formazione, metodo e ascolto al servizio del tuo movimento.",
+  tagline: "Formazione, professionalità e ascolto al servizio della tua salute.",
   scrollHint: "scorri",
 } as const;
 

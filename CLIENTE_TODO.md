@@ -40,6 +40,24 @@ In realtà si potrebbe pensare di mettere un ‘focus a destra’ anche per le a
   luce, abbigliamento, cosa fare durante lo scatto, la questione consenso, e la lista dei 3+2
   scatti con le proporzioni giuste. È scritto per essere girato ad Alessia così com'è.
 
+- FATTO (foto vere, 18/08): le foto dello studio sono arrivate e sono dentro il sito.
+  - **Hero**: non una foto ferma ma il **video** — scrollando, Alessia incrocia le braccia.
+  - **Muscoloscheletrica / sport** (fascia fucsia): tre foto che si susseguono mentre si
+    scorre — la valutazione della spalla, la terapia manuale, il ritorno al gesto sportivo —
+    e sopra resta il logo Milano Cortina. Il disegno dell'atleta è stato sostituito da loro.
+  - **Domiciliare** (fascia oro): la foto con la signora anziana, e la **mappa di Padova
+    diventa una card più piccola** appoggiata sopra, invece di occupare tutta la fascia.
+  - **Contatti** e **Formazione**: la foto sta sul fondo, molto tenue, come texture — non
+    c'era spazio in altezza per metterla in mezzo al testo. Sulla Formazione c'è anche il
+    **ritratto** (quello in cui guardi l'obiettivo), in tondo, in basso a destra.
+  - Tutte sono **filtrate col colore della sezione**: è quello che tiene insieme scatti fatti
+    con luci e inquadrature diverse e le fa sembrare una famiglia sola.
+  - ⚠️ **Manca solo il pavimento pelvico**: di quel servizio non c'è nessuna foto, quindi
+    quella fascia tiene ancora il disegno (l'esercizio del ponte). È lo scatto n. 2 di
+    `FOTO_BRIEF.md`.
+  - ⚠️ **Consenso**: nelle foto ci sono pazienti riconoscibili. Prima di pubblicare serve la
+    liberatoria firmata di ognuno di loro (vedi la sezione "Privacy" del brief).
+
 4. Alla fine, o a ‘destra’ della parte dei contatti o dove tu ritieni sia più consono, metterei un posto in cui si vede la mia formazione, tipo cv. Perché credo sia importante far vedere la mia formazione e le mie esperienze. Ma appunto lo metterei alla fine di tutto.
 
 - FATTO: pannello **Formazione** dopo i contatti e prima del footer — "alla fine di tutto" come

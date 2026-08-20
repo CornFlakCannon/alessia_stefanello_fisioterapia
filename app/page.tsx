@@ -21,6 +21,9 @@ import ServiceIndex from "./site/ServiceIndex";
 import ContactBar from "./site/ContactBar";
 import TravellingFigure from "./site/TravellingFigure";
 import ScrollLottie from "./site/ScrollLottie";
+import PhotoSlab from "./site/PhotoSlab";
+import DuotonePhoto from "./site/DuotonePhoto";
+import { PHOTOS, type Photo } from "./site/photos";
 import { MailIcon, PhoneIcon, PinIcon } from "./site/ContactIcons";
 import ContattamiButton from "./site/ContattamiButton";
 
@@ -78,7 +81,7 @@ const tableReveal = [
  *  (MASK_END) stands in for the boundary math only. */
 const PANEL_END = [
   600 + DWELL, // 0 hero
-  FIGURE_OUT + 150, // 1 muscolo + focus sport — the athlete has to finish scrubbing
+  FIGURE_OUT + 150, // 1 muscolo + focus sport — the slab photos reuse the athlete's window
   FIGURE_OUT + 150, // 2 pelvico + focus post parto — same, for the bridge
   FOCUS_LANDED + DWELL, // 3 domiciliare + focus mappa — no scrubbed figure, just dwell
   holdEnd(4), // 4 contatti (rev(4) is the form)
@@ -137,6 +140,41 @@ function Points({ items }: { items: readonly string[] }) {
   );
 }
 
+/**
+ * A studio photo as the ground of a TEXT panel (contatti, formazione).
+ *
+ * These two panels have no slab to put a photo in, and no vertical room to put one in
+ * flow — panel 4 carries the form and panel 5 the timeline, and both have to fit inside
+ * 100svh. So the photo goes behind everything, absolutely: it costs zero height and
+ * nothing in the a11y tree.
+ *
+ * The dose lives HERE, not in `intensity`: these grounds are light, so the way to make a
+ * duotone recede is to fade the whole layer OVER the ground, not to pile more colour on
+ * top of it — that would paint a solid blue rectangle over the panel. It is a `style`
+ * and not a Tailwind class because the value is now a prop, and Tailwind cannot generate
+ * an arbitrary class from a runtime number.
+ *
+ * ## Choosing `opacity`
+ * It is a contrast budget, not a taste slider, and the ceiling is set by the panel's
+ * palest text. Measured pixel-by-pixel on `studio.webp` against the contatti panel:
+ *
+ *   | opacity | heading (text-primary) | body | placeholder (text-ink/70) |
+ *   |    0.22 |                   5.16 | 7.98 |                      4.72 |
+ *   |    0.28 |                   4.43 | 7.00 |                      4.34 |
+ *   |    0.35 |                   3.67 | 5.94 |                      3.89 |
+ *
+ * 0.22 is the last value where everything clears 4.5:1. Past ~0.25 the heading is the
+ * first thing to go under — and it goes under silently: the panel still looks good, it
+ * just stops being readable for anyone who needs the contrast. Re-measure, don't guess.
+ */
+function PanelTexture({ photo, opacity = 0.08 }: { photo: Photo; opacity?: number }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0" style={{ opacity }}>
+      <DuotonePhoto photo={photo} tint="primary" intensity={0.2} sizes="100vw" className="absolute inset-0" />
+    </div>
+  );
+}
+
 /** Decorative corner brackets (the biglietto da visita motif). `topLeft` is opt-out
  *  because the always-on ContactBar badge sits at top-left (fixed, over every panel)
  *  and the bracket collides with it. */
@@ -158,55 +196,69 @@ export default function Home() {
     <ScrollShell>
       {/* ── 0 · HERO ─────────────────────────────────────────────────────── */}
       <Section index={0} end={PANEL_END[0]}>
-        <div className={`${shell} bg-white`}>
+        <div className={`${shell} bg-white lg:px-0`}>
           {/* was white-on-gold; on the white ground white brackets would vanish */}
           <Corners color="rgba(0,78,143,0.22)" topLeft={false} />
-          <div className="relative z-10 grid w-full max-w-6xl items-center gap-10 max-lg:short:gap-4 lg:grid-cols-[1.05fr_0.85fr] lg:gap-16">
-            {/* Portrait cell. The photo is DEAD STRAIGHT (the client asked for it) and
-                surfaces from a drawn line — see HeroPortrait. It sits FIRST in the DOM
-                so on phones it leads, above the name; on lg it moves to the right, onto
-                the slab. The SDiv is only the whole-group base drift: the photo and the
-                line each add their own departure on top of it, and DOM nesting composes
-                the two, so a part's travel ADDS to this. */}
-            <div className="relative order-first lg:order-last">
-              {/* THE GOLD GROUND — the panel used to be gold edge to edge, which read as
-                  heavy and left the other half empty. Now the gold is a ground the
-                  portrait stands on (the Olimpiadi panel's device, so the page keeps one
-                  grammar) and the composition, not the colour, carries the panel.
 
-                  Both are anchored to the PHOTO's cell, never to the viewport: the grid
-                  is capped at max-w-6xl while the viewport isn't, so a `w-[42%]`-of-screen
-                  slab drifts away from the column as the screen widens — past ~2500px the
-                  photo starts overhanging its edge. Hanging them off the cell keeps the
-                  gold margin around the photo constant at every width, and the panel's
-                  overflow-hidden clips whatever bleeds out.
+          {/* THE PORTRAIT AND ITS GOLD — deliberately ONE box, not two.
+              The gold used to be a `<span>` hung off the photo's grid cell, bleeding
+              `-right-[50vw]` to the screen edge, while the photo was centred inside the
+              cell (capped at max-w-6xl). Two reference frames for two things that have to
+              look concentric: on a 1883px window the photo sat 164px left of the gold's
+              centre, and the gap grew with the monitor.
 
-                  Phones: a band whose `bottom-0` is exactly the portrait's own line, so
-                  the drawn rule doubles as the gold/white boundary. */}
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-[-50vw] -top-8 bottom-0 bg-secondary lg:hidden"
-              />
-              {/* Desktop: a full-height slab starting just left of the photo and bleeding
-                  off the right edge. The 100vh over/under is clipped by the panel. */}
-              <span
-                aria-hidden="true"
-                className="pointer-events-none absolute -bottom-[100vh] -left-8 -right-[50vw] -top-[100vh] hidden bg-secondary lg:block"
-              />
-              <SDiv
-                start={0}
-                budget={600}
-                anim={[
-                  { at: 0, y: 0 },
-                  { at: 1, y: -14 },
-                ]}
-                className="relative mx-auto w-52 max-lg:short:w-36 sm:w-64 lg:w-full lg:max-w-[21rem]"
-              >
-                <HeroPortrait />
-              </SDiv>
-            </div>
+              Now the gold IS this element's background and the photo is centred in it, so
+              they are concentric by construction at every width — there is no number to
+              keep in agreement. (The old comment here argued the slab had to hang off the
+              cell or it would drift away from the photo on wide screens. That was true
+              while the photo lived in the grid; it cannot happen once they are the same
+              box. Don't restore it.)
 
-            <div className="text-center lg:text-left">
+              Mobile keeps its own device: a band whose `bottom-0` is exactly the
+              portrait's own drawn line, so the rule doubles as the gold/white boundary. */}
+          <div className="relative mb-10 w-full max-w-6xl max-lg:short:mb-4 lg:absolute lg:inset-y-0 lg:right-0 lg:mb-0 lg:flex lg:w-[46vw] lg:max-w-none lg:items-center lg:justify-center lg:bg-secondary lg:py-12 lg:short:py-6">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-[-50vw] -top-8 bottom-0 bg-secondary lg:hidden"
+            />
+            {/* The whole-group base drift; the photo and the line each add their own
+                departure on top of it, and DOM nesting composes the two.
+                The desktop width is capped by `svh`, not by a fixed rem, because the
+                binding constraint is HEIGHT: a 3:4 portrait is 1.33x as tall as it is
+                wide, and the panel owes 100svh. 60svh of width = 80svh of height, inside
+                a band that is the full panel height less `py-12`. Raise it to make her
+                bigger, then re-check at 768px tall — that is where the margin runs out
+                first.
+
+                The `38vw` term guards the OTHER axis: the band is 46vw, and without it a
+                1024x768 window resolves 60svh to 461px inside a 471px band — 5px of
+                margin, visibly glued to both edges. 38vw keeps 4vw of air per side at
+                every width, and never binds on wide screens (at 1895 it is 720px, so
+                34rem still wins). The mobile branch (w-52 / sm:w-64) is untouched. */}
+            <SDiv
+              start={0}
+              budget={600}
+              anim={[
+                { at: 0, y: 0 },
+                { at: 1, y: -14 },
+              ]}
+              className="relative mx-auto w-52 max-lg:short:w-36 sm:w-64 lg:mx-0 lg:w-[min(34rem,60svh,38vw)]"
+            >
+              <HeroPortrait />
+            </SDiv>
+          </div>
+
+          {/* THE TEXT — `self-start` because the panel is `flex-col items-center`, so the
+              cross axis is horizontal: without it a 54vw box would be centred in the
+              viewport and run under the gold.
+
+              Inside, `mx-auto` centres the copy IN THE WHITE HALF, which is the mirror of
+              the portrait being centred in the gold one: same air on both sides of each.
+              It first shipped as `ml-auto` + a right pad, parking the text against the
+              gold's edge — on a 1895px window that read as 520px of void on the left and
+              64 on the right, which is what "the space is badly distributed" was. */}
+          <div className="relative z-10 w-full max-w-6xl text-center lg:w-[54vw] lg:max-w-none lg:self-start lg:text-left">
+            <div className="lg:mx-auto lg:max-w-[34rem] lg:px-10">
               <p className="fisio-rise font-mono text-xs uppercase tracking-[0.28em] text-primary/70 sm:text-sm" style={{ animationDelay: "0.05s" }}>
                 {HERO.kicker}
               </p>
@@ -263,7 +315,20 @@ export default function Home() {
           slab="bg-emphasis text-white"
           focus={
             <>
-              <div className="max-w-md">
+              {/* The slab's ground. It runs over exactly the window the athlete used to
+                  scrub (FIGURE_IN..FIGURE_OUT), so PANEL_END[1] — and with it the
+                  TravellingFigure's JOURNEY, built from prefix sums of PANEL_END —
+                  never moves. Story order: valutazione, terapia manuale, ritorno al
+                  gesto sportivo, closing on the Olimpiadi beat below. */}
+              <PhotoSlab
+                photos={[PHOTOS.spalla, PHOTOS.manuale, PHOTOS.equilibrio]}
+                tint="emphasis"
+                intensity={0.42}
+                start={FIGURE_IN}
+                end={FIGURE_OUT}
+              />
+
+              <div className="relative z-10 max-w-md">
                 <p className={focusEyebrow}>{SERVICES.sport.eyebrow}</p>
                 <h3 className={focusHeading}>{SERVICES.sport.title}</h3>
                 <p className={focusBody}>{SERVICES.sport.body}</p>
@@ -272,7 +337,7 @@ export default function Home() {
               {/* Milano Cortina 2026 — the JPEG's own ground is exactly --brand-emphasis
                   (see globals.css), so it sits on the slab with no visible box. The
                   Olimpiadi beat signs the focus off rather than owning a panel. */}
-              <div className="flex flex-col items-center gap-2">
+              <div className="relative z-10 flex flex-col items-center gap-2">
                 <Image
                   src="/olimpiadi_cortina.jpeg"
                   alt="Milano Cortina 2026"
@@ -284,20 +349,6 @@ export default function Home() {
                   {SERVICES.sport.olimpiadi.caption}
                 </p>
               </div>
-
-              {/* Athlete — white, scrubbed over the slab's landed window. Size: below
-                  `md` it scales with the viewport instead of sitting at a fixed 600px —
-                  125vw/-18vw is the SAME ratio the old `w-150 -ml-25` had against a
-                  375px phone, so the left-bleed reads identically while costing ~65px
-                  less height (the slab is overflow-hidden and centred: overspill shears
-                  the content off the top). `md:` restores the fixed desktop values. */}
-              <ScrollLottie
-                src="/Athlete.lottie"
-                white
-                start={FIGURE_IN}
-                end={FIGURE_OUT}
-                className="w-[125vw] -ml-[18vw] md:w-150 md:ml-0 rotate-y-180"
-              />
 
               <span aria-hidden="true" className="pointer-events-none absolute -bottom-10 -right-4 font-display text-[11rem] leading-none text-white/10">
                 ◎
@@ -369,16 +420,35 @@ export default function Home() {
           slab="bg-secondary text-primary"
           focus={
             <>
-              <div className="max-w-md">
+              {/* The only slab with DARK text on it, so it screens instead of multiplying
+                  — gold multiplied by a photo goes brown and takes text-primary down to
+                  ~1:1. Screened it floors at 4.25:1, which is the flat gold's own value,
+                  and that is what buys the low `intensity`: the photo can carry the slab
+                  here more than it does on the fuchsia one. Its window is what the panel
+                  has spare after the slab lands — no scrubbed figure to share it with. */}
+              <PhotoSlab
+                photos={[PHOTOS.palla, PHOTOS.step]}
+                tint="secondary"
+                intensity={0.3}
+                blend="screen"
+                start={FOCUS_LANDED}
+                end={PANEL_END[3]}
+              />
+
+              <div className="relative z-10 max-w-md">
                 <p className={focusEyebrow}>{SERVICES.domiciliare.zona.eyebrow}</p>
                 <h3 className={focusHeading}>{SERVICES.domiciliare.zona.title}</h3>
                 <p className={focusBody}>{SERVICES.domiciliare.zona.body}</p>
               </div>
 
               {/* The map rides in ON the slab, so its ring must reveal AFTER the slab
-                  lands — otherwise it plays off-stage and arrives already open. Its own
-                  rounded, light box reads as a card on the gold, no extra frame needed. */}
-              <PadovaMap className="max-w-md" revealAt={FIGURE_IN} />
+                  lands — otherwise it plays off-stage and arrives already open. Now that
+                  the slab wears a photo the map is an inset card, not the main event:
+                  its light rounded box is what lifts it off the photo. */}
+              <PadovaMap
+                className="relative z-10 max-w-[25rem] shadow-xl shadow-primary/20 short:max-w-[12rem]"
+                revealAt={FIGURE_IN}
+              />
             </>
           }
         >
@@ -402,7 +472,11 @@ export default function Home() {
       {/* ── 4 · CONTATTAMI ───────────────────────────────────────────────── */}
       <Section index={4} snap={SNAP} end={PANEL_END[4]}>
         <div className={`${shell} bg-white`}>
-          <div className="w-full max-w-3xl">
+          {/* Lo studio dietro al form: "vieni qui" detto dall'ambiente invece che a
+              parole. La dose è alta rispetto alla formazione — è la richiesta — ma è
+              anche il tetto: vedi la tabella di contrasto su PanelTexture. */}
+          <PanelTexture photo={PHOTOS.studio} opacity={0.40} />
+          <div className="relative z-10 w-full max-w-3xl">
             <SDiv {...rev(0)} anim={UP} className="mb-4 text-center">
               <p className={eyebrow}>{CONTACT_COPY.eyebrow}</p>
             </SDiv>
@@ -430,7 +504,31 @@ export default function Home() {
           pubblicare (i titoli di studio di una persona reale non si inventano). */}
       <Section index={5} snap={SNAP} end={PANEL_END[5]}>
         <div className={`${shell} bg-mist`}>
-          <div className="w-full max-w-4xl">
+          {/* Resta un sussurro, e diverso da quello dei contatti: questo pannello ha
+              già il ritratto tondo, due immagini alla stessa voce si darebbero fastidio. */}
+          <PanelTexture photo={PHOTOS.cervicaleLargo} />
+
+          {/* Il ritratto (scatto #4 del brief, "chi sono") sul pannello del CV. Sta in
+              un angolo in assoluto, come la figura del footer, perché questo pannello
+              deve restare dentro 100svh: in flusso costerebbe altezza, qui costa zero.
+              `xl:` e non `lg:` — sotto i 1280 il margine laterale non basta e finirebbe
+              sopra la timeline. */}
+          <SDiv
+            {...rev(2)}
+            anim={UP}
+            className="pointer-events-none absolute bottom-12 right-10 hidden xl:block"
+          >
+            <Image
+              src={PHOTOS.ritrattoTondo.src}
+              alt={PHOTOS.ritrattoTondo.alt}
+              width={PHOTOS.ritrattoTondo.width}
+              height={PHOTOS.ritrattoTondo.height}
+              sizes="9rem"
+              className="size-36 rounded-full object-cover ring-4 ring-white/70"
+            />
+          </SDiv>
+
+          <div className="relative z-10 w-full max-w-4xl">
             <SDiv {...rev(0)} anim={UP} className="mb-4 text-center">
               <p className={eyebrow}>{FORMAZIONE.eyebrow}</p>
             </SDiv>

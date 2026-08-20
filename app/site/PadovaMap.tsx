@@ -66,7 +66,7 @@ export default function PadovaMap({
 }) {
   return (
     <div
-      className={`relative aspect-[4/3] w-full overflow-hidden rounded-3xl bg-mist ring-1 ring-primary/10 short:aspect-[16/10] ${className}`}
+      className={`relative aspect-[4/3] border w-full overflow-hidden rounded-3xl bg-mist ring-1 ring-primary/10 short:aspect-[16/10] ${className}`}
     >
       <iframe
         src={EMBED_SRC}

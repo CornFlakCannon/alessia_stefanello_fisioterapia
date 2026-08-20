@@ -86,10 +86,47 @@ ricomprime e le rovina.
 
 ---
 
+## Stato — aggiornato al 18/08/2026
+
+Il primo blocco di foto è arrivato ed è **online**. Cosa c'è e cosa manca:
+
+| # | serve per | stato |
+|---|---|---|
+| 1 | Muscoloscheletrico / sport | ✅ tre scatti, tutti e tre nella fascia fucsia |
+| 2 | **Pavimento pelvico / post parto** | ❌ **manca** — è l'unica sezione ancora col disegno |
+| 3 | Domicilio | ⚠️ ci sono gli scatti con la signora anziana, ma **sono in studio**: manca il contesto di casa (la borsa, il tappetino in salotto, la poltrona). Vanno benissimo per intanto |
+| 4 | ritratto | ✅ usato nella sezione Formazione |
+| 5 | dettagli / studio vuoto | ✅ usato come fondo tenue su Contatti e Formazione |
+
+In più è arrivato un **video** di te che incroci le braccia: è diventato l'apertura del
+sito — scorrendo la pagina, il gesto si compie. Funziona molto bene, se un domani se ne
+rifà uno vale la pena girarlo con la stessa idea (un gesto solo, lento, fondo chiaro).
+
+**Due cose per la prossima sessione:**
+
+1. **Girate il telefono / la macchina in verticale.** Le foto arrivate sono orizzontali,
+   mentre le fasce del sito sono strette e alte: le ho dovute ritagliare tutte, buttando
+   via metà dell'inquadratura. In verticale si tiene tutto.
+2. **Serve lo scatto n. 2** (pavimento pelvico / post parto). Finché non c'è, quella
+   sezione resta col disegno — che non è un problema, ma è l'unica delle tre a non avere
+   una foto vera.
+
+E la cosa che blocca la pubblicazione: **le liberatorie**. Nelle foto ci sono pazienti
+riconoscibili in viso. Prima di mettere il sito online serve, per ognuno, il foglio
+firmato di cui parla la sezione Privacy qui sopra.
+
+---
+
 ## Nota per lo sviluppatore
 
-Quando arriva un file: metterlo in `public/` e inserirlo nello slab del servizio dentro
-`app/page.tsx`, al posto della `ScrollLottie` di quel `FocusPanel` (o del logo, per il
-pannello sport). Usare `next/image` con `width`/`height` reali, come già fa
-`HeroPortrait.tsx`. Il pannello deve continuare a stare in `100svh`: se la foto non ci sta,
-si accorcia lei (`max-h`), non si allunga il pannello.
+Quando arriva un file: **non** metterlo in `public/` — va in `FOTO_ORIGINALI/`
+(gitignorata), poi `npm run photos` produce il derivato ritagliato in `public/foto/`.
+Il ritaglio si sceglie a mano, una riga in `scripts/crop-photos.mjs`: gli originali sono
+orizzontali e le fasce sono alte e strette, `object-cover` da solo taglia le teste.
+Poi una riga in `app/site/photos.ts` e la foto è disponibile ovunque.
+
+Nelle fasce ci va `PhotoSlab`, non un `<Image>` nudo: gestisce la dissolvenza fra più
+foto, il ken-burns e la tinta della sezione. **Attenzione al `blend`** — `multiply` sotto
+testo chiaro, `screen` sotto testo scuro; il perché (con i numeri di contrasto) è nella
+tabella in `CLAUDE.md` § Photos. Il pannello deve continuare a stare in `100svh`: se la
+foto non ci sta, si accorcia lei (`max-h`), non si allunga il pannello.
