@@ -17,6 +17,7 @@ import HeroFigure from "./site/HeroFigure";
 import HeroPortrait from "./site/HeroPortrait";
 import PadovaMap from "./site/PadovaMap";
 import ContactForm from "./site/ContactForm";
+import CvSheets, { sheetsEnd } from "./site/CvSheets";
 import ServiceIndex from "./site/ServiceIndex";
 import ContactBar from "./site/ContactBar";
 import PhotoSlab from "./site/PhotoSlab";
@@ -90,7 +91,7 @@ const PANEL_END = [
   FOCUS_LANDED + PHOTO_CYCLE, // 2 pelvico + focus post parto — two
   FOCUS_LANDED + DWELL, // 3 domiciliare — two photos, but the map is the beat here
   holdEnd(4), // 4 contatti (rev(4) is the form)
-  holdEnd(3), // 5 formazione
+  sheetsEnd(FORMAZIONE.pages.length) + DWELL, // 5 formazione — il budget segue il CV
   MASK_END, // 6 footer
 ] as const;
 
@@ -520,9 +521,8 @@ export default function Home() {
       {/* ── 5 · FORMAZIONE / CV ──────────────────────────────────────────────
           Chiude la pagina prima del footer, come chiesto ("alla fine di tutto",
           CLIENTE_TODO.md §4): chi è già convinto ha appena visto il form, chi vuole
-          verificare le credenziali le trova qui.
-          ⚠️ Le voci in data.ts sono PLACEHOLDER — vanno riempite da Alessia prima di
-          pubblicare (i titoli di studio di una persona reale non si inventano). */}
+          verificare le credenziali le trova qui. Le voci sono quelle vere del CV; il
+          pannello le sfoglia invece di allungarsi (vedi CvSheets). */}
       <Section index={5} snap={SNAP} end={PANEL_END[5]}>
         <div className={`${shell} bg-mist`}>
           {/* Resta un sussurro, e diverso da quello dei contatti: questo pannello ha
@@ -556,22 +556,13 @@ export default function Home() {
             <SDiv {...rev(1)} anim={UP} className="mb-4 text-center">
               <h2 className={heading}>{FORMAZIONE.title}</h2>
             </SDiv>
-            <SDiv {...rev(2)} anim={UP} className="mb-10 text-center short:mb-6">
+            <SDiv {...rev(2)} anim={UP} className="mb-7 text-center short:mb-4">
               <p className={`${body} mx-auto max-w-2xl`}>{FORMAZIONE.intro}</p>
             </SDiv>
-            {/* Timeline: due colonne su desktop, una su telefono. Ogni voce è un filetto
-                orizzontale + anno in mono + titolo — compatta perché il pannello deve
-                stare in 100svh: un CV più lungo si accorcia, non allunga il pannello. */}
+            {/* I quattro fogli del CV, che si sovrappongono scorrendo. Un CV più lungo
+                aggiunge PAGINE, non altezza: il pannello deve stare in 100svh. */}
             <SDiv {...rev(3)} anim={UP}>
-              <ul className="grid gap-x-12 gap-y-5 short:gap-y-3 sm:grid-cols-2">
-                {FORMAZIONE.items.map(({ year, title, place }) => (
-                  <li key={`${year}-${title}`} className="border-t border-primary/15 pt-3 short:pt-2">
-                    <p className="font-mono text-xs uppercase tracking-[0.18em] text-secondary">{year}</p>
-                    <p className="mt-1 font-display text-lg leading-snug text-primary">{title}</p>
-                    <p className="mt-0.5 text-sm text-ink/70">{place}</p>
-                  </li>
-                ))}
-              </ul>
+              <CvSheets pages={FORMAZIONE.pages} />
             </SDiv>
           </div>
         </div>

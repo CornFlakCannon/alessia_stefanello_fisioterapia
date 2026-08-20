@@ -41,10 +41,9 @@ import { CONTACT } from "./data";
 /** Street level: the building is findable and the quartiere still reads around it. */
 const ZOOM = 15;
 
-const EMBED_SRC =
-  `https://maps.google.com/maps?q=${encodeURIComponent(
-    `${CONTACT.address.line1}, ${CONTACT.address.city}`,
-  )}&z=${ZOOM}&hl=it&output=embed`;
+const EMBED_SRC = `https://maps.google.com/maps?q=${encodeURIComponent(
+  CONTACT.mapsQuery,
+)}&z=${ZOOM}&hl=it&output=embed`;
 
 export default function PadovaMap({ className = "" }: { className?: string }) {
   return (

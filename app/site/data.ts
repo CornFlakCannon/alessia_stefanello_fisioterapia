@@ -6,6 +6,11 @@
  * Contact details come from the biglietto da visita.
  */
 
+/** The address as GOOGLE should read it — no "(PD)" parenthetical, which is how it is
+ *  written for people but not what a geocoder wants. One string, so the embedded map and
+ *  the "apri in Google Maps" link can never end up pointing at two different places. */
+const MAPS_QUERY = "Viale della Navigazione Interna 51, Padova PD";
+
 export const CONTACT = {
   name: "Alessia Stefanello",
   role: "Fisioterapista, OMPT",
@@ -18,10 +23,11 @@ export const CONTACT = {
     city: "Padova (PD)",
   },
   note: "Solo su prenotazione",
+  /** What PadovaMap's embed geocodes (see MAPS_QUERY above). */
+  mapsQuery: MAPS_QUERY,
   /** Studio address on Google Maps — the "apri in Google Maps" link on PadovaMap. */
   mapsUrl:
-    "https://www.google.com/maps/search/?api=1&query=" +
-    encodeURIComponent("Viale della Navigazione Interna 51, Padova PD"),
+    "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(MAPS_QUERY),
 } as const;
 
 /** Section (panel) indices — the order of the top-level <Section>s in page.tsx.
@@ -113,13 +119,30 @@ export const SERVICES = {
 /**
  * Formazione / CV — the closing panel (CLIENTE_TODO.md §4).
  *
- * ⚠️ `items` are PLACEHOLDERS, not Alessia's real qualifications: nobody's degrees,
- * courses or employers may be invented on a public site. Every line must be replaced
- * with what she actually holds before this branch goes anywhere near production —
- * the underscores are there to make an unreplaced line impossible to miss.
+ * These are Alessia's REAL credentials, transcribed from
+ * `FOTO_ORIGINALI/CV_Alessia_Stefanello_2026.pdf`. The panel used to carry six
+ * placeholder lines full of underscores; nobody's degrees may be invented on a public
+ * site, and that warning is now spent.
  *
- * Keep it to SIX entries: the panel has to fit inside 100svh (see CLAUDE.md). A longer
- * CV gets shorter lines, not a taller panel.
+ * ## Why it is paged rather than listed
+ * The CV has sixteen entries across four headings and the panel has to fit inside 100svh.
+ * A longer CV therefore adds PAGES, not height — `CvSheets` deals them in from the right
+ * as you scroll, one sheet over the last (NUOVA_TODO.md §Formazione/1). Adding an entry
+ * here is free until a single page outgrows the box; adding a fifth page costs scroll,
+ * which `PANEL_END[5]` derives from the page count rather than hard-coding.
+ *
+ * Order is deliberate: what she does now, then the two experiences that are actually
+ * stories, then the qualifications, then the courses. Skills (languages, literature
+ * search, soft skills) are on the CV but stay off the site — they are what a CV says to a
+ * hiring manager, not what a patient is deciding on.
+ *
+ * ⚠️ TO CONFIRM WITH ALESSIA before publishing (do not silently "fix" a real person's
+ * record — these are transcription calls, not typos in our copy):
+ *   - the CV writes "Kisesis medical" (Kinesis?), "Collaboratirce", "Laura Triennale",
+ *     "Strenght and Conditioning", "NCSA" (NSCA?), "Phisiovit" (Physiovit?). Rendered here
+ *     in their corrected form on the assumption they are slips in the PDF.
+ *   - the CV's header gives `alessiastefanello@gmail.com`; the site publishes
+ *     `alessiastefanello.fisio@gmail.com` (CONTACT above). One of the two is wrong.
  */
 export const FORMAZIONE = {
   eyebrow: "05 — Formazione",
@@ -127,13 +150,47 @@ export const FORMAZIONE = {
   intro:
     "Il percorso che c'è dietro ai trattamenti: studi, specializzazioni e i contesti in cui " +
     "ho lavorato.",
-  items: [
-    { year: "____", title: "Laurea in Fisioterapia", place: "Università di ____" },
-    { year: "____", title: "Master / corso di specializzazione ____", place: "____" },
-    { year: "____", title: "Corso ____ (pavimento pelvico)", place: "____" },
-    { year: "____", title: "Corso ____ (riabilitazione sportiva)", place: "____" },
-    { year: "____", title: "Esperienza presso ____", place: "____" },
-    { year: "oggi", title: "Libera professione", place: "Padova" },
+  pages: [
+    {
+      id: "esperienza",
+      label: "Esperienza",
+      items: [
+        { year: "2025 — oggi", title: "Fisioterapia muscoloscheletrica e ortopedica", place: "Kinesis Medical" },
+        { year: "2022 — oggi", title: "Libera professione — muscoloscheletrico, ortopedico, sportivo", place: "Padova" },
+        { year: "2022 — oggi", title: "Collaboratrice alla docenza — distretto toraco-lombare", place: "Università di Genova" },
+        { year: "2022 — 2024", title: "Muscoloscheletrico, ortopedico e neurologico", place: "Policlinico San Marco (VE)" },
+        { year: "2021 — 2022", title: "Muscoloscheletrico e ortopedico", place: "FisioRED (PD)" },
+      ],
+    },
+    {
+      id: "extra",
+      label: "Esperienze extra",
+      items: [
+        { year: "2026", title: "Fisioterapista ai Giochi olimpici invernali", place: "Villaggio olimpico — Milano Cortina 2026" },
+        { year: "2024", title: "Volontariato — neurologico, ortopedico ed età evolutiva", place: "Ospedale di Andavadoaka, Madagascar" },
+      ],
+    },
+    {
+      id: "educazione",
+      label: "Educazione",
+      items: [
+        { year: "2020 — 2022", title: "Master in Riabilitazione dei disturbi muscoloscheletrici — 110 e lode", place: "Università di Genova" },
+        { year: "2017 — 2020", title: "Laurea triennale in Fisioterapia — 110 e lode", place: "Università di Padova" },
+        { year: "2012 — 2017", title: "Diploma di maturità scientifica", place: "Liceo Enrico Fermi (PD)" },
+      ],
+    },
+    {
+      id: "corsi",
+      label: "Corsi",
+      items: [
+        { year: "2025 — 2026", title: "Master in Riabilitazione del pavimento pelvico", place: "Fisiokines" },
+        { year: "2025", title: "Tecnico di 1° livello — Strength and Conditioning", place: "NSCA · Physiovit" },
+        { year: "2024", title: "Gestione del paziente neurologico — lavoro in team", place: "Policlinico San Marco" },
+        { year: "2024", title: "La riabilitazione nella cooperazione internazionale", place: "Fisioterapisti senza frontiere" },
+        { year: "2023", title: "Evidence Based Practice: strumenti e metodi", place: "ECM · SPES" },
+        { year: "2022", title: "LCA rehab: dalla chirurgia al ritorno in campo", place: "FisioScience" },
+      ],
+    },
   ],
 } as const;
 
