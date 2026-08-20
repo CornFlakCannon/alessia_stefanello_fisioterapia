@@ -88,6 +88,12 @@ stato fatto.
      opaca, con la scacchiera *dipinta dentro*. È stata scontornata davvero. *(Se salta
      fuori il file originale con la trasparenza vera, tanto meglio: il nostro passaggio
      diventa superfluo.)*
+   - **Il ritratto poggia sul bordo inferiore della videata** e ci sta tutto: il taglio
+     dei pantaloni fa da base, così sembra che continui oltre l'inquadratura invece di
+     finire per aria. Via l'ombra e via anche lo scale finale 1.1 — un ingrandimento
+     all'ultimo istante litiga con una figura ancorata in basso e dimensionata per
+     riempire la sua metà (la costringerebbe a stare il 10% sotto lo spazio disponibile),
+     ed è proprio quel 10% che ha guadagnato.
    - **Alessia sta sul bianco e l'oro è passato alla metà del testo.** Sull'oro il ritaglio
      portava un alone chiaro attorno ai capelli, e non era una frangia da limare: quei
      pixel sono ~11k luci *dentro* di lei (pantaloni e capelli), e limarli vuol dire
@@ -120,8 +126,12 @@ stato fatto.
    testo e form si appoggiano su una **card bianca traslucida** — così il contrasto torna
    a misurarsi sul bianco. Caratteri del form più grandi.
 8. **Formazione dal CV.** — FATTO. Sedici voci vere (esperienza, esperienze extra,
-   educazione, corsi) sfogliate in **quattro fogli che si sovrappongono** entrando da
-   destra, esattamente l'animazione chiesta: un CV più lungo aggiunge pagine, non altezza.
+   educazione, corsi) sfogliate in **fogli che si sovrappongono** entrando da destra,
+   esattamente l'animazione chiesta: un CV più lungo aggiunge pagine, non altezza.
+   Un foglio tiene un *numero* di voci, non un capitolo del CV: sul telefono la lista è a
+   colonna singola, quindi le cinque voci di "Esperienza" sarebbero uscite dalla videata.
+   Un capitolo che non ci sta diventa due fogli ("Esperienza · 1/2"). Sul desktop restano
+   quattro fogli, sul telefono sono sei — e si sfogliano più in fretta, non più a lungo.
 9. **Mobile: banda bianca in cima / crop della foto.** — FATTO, con una precisazione: la
    foto è inquadrata su **testa e mezzo busto** come chiesto, ma il fondo pieno in cima ora
    è **bianco**, non giallo — l'oro si è spostato sotto, dietro al testo, insieme al

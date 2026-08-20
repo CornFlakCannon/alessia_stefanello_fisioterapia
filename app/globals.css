@@ -91,7 +91,13 @@
      0.22s  the white slab — and the photo inside it — covers the blade down to a ~50px
             strip, which lands exactly on the gold/white seam. The lag IS the effect:
             the blade has to be seen before it is covered.
-     1.12s  the photo lifts off the page (0.22 + 0.9 = when the slab is home)
+
+   There used to be a third beat, `.fisio-lift`: the portrait grew to 1.1 and switched on a
+   drop-shadow, so she read as sitting ON the page. It is gone with the shadow, and not
+   only because the shadow was dropped — a final overshoot fights the portrait's job now
+   that she is bottom-anchored and sized to fill her half, since her resting size would
+   have to be 10% under the space she is meant to occupy. Removing it is what buys the
+   extra 10%.
 
    `both` on each, so the from-state already applies during the delay: no flash of a
    settled hero before its own animation starts. */
@@ -124,25 +130,6 @@
   animation: fisio-slide-left 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* The rilievo: she grows a little and casts a shadow, so she reads as sitting ON the
-   slab rather than printed into it. `drop-shadow` and NOT `box-shadow` — the portrait
-   is a cut-out whose box is mostly transparent, so a box shadow would draw a rectangle
-   in mid-air around her. The two filter values have the same shape, which is what makes
-   them interpolable. */
-@keyframes fisio-lift {
-  from {
-    transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(20, 33, 46, 0));
-  }
-  to {
-    transform: scale(1.1);
-    filter: drop-shadow(0 22px 26px rgba(20, 33, 46, 0.38));
-  }
-}
-.fisio-lift {
-  animation: fisio-lift 0.7s cubic-bezier(0.22, 1, 0.36, 1) 1.12s both;
-}
-
 /* Respect reduced-motion: show everything settled, skip the entrance animations. */
 @media (prefers-reduced-motion: reduce) {
   .fisio-draw path {
@@ -153,17 +140,11 @@
     opacity: 1;
     animation: none;
   }
-  /* The hero is shown already arrived: slabs home, portrait at its lifted resting pose
-     (the composed end state, not an interrupted one). */
+  /* The hero is shown already arrived: both halves home. */
   .fisio-slide-in,
   .fisio-slide-left {
     animation: none;
     transform: translateX(0);
-  }
-  .fisio-lift {
-    animation: none;
-    transform: scale(1.1);
-    filter: drop-shadow(0 22px 26px rgba(20, 33, 46, 0.38));
   }
 }
 

@@ -91,7 +91,7 @@ const PANEL_END = [
   FOCUS_LANDED + PHOTO_CYCLE, // 2 pelvico + focus post parto — two
   FOCUS_LANDED + DWELL, // 3 domiciliare — two photos, but the map is the beat here
   holdEnd(4), // 4 contatti (rev(4) is the form)
-  sheetsEnd(FORMAZIONE.pages.length) + DWELL, // 5 formazione — il budget segue il CV
+  sheetsEnd() + DWELL, // 5 formazione — span fisso, i fogli si spartiscono quello
   MASK_END, // 6 footer
 ] as const;
 
@@ -240,26 +240,34 @@ export default function Home() {
 
               È anche ciò che copre la lama berry lasciandone i 50px. */}
           <div
-            className="fisio-slide-in relative z-[2] mb-10 w-full max-w-6xl max-lg:short:mb-4 lg:absolute lg:inset-y-0 lg:right-0 lg:mb-0 lg:flex lg:w-[46vw] lg:max-w-none lg:items-center lg:justify-center lg:bg-white lg:py-12 lg:short:py-6"
+            className="fisio-slide-in relative z-[2] mb-10 w-full max-w-6xl max-lg:short:mb-4 lg:absolute lg:inset-y-0 lg:right-0 lg:mb-0 lg:flex lg:w-[46vw] lg:max-w-none lg:items-end lg:justify-center lg:bg-white lg:pb-0 lg:pt-12 lg:short:pt-6"
             style={{ animationDelay: "0.22s" }}
           >
-            {/* La deriva dell'intero gruppo allo scroll; il ritratto ci si appoggia sopra
-                (il nesting compone le due).
-                Il cap è in `svh` e non in rem perché il vincolo vero è l'ALTEZZA: 3:4 vuol
-                dire 1.33x più alta che larga, e il rilievo finale (scale 1.1) la porta a
-                1.47x. A 55svh di larghezza sono ~81svh di altezza dentro una fascia alta
-                100svh meno il `py-12` — ci sta anche su una finestra da 768px. È QUESTA la
-                costante da alzare per farla più grande, ricontrollando a 768px.
-                Il `38vw` guarda l'altro asse: la fascia è 46vw, e senza quel termine una
-                1024x768 risolve 55svh in 422px dentro 471px di fascia, incollata ai bordi. */}
+            {/* La deriva dell'intero gruppo allo scroll. Va verso il BASSO, non verso
+                l'alto: adesso lei poggia sul bordo inferiore della videata, e sollevarla
+                aprirebbe una striscia bianca sotto ai piedi. Scendendo, invece, il taglio
+                dei pantaloni esce dalla piega e non si vede nulla.
+
+                Il cap non ha più un termine in rem — era `34rem` ed era LUI a legare, non
+                l'altezza: su 1920x1080 la teneva a 544px in una fascia da 883. Ora i due
+                termini sono entrambi relativi alla videata:
+                  69svh  è l'ALTEZZA travestita da larghezza. 3:4 vuol dire 1.33x più alta
+                         che larga, quindi 69svh di larghezza sono ~92svh di altezza: piena
+                         fino in fondo, con ~8svh di aria sopra la testa. Alzalo e le tagli
+                         la testa (il pannello è overflow-hidden).
+                  39vw   guarda l'altro asse: la fascia è 46vw, quindi le lascia ~3.5vw di
+                         aria per lato. È il termine che lega sotto i 16:9 — su 1024x768
+                         risolve a 399px dentro 471px di fascia.
+                Senza lo scale finale (vedi HeroPortrait) questi numeri sono la misura vera
+                a schermo, non una misura a riposo da moltiplicare. */}
             <SDiv
               start={0}
               budget={600}
               anim={[
                 { at: 0, y: 0 },
-                { at: 1, y: -14 },
+                { at: 1, y: 14 },
               ]}
-              className="relative mx-auto w-52 max-lg:short:w-36 sm:w-64 lg:mx-0 lg:w-[min(34rem,55svh,38vw)]"
+              className="relative mx-auto w-52 max-lg:short:w-36 sm:w-64 lg:mx-0 lg:w-[min(69svh,39vw)]"
             >
               <HeroPortrait />
             </SDiv>

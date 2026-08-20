@@ -20,21 +20,25 @@
  * have different ratios (3:4 and 4:5); without them the desktop branch would reserve the
  * phone's box and shift on load.
  *
+ * ## She stands on the bottom edge of the screen
+ * On desktop the portrait is bottom-anchored, not centred: the source is cut across her
+ * thighs, and butting that cut against the fold turns it from a crop into a BASE — she
+ * continues past the frame instead of ending in mid-air. Everything about her size follows
+ * from that (see the cap in page.tsx), and it is also why the scroll drift moves her DOWN
+ * rather than up: lifting a bottom-anchored figure opens a strip of white under her feet.
+ *
  * ## The motion is on load, and it is CSS
  * Panel 0 is on screen at scroll 0, so its entrance can never be a scroll-gated reveal —
- * it would arrive blank. The photo rides in with the gold slab (`.fisio-slide-in`, owned
- * by the slab in page.tsx) and then lifts off it: `.fisio-lift` grows her to 1.1 and
- * turns on a `drop-shadow`. `drop-shadow` and not `box-shadow` — a cut-out's box is
- * mostly transparent, so a box shadow would draw a rectangle in mid-air around her.
+ * it would arrive blank. She simply rides in with her slab (`.fisio-slide-in`, owned by
+ * the slab in page.tsx); the portrait itself carries no animation of its own, which is
+ * also why nothing here fights the scroll layer (a filled `both` CSS animation outranks
+ * inline styles permanently, so it would beat whatever `SDiv` writes).
  *
- * `origin-bottom` under `lg` is load-bearing: on phones the slab's bottom edge IS this
- * photo's bottom edge (the gold/white boundary), and a centred scale would push her hard
- * cut-off 5% past it, onto the white. Growing upward keeps her planted on the band.
- *
- * The animation lives on the `<img>` itself, which is never an `SDiv` — a filled (`both`)
- * CSS animation outranks inline styles permanently, so it would beat anything the scroll
- * layer writes. The scroll layer's drift is on the wrapper in page.tsx; DOM nesting
- * composes the two.
+ * There WAS one: `.fisio-lift` grew her to 1.1 and switched on a `drop-shadow`, so she
+ * read as sitting ON the page. Both are gone — the shadow because the client asked, and
+ * the scale with it. A final overshoot is in direct conflict with a portrait that is
+ * bottom-anchored and sized to fill its half: her resting size would have to be 10% under
+ * the space she is meant to occupy. Dropping it is what pays for the extra 10%.
  */
 import { HERO_PHOTO } from "./photos";
 
@@ -57,7 +61,7 @@ export default function HeroPortrait({ className = "" }: { className?: string })
           height={HERO_PHOTO.mobile.height}
           fetchPriority="high"
           decoding="async"
-          className="fisio-lift block h-auto w-full origin-bottom lg:origin-center"
+          className="block h-auto w-full"
         />
       </picture>
     </div>

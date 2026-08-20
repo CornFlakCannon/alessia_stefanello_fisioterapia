@@ -281,7 +281,7 @@ deferral would make the guard redundant. Don't take this as licence for a second
   same code works on phone and desktop — no per-device coordinate sets.
 - Panels 1-6 aren't active at load, so `at:0` = invisible reveals are fine there.
   The **hero (index 0) is visible at scroll 0**, so every beat of it is an on-load CSS
-  animation (`.fisio-rise`, `.fisio-slide-in`, `.fisio-lift`, `.fisio-draw` — see
+  animation (`.fisio-rise`, `.fisio-slide-in`, `.fisio-slide-left`, `.fisio-draw` — see
   `globals.css`), NOT a scroll-gated reveal. Keep that rule for any always-on-screen
   content. Each animation must sit on **its own element**: a filled (`both`) CSS animation
   outranks inline styles permanently, so it would beat everything `SDiv` writes.
@@ -326,12 +326,21 @@ deferral would make the guard redundant. Don't take this as licence for a second
   decision — read the table above before touching it.
 - `PhotoSlab.tsx` — N duotone photos cross-fading with a ken-burns inside a `FocusPanel`
   slab. Renders `absolute inset-0 z-0`, so the slab's own children need `relative z-10`.
-- `CvSheets.tsx` — the formazione panel's four sheets, dealt in from the right as you
-  scroll (`x: 100%→0`, `scale: 1.2→1`, shadow fading out on its own layer because
-  `box-shadow` is not an `anim.ts` channel). A longer CV buys **pages, not height**.
-  `sheetsEnd()` is exported so `PANEL_END[5]` is derived from the page count rather than
-  being a number to remember. No buttons: the page is told by scrolling, and a control in
-  here would reopen the tap-vs-swipe seam.
+- `CvSheets.tsx` — the formazione panel's sheets, dealt in from the right as you scroll
+  (`x: 100%→0`, `scale: 1.2→1`, shadow fading out on its own layer because `box-shadow` is
+  not an `anim.ts` channel). A longer CV buys **pages, not height**. No buttons: the page
+  is told by scrolling, and a control in here would reopen the tap-vs-swipe seam.
+  Three things it learned the hard way:
+  **a sheet holds a NUMBER of entries, not a CV heading** — one-sheet-per-heading put five
+  single-column entries on a phone and spilled off the panel, so headings are chunked to
+  `PER_SHEET_DESKTOP`/`PER_SHEET_PHONE` and a heading that does not fit becomes
+  "Esperienza · 1/2";
+  **the box has no height** — the sheets stack with `grid` (all in `row-start-1
+  col-start-1`), so the row is as tall as the fullest sheet and stretches the rest to
+  match, instead of a `h-[min(…)]` guessed against desktop;
+  **the panel's span is fixed and the step divides out of it** (`SHEETS_SPAN`), so the
+  phone's six sheets deal faster than the desktop's four rather than needing a different
+  `end` — which a `<Section>` cannot have, being authored once for both.
 - `HeroPortrait.tsx` — the portrait, **dead straight** (the client asked for it) and now a
   **cut-out with a real alpha channel**, in a `<picture>` with two framings (desktop 3:4,
   phone head-and-half-torso 4:5 — art direction `next/image` cannot express). There is no
@@ -343,17 +352,29 @@ deferral would make the guard redundant. Don't take this as licence for a second
   service panels played once: at `0.10s` the **gold half** comes in from the left and the
   **berry blade** from the right; at `0.22s` the **white slab** carrying the photo covers
   the blade down to a ~50px strip, which lands exactly on the gold/white seam and so reads
-  as a divider rather than an edge; at `1.12s` the photo **lifts** — `scale(1.1)` plus a
-  `drop-shadow`. `drop-shadow` and not `box-shadow`: a cut-out's box is mostly transparent,
-  so a box shadow would draw a rectangle in mid-air around her.
+  as a divider rather than an edge. The portrait itself carries no animation.
 
-  Its size is capped in `page.tsx` as `lg:w-[min(34rem,55svh,38vw)]`. The `55svh` is the
-  one that usually binds — **viewport HEIGHT is the real constraint**: a 3:4 portrait is
-  1.33x as tall as it is wide and the lift takes that to 1.47x, so 55svh of width lands at
-  ~81svh of height inside a band that is 100svh less `py-12`. That is also the standing
-  answer to "make it as big as the gold half": at the band's full width she would be
-  permanently clipped and unreachable. The `38vw` guards the other axis — the band is
-  `46vw`. Raise the `55svh` to grow her, then re-check at 768px tall.
+  It used to: `.fisio-lift` grew her to 1.1 and switched on a `drop-shadow`. Both are gone,
+  and not only because the shadow was dropped — **a final overshoot is in direct conflict
+  with a bottom-anchored portrait sized to fill its half**, since her resting size would
+  have to be 10% under the space she is meant to occupy. Removing it is what paid for the
+  extra 10%.
+
+  **She is bottom-anchored** (`lg:items-end`, `lg:pb-0`): the source is cut across her
+  thighs, and butting that cut against the fold turns a crop into a BASE — she continues
+  past the frame instead of ending in mid-air. It is also why the scroll drift moves her
+  DOWN (`y: 0 → 14`): lifting a bottom-anchored figure opens a strip of white under her
+  feet, while sinking just pushes the cut past the fold where nothing shows.
+
+  Her size is capped in `page.tsx` as `lg:w-[min(69svh,39vw)]`, and both terms are
+  viewport-relative on purpose — the cap used to carry a `34rem` term and THAT is what
+  bound, holding her to 544px inside an 883px slab on a 1920x1080 screen.
+  - `69svh` is **height in disguise**: a 3:4 portrait is 1.33x as tall as it is wide, so
+    69svh of width is ~92svh of height — full to the fold with ~8svh of air over her head.
+    Raise it and you cut her head off (the panel is `overflow-hidden`).
+  - `39vw` guards the other axis: the slab is `46vw`, so this leaves ~3.5vw of air per
+    side. It is the term that binds below 16:9 — on 1024x768 it resolves to 399px inside a
+    471px slab.
 
   **The gold is the TEXT's half now** — `left-0 w-[54vw]` on desktop, and on phones a band
   behind the copy that bleeds to the bottom of the viewport (`bottom-[-100svh]`, cut
