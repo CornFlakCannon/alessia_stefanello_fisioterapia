@@ -6,9 +6,13 @@
  * they are 6000x4000 landscape files, ~35 MB, and the slabs are tall and narrow, so the
  * crop is chosen by hand there rather than left to `object-cover`).
  *
- * Re-casting a section is a one-line change HERE: all thirteen photos are built, not
- * just the seven currently placed. `position` feeds `object-position` for the cases
- * where cover still has to choose — a phone-width slab is much taller than 3:4.
+ * Re-casting a section is a one-line change HERE: every photo is built, not just the
+ * ones currently placed. `position` feeds `object-position` for the cases where cover
+ * still has to choose — a phone-width slab is much taller than 3:4.
+ *
+ * The hero is the exception and lives at the bottom of this file: it is a CUT-OUT with an
+ * alpha channel, built by its own script (`scripts/hero-cutout.mjs`), and it ships in two
+ * framings because the phone wants her face and the desktop wants her whole.
  *
  * `alt` is real alternative text, in Italian, describing the therapy — not the file.
  * The two textures are decorative and carry `alt: ""` on purpose.
@@ -98,6 +102,23 @@ export const PHOTOS = {
     alt: "Alessia guida da terra una signora anziana che sale sullo step",
   },
 
+  /** Manual therapy on the couch, she is standing and fully in frame. The pavimento
+   *  pelvico slab had NO photo at all and still wore the drawn bridge exercise. */
+  pelvico: {
+    src: "/foto/pelvico.webp",
+    width: 1200,
+    height: 1600,
+    alt: "Alessia Stefanello durante un trattamento di terapia manuale",
+  },
+  /** The couch and stool, empty: no patient, no consent to collect, and it reads as the
+   *  second beat after the photo above — the gesture, then the place. */
+  lettino: {
+    src: "/foto/lettino.webp",
+    width: 1200,
+    height: 1600,
+    alt: "Il lettino dello studio di fisioterapia a Padova",
+  },
+
   /** Shot #4 of FOTO_BRIEF.md: she looks at the lens. Head and torso. */
   ritratto: {
     src: "/foto/ritratto.webp",
@@ -123,32 +144,36 @@ export const PHOTOS = {
 } as const satisfies Record<string, Photo>;
 
 /**
- * The hero video: Alessia crosses her arms, once, when the page lands.
+ * The hero portrait — a CUT-OUT, in two framings.
  *
- * Built by `scripts/hero-video.sh` from `FOTO_ORIGINALI/V1.mp4`. Two encodes of the same
- * 1080x1440 crop — the browser downloads whichever `<source>` it can play first, never
- * both. WebM/VP9 is 361 KB, the MP4/H.264 fallback 573 KB.
+ * Built by `scripts/hero-cutout.mjs`, which is where the interesting part is written up:
+ * the source `HERO_PHOTO.png` only *looks* like a background-removal export (it is 100%
+ * opaque, with the transparency checkerboard painted in), so the alpha is keyed back out
+ * of it — safely, because that plate is perfectly neutral and brighter than anything she
+ * is wearing, which the studio's grey-green wall was not.
  *
- * This replaced a 27-frame `ImageSequence`, and the reason is worth keeping: that widget
- * needs a hand-written `frames` count to stay in step with the files on disk, with no
- * runtime check — and when it drifts, assigning a 404 URL to the live `<img>` throws away
- * the good frame that was showing and renders the broken-image icon. That is exactly how
- * this hero broke once. A video has no such number.
+ * ## Why two files rather than one plus `object-position`
+ * She is tall and narrow, and the phone hero is a different PICTURE, not a different crop
+ * of the same one: the client asked for head and half torso, face first (NUOVA_TODO.md
+ * §MOBILE/1). Getting there from the 3:4 frame means throwing away ~60% of its height —
+ * art direction, which `next/image` cannot express. Hence a `<picture>` with two sources
+ * in `HeroPortrait`, and exactly one of them is ever fetched.
  *
- * `poster` is the first frame, so the gold slab is never briefly empty on a cold load.
+ * ## What replaced what
+ * This used to be a `<video>` that played once on load (and before that a 27-frame
+ * `ImageSequence`). Both existed to solve a problem that has now gone away: the source was
+ * a clip on a wall that could not be keyed, so the background had to be composited at
+ * build time and the whole thing shipped as opaque pixels. With a real alpha channel the
+ * gold behind her is just the slab's own CSS colour — nothing to match, no seam to
+ * measure, and the entrance is a plain CSS animation.
  *
- * `width`/`height` express the **3:4 aspect**, not the encode's pixel size. They feed
- * `<video width height>`, whose only job is to reserve the right box before a byte of
- * video arrives (no layout shift) — and the ratio is invariant while the encode's real
- * resolution follows whatever the source was: 1080x1440 from the 4K original, 810x1080
- * from a 1080p one. Reading them as a claim about the file turns them into a maintenance
- * trap that needs editing every time the source changes; they are not that.
+ * `width`/`height` are the encodes' real pixels here (unlike the video's, which were only
+ * the ratio): they reserve the box and feed `next/image`-style sizing.
  */
-export const HERO_VIDEO = {
-  webm: "/hero/alessia.webm",
-  mp4: "/hero/alessia.mp4",
-  poster: "/hero/poster.webp",
-  width: 1080,
-  height: 1440,
+export const HERO_PHOTO = {
+  /** Desktop: 3:4, cropped tight top and bottom so she is as large as the slab allows. */
+  desktop: { src: "/foto/hero.webp", width: 1100, height: 1467 },
+  /** Phone: 4:5, head and half torso. */
+  mobile: { src: "/foto/hero-mobile.webp", width: 800, height: 1000 },
   alt: "Alessia Stefanello, fisioterapista",
 } as const;

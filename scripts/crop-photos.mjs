@@ -57,6 +57,14 @@ const PHOTOS = [
   // Stepping onto the step, guided from the floor. The most dynamic.
   { id: "step", src: "DIS4599.jpg", crop: { left: 1815, top: 0, width: 3000, height: 4000 }, w: TALL },
 
+  // --- pavimento pelvico ----------------------------------------------------------
+  // Terapia manuale sul lettino, lei in piedi e in campo per intero: la fascia blu del
+  // pavimento pelvico non aveva NESSUNA foto e teneva ancora il disegno animato.
+  { id: "pelvico", src: "PELVICO_CROPPATA.jpg", crop: { left: 1870, top: 0, width: 3000, height: 4000 }, w: TALL },
+  // Lo studio col lettino, vuoto: nessun paziente, nessun consenso da chiedere, e fa da
+  // secondo tempo alla foto sopra (il gesto, poi il luogo).
+  { id: "lettino", src: "LETTINO.jpg", crop: { left: 1600, top: 0, width: 3000, height: 4000 }, w: TALL },
+
   // --- ritratto e ambiente --------------------------------------------------------
   // Shot #4 of FOTO_BRIEF.md: she looks at the lens, white ground. Tight on head+torso.
   { id: "ritratto", src: "DIS4477.jpg", crop: { left: 1650, top: 150, width: 2700, height: 3600 }, w: TALL },

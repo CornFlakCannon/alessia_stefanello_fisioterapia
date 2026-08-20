@@ -80,49 +80,50 @@
   animation: fisio-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* ── Hero portrait arrival ────────────────────────────────────────────────────
-   The photo is DEAD STRAIGHT (the client asked for it) and surfaces out of a single
-   horizontal rule: the line is drawn first, then the photo slides up from behind it.
-   The line is not decoration but the bottom edge of the mask that clips the photo —
-   see HeroPortrait, which owns the geometry.
+/* ── Hero arrival ─────────────────────────────────────────────────────────────
+   The hero takes the leitmotiv of the service panels — a coloured slab entering from
+   the right — and plays it ON LOAD. Panel 0 is on screen at scroll 0, so its entrance
+   can never be a scroll-gated reveal; it would arrive blank.
 
-   On-load like the rest of the hero — NOT scroll-gated. Each animation must sit on
-   its own element, never on an SDiv (which writes transform channels every frame).
-   Both use `both`, so the from-state already applies during the delay (no flash at
-   load). Timings:
-     0.10s  the line starts drawing out from its centre
-     0.50s  the photo starts surfacing (the line is nearly complete by then)
+   Three owners, three delays, one per element (an SDiv must never carry one of these:
+   a filled `both` animation outranks the inline transform it writes, permanently):
+     0.10s  the berry blade slides in
+     0.22s  the gold slab — and the photo inside it — follows, covering the blade down
+            to a ~50px strip. The lag IS the effect: the blade has to be seen first.
+     1.12s  the photo lifts off the slab (0.22 + 0.9 = when the slab is home)
 
-   The photo settles with its last `--emerge-rest` still behind the line. That same
-   fraction shows up as a transparent strip above the image (the box stays as tall as
-   the photo) — see HeroPortrait's docblock. Override per-element with a Tailwind
-   arbitrary property, e.g. `[--emerge-rest:12%]`. */
-@keyframes fisio-line {
+   `both` on each, so the from-state already applies during the delay: no flash of a
+   settled hero before its own animation starts. */
+@keyframes fisio-slide-in {
   from {
-    transform: scaleX(0);
+    transform: translateX(100%);
   }
   to {
-    transform: scaleX(1);
+    transform: translateX(0);
   }
 }
-.fisio-line {
-  transform: scaleX(1); /* resting pose (also the reduced-motion pose) */
-  animation: fisio-line 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+.fisio-slide-in {
+  transform: translateX(0); /* resting pose (also the reduced-motion pose) */
+  animation: fisio-slide-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-@keyframes fisio-emerge {
+/* The rilievo: she grows a little and casts a shadow, so she reads as sitting ON the
+   slab rather than printed into it. `drop-shadow` and NOT `box-shadow` — the portrait
+   is a cut-out whose box is mostly transparent, so a box shadow would draw a rectangle
+   in mid-air around her. The two filter values have the same shape, which is what makes
+   them interpolable. */
+@keyframes fisio-lift {
   from {
-    transform: translateY(100%);
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 rgba(20, 33, 46, 0));
   }
   to {
-    transform: translateY(var(--emerge-rest));
+    transform: scale(1.1);
+    filter: drop-shadow(0 22px 26px rgba(20, 33, 46, 0.38));
   }
 }
-.fisio-emerge {
-  --emerge-rest: 7%; /* how much of the photo stays submerged */
-  transform: translateY(var(--emerge-rest));
-  will-change: transform;
-  animation: fisio-emerge 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.5s both;
+.fisio-lift {
+  animation: fisio-lift 0.7s cubic-bezier(0.22, 1, 0.36, 1) 1.12s both;
 }
 
 /* Respect reduced-motion: show everything settled, skip the entrance animations. */
@@ -135,14 +136,16 @@
     opacity: 1;
     animation: none;
   }
-  /* The portrait is shown already surfaced: line drawn, photo at its resting depth. */
-  .fisio-line {
+  /* The hero is shown already arrived: slabs home, portrait at its lifted resting pose
+     (the composed end state, not an interrupted one). */
+  .fisio-slide-in {
     animation: none;
-    transform: scaleX(1);
+    transform: translateX(0);
   }
-  .fisio-emerge {
+  .fisio-lift {
     animation: none;
-    transform: translateY(var(--emerge-rest));
+    transform: scale(1.1);
+    filter: drop-shadow(0 22px 26px rgba(20, 33, 46, 0.38));
   }
 }
 

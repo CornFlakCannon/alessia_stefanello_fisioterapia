@@ -24,7 +24,6 @@ import PhotoSlab from "./site/PhotoSlab";
 import DuotonePhoto from "./site/DuotonePhoto";
 import { PHOTOS, type Photo } from "./site/photos";
 import { MailIcon, PhoneIcon, PinIcon } from "./site/ContactIcons";
-import ContattamiButton from "./site/ContattamiButton";
 
 /* Restrained reveal — fade + short rise. `at:0` is invisible, so it's used only in
    panels 1-6 (which aren't active at load); the hero uses on-load CSS animations
@@ -178,47 +177,57 @@ export default function Home() {
   const year = new Date().getFullYear();
   return (
     <ScrollShell>
-      {/* ── 0 · HERO ─────────────────────────────────────────────────────── */}
+      {/* ── 0 · HERO ───────────────────────────────────────────────────────
+          Il leitmotiv delle sezioni — una fascia colorata che entra da destra — portato
+          qui e suonato AL CARICAMENTO, non allo scroll: il pannello 0 è a schermo a
+          scroll 0, quindi ogni sua entrata è una CSS animation (vedi globals.css). */}
       <Section index={0} end={PANEL_END[0]}>
         <div className={`${shell} bg-white lg:px-0`}>
           {/* was white-on-gold; on the white ground white brackets would vanish */}
           <Corners color="rgba(0,78,143,0.22)" topLeft={false} />
 
-          {/* THE PORTRAIT AND ITS GOLD — deliberately ONE box, not two.
-              The gold used to be a `<span>` hung off the photo's grid cell, bleeding
+          {/* LA LAMA BERRY. Entra per prima e l'oro la ricopre quasi tutta: quello che
+              avanza è una barra verticale di ~50px, il terzo colore del marchio che si
+              affaccia sul hero senza occupare spazio. Solo da lg — è verticale per
+              definizione, e sul telefono la fascia oro è orizzontale. */}
+          <span
+            aria-hidden="true"
+            className="fisio-slide-in pointer-events-none absolute inset-y-0 right-0 z-0 hidden bg-emphasis lg:block lg:w-[calc(46vw+50px)]"
+            style={{ animationDelay: "0.10s" }}
+          />
+
+          {/* LA FASCIA ORO E IL RITRATTO — deliberatamente UN box, non due.
+              L'oro used to be a `<span>` hung off the photo's grid cell, bleeding
               `-right-[50vw]` to the screen edge, while the photo was centred inside the
-              cell (capped at max-w-6xl). Two reference frames for two things that have to
-              look concentric: on a 1883px window the photo sat 164px left of the gold's
-              centre, and the gap grew with the monitor.
+              cell: two reference frames for two things that have to look concentric, and
+              on a 1883px window the photo sat 164px left of the gold's centre. Now the
+              gold IS this element's background and the photo is centred in it, so they
+              are concentric by construction at every width. Don't restore the old shape.
 
-              Now the gold IS this element's background and the photo is centred in it, so
-              they are concentric by construction at every width — there is no number to
-              keep in agreement. (The old comment here argued the slab had to hang off the
-              cell or it would drift away from the photo on wide screens. That was true
-              while the photo lived in the grid; it cannot happen once they are the same
-              box. Don't restore it.)
+              Entra 0.12s dopo la lama: il ritardo È l'effetto, la lama deve farsi vedere
+              prima di essere coperta.
 
-              Mobile keeps its own device: a band whose `bottom-0` is exactly the
-              portrait's own drawn line, so the rule doubles as the gold/white boundary. */}
-          <div className="relative mb-10 w-full max-w-6xl max-lg:short:mb-4 lg:absolute lg:inset-y-0 lg:right-0 lg:mb-0 lg:flex lg:w-[46vw] lg:max-w-none lg:items-center lg:justify-center lg:bg-secondary lg:py-12 lg:short:py-6">
+              Mobile keeps its own device: a band that now bleeds all the way to the top
+              of the viewport (the panel is overflow-hidden, so `-top-[100svh]` is cut
+              exactly on the fold) — prima si fermava a `-top-8` e sopra restava una
+              striscia bianca. In basso il bordo della fascia è il bordo della foto. */}
+          <div
+            className="fisio-slide-in relative z-[1] mb-10 w-full max-w-6xl max-lg:short:mb-4 lg:absolute lg:inset-y-0 lg:right-0 lg:mb-0 lg:flex lg:w-[46vw] lg:max-w-none lg:items-center lg:justify-center lg:bg-secondary lg:py-12 lg:short:py-6"
+            style={{ animationDelay: "0.22s" }}
+          >
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-x-[-50vw] -top-8 bottom-0 bg-secondary lg:hidden"
+              className="pointer-events-none absolute inset-x-[-50vw] -top-[100svh] bottom-0 bg-secondary lg:hidden"
             />
-            {/* The whole-group base drift; the photo and the line each add their own
-                departure on top of it, and DOM nesting composes the two.
-                The desktop width is capped by `svh`, not by a fixed rem, because the
-                binding constraint is HEIGHT: a 3:4 portrait is 1.33x as tall as it is
-                wide, and the panel owes 100svh. 60svh of width = 80svh of height, inside
-                a band that is the full panel height less `py-12`. Raise it to make her
-                bigger, then re-check at 768px tall — that is where the margin runs out
-                first.
-
-                The `38vw` term guards the OTHER axis: the band is 46vw, and without it a
-                1024x768 window resolves 60svh to 461px inside a 471px band — 5px of
-                margin, visibly glued to both edges. 38vw keeps 4vw of air per side at
-                every width, and never binds on wide screens (at 1895 it is 720px, so
-                34rem still wins). The mobile branch (w-52 / sm:w-64) is untouched. */}
+            {/* La deriva dell'intero gruppo allo scroll; il ritratto ci si appoggia sopra
+                (il nesting compone le due).
+                Il cap è in `svh` e non in rem perché il vincolo vero è l'ALTEZZA: 3:4 vuol
+                dire 1.33x più alta che larga, e il rilievo finale (scale 1.1) la porta a
+                1.47x. A 55svh di larghezza sono ~81svh di altezza dentro una fascia alta
+                100svh meno il `py-12` — ci sta anche su una finestra da 768px. È QUESTA la
+                costante da alzare per farla più grande, ricontrollando a 768px.
+                Il `38vw` guarda l'altro asse: la fascia è 46vw, e senza quel termine una
+                1024x768 risolve 55svh in 422px dentro 471px di fascia, incollata ai bordi. */}
             <SDiv
               start={0}
               budget={600}
@@ -226,48 +235,56 @@ export default function Home() {
                 { at: 0, y: 0 },
                 { at: 1, y: -14 },
               ]}
-              className="relative mx-auto w-52 max-lg:short:w-36 sm:w-64 lg:mx-0 lg:w-[min(34rem,60svh,38vw)]"
+              className="relative mx-auto w-52 max-lg:short:w-36 sm:w-64 lg:mx-0 lg:w-[min(34rem,55svh,38vw)]"
             >
               <HeroPortrait />
             </SDiv>
           </div>
 
-          {/* THE TEXT — `self-start` because the panel is `flex-col items-center`, so the
-              cross axis is horizontal: without it a 54vw box would be centred in the
-              viewport and run under the gold.
-
-              Inside, `mx-auto` centres the copy IN THE WHITE HALF, which is the mirror of
-              the portrait being centred in the gold one: same air on both sides of each.
-              It first shipped as `ml-auto` + a right pad, parking the text against the
-              gold's edge — on a 1895px window that read as 520px of void on the left and
-              64 on the right, which is what "the space is badly distributed" was. */}
-          <div className="relative z-10 w-full max-w-6xl text-center lg:w-[54vw] lg:max-w-none lg:self-start lg:text-left">
-            <div className="lg:mx-auto lg:max-w-[34rem] lg:px-10">
+          {/* IL TESTO — `self-start` perché il pannello è `flex-col items-center`, quindi
+              l'asse trasversale è orizzontale: senza, un box da 54vw finirebbe centrato
+              nella viewport e sotto l'oro.
+              Dentro, tutto è CENTRATO (richiesta del cliente) e `mx-auto`: il testo sta al
+              centro della metà BIANCA esattamente come il ritratto sta al centro di quella
+              oro. Aveva già avuto due giri di "lo spazio è distribuito male" da `ml-auto`. */}
+          <div className="relative z-10 w-full max-w-6xl text-center lg:w-[54vw] lg:max-w-none lg:self-start">
+            <div className="mx-auto max-w-[34rem] lg:px-10">
               <p className="fisio-rise font-mono text-xs uppercase tracking-[0.28em] text-primary/70 sm:text-sm" style={{ animationDelay: "0.05s" }}>
                 {HERO.kicker}
               </p>
               <h1 className="fisio-rise mt-3 font-display text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-primary max-lg:short:text-4xl sm:text-6xl lg:text-7xl" style={{ animationDelay: "0.15s" }}>
                 {HERO.name}
               </h1>
-              {/* the role hangs off a short gold rule — the one place the gold reaches
-                  into the text column, so the two halves read as one composition */}
-              <p className="fisio-rise mt-3 flex items-center justify-center gap-3 font-display text-xl italic text-primary/90 short:mt-2 sm:text-2xl lg:justify-start" style={{ animationDelay: "0.28s" }}>
+              {/* il ruolo fra due stanghette oro, simmetriche — è l'unico punto in cui
+                  l'oro entra nella colonna del testo, e tiene insieme le due metà */}
+              <p className="fisio-rise mt-3 flex items-center justify-center gap-3 font-display text-xl italic text-primary/90 short:mt-2 sm:text-2xl" style={{ animationDelay: "0.28s" }}>
                 <span aria-hidden="true" className="h-px w-8 shrink-0 bg-secondary sm:w-10" />
                 {HERO.role}
+                <span aria-hidden="true" className="h-px w-8 shrink-0 bg-secondary sm:w-10" />
               </p>
-              <p className="fisio-rise mx-auto mt-5 max-w-md text-base leading-relaxed text-ink/85 short:mt-3 sm:text-lg lg:mx-0" style={{ animationDelay: "0.42s" }}>
+              <p className="fisio-rise mx-auto mt-5 max-w-md text-base leading-relaxed text-ink/85 short:mt-3 sm:text-lg" style={{ animationDelay: "0.42s" }}>
                 {HERO.tagline}
               </p>
-              <div className="fisio-rise mt-7 flex flex-wrap items-center justify-center gap-4 short:mt-4 lg:justify-start" style={{ animationDelay: "0.56s" }}>
-                <ContattamiButton className="bg-primary text-white shadow-lg shadow-primary/20" />
-                <a href={`tel:${CONTACT.phoneHref}`} className="font-sans text-sm font-medium text-primary underline-offset-4 hover:underline">
-                  oppure chiama {CONTACT.phoneDisplay}
-                </a>
+              {/* Dov'è lo studio, al posto del CTA + numero che stavano qui: chi arriva
+                  sul sito di una fisioterapista vuole prima sapere DOVE. Telefono ed email
+                  restano a un tap nella targhetta in alto a sinistra e nel footer. */}
+              <div className="fisio-rise mt-7 flex flex-col items-center gap-1.5 short:mt-4" style={{ animationDelay: "0.56s" }}>
+                <p className="flex items-start justify-center gap-2 text-sm leading-relaxed text-ink/85 sm:text-base">
+                  <span className="mt-0.5 shrink-0 text-primary">
+                    <PinIcon />
+                  </span>
+                  <span>
+                    {CONTACT.address.line1}, {CONTACT.address.line2} — {CONTACT.address.city}
+                  </span>
+                </p>
+                <p className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-primary/70">
+                  {CONTACT.note}
+                </p>
               </div>
-              {/* the page's index — gives the panel a bottom edge and a hierarchy, and
-                  each entry scrolls to its panel (see useSectionJump) */}
+              {/* l'indice della pagina — dà al pannello un bordo inferiore e una gerarchia,
+                  e ogni voce scorre fino alla sua sezione (vedi useSectionJump) */}
               <div className="fisio-rise mt-8 short:mt-5" style={{ animationDelay: "0.7s" }}>
-                <ServiceIndex className="mx-auto max-w-md lg:mx-0" />
+                <ServiceIndex className="mx-auto max-w-md" />
               </div>
             </div>
           </div>
@@ -280,13 +297,14 @@ export default function Home() {
               { at: 0, opacity: 1, y: 0 },
               { at: 1, opacity: 0, y: 8 },
             ]}
-            className="absolute inset-x-0 bottom-8 flex flex-col items-center gap-1 text-primary/80"
+            className="absolute inset-x-0 bottom-8 z-10 flex flex-col items-center gap-1 text-primary/80"
           >
             <span className="font-mono text-[0.7rem] uppercase tracking-[0.2em]">{HERO.scrollHint}</span>
             <span aria-hidden="true" className="text-lg leading-none">↓</span>
           </SDiv>
         </div>
       </Section>
+
 
       {/* ── 1 · MUSCOLOSCHELETRICO (+ focus sport, entra da destra) ───────────
           La sequenza dei servizi e il "focus a destra" sono richiesta del cliente

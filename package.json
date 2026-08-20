@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "photos": "node scripts/crop-photos.mjs && bash scripts/hero-video.sh"
+    "photos": "node scripts/crop-photos.mjs && node scripts/hero-cutout.mjs"
   },
   "dependencies": {
     "@lottiefiles/dotlottie-react": "^0.19.10",
