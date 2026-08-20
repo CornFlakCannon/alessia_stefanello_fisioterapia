@@ -366,6 +366,11 @@ deferral would make the guard redundant. Don't take this as licence for a second
   DOWN (`y: 0 → 14`): lifting a bottom-anchored figure opens a strip of white under her
   feet, while sinking just pushes the cut past the fold where nothing shows.
 
+  That drift is **desktop only** (`HERO_DRIFT` in `page.tsx`), and the reason is the same
+  geometry reaching the opposite conclusion: on phones her bottom edge is her WAIST, resting
+  on the band's berry rule, and there is no fold under it to sink into — she simply slides
+  down over the gold. One rule cannot serve both, which is why it is gated in JS.
+
   Her size is capped in `page.tsx` as `lg:w-[min(69svh,39vw)]`, and both terms are
   viewport-relative on purpose — the cap used to carry a `34rem` term and THAT is what
   bound, holding her to 544px inside an 883px slab on a 1920x1080 screen.

@@ -79,6 +79,7 @@ function Entry({
 
 export default function ServiceIndex({ className = "" }: { className?: string }) {
   const { jumpTo } = useSectionJump();
+  const odd = HERO_INDEX.length % 2 === 1;
 
   return (
     <nav aria-label="Sezioni del sito" className={className}>
@@ -86,8 +87,18 @@ export default function ServiceIndex({ className = "" }: { className?: string })
         {HERO_INDEX_TITLE}
       </p>
       <ul className="mt-1.5 grid grid-cols-2 gap-x-6 gap-y-1 short:mt-1 short:gap-y-0.5">
-        {HERO_INDEX.map(({ n, label, section, land }) => (
-          <li key={n} className="border-t border-ink/25">
+        {HERO_INDEX.map(({ n, label, section, land }, i) => (
+          <li
+            key={n}
+            /* An ODD count leaves the last entry alone on its row, and half a column is not
+               enough for the longest label plus its ordinal: it wrapped to two lines, which
+               made the row taller than the others and left the number stranded at the left
+               of a two-line block. Spanning the row it has the width to stay on one line —
+               and its rule then matches the full-width one under "la mia formazione". */
+            className={`border-t border-ink/25${
+              odd && i === HERO_INDEX.length - 1 ? " col-span-2" : ""
+            }`}
+          >
             <Entry jumpTo={jumpTo} n={n} label={label} section={section} land={land} />
           </li>
         ))}

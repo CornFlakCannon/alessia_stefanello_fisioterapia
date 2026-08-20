@@ -6,6 +6,7 @@ import { Section } from "./_scroll";
 import { easeInCubic, easeOutCubic } from "./_scroll/easing";
 import ScrollShell from "./ScrollShell";
 import SDiv from "./widgets/SDiv";
+import type { AnimSpec } from "./widgets/anim";
 import SMask from "./widgets/SMask";
 import DevHud from "./widgets/DevHud";
 
@@ -20,6 +21,7 @@ import ContactForm from "./site/ContactForm";
 import CvSheets, { sheetsEnd } from "./site/CvSheets";
 import ServiceIndex from "./site/ServiceIndex";
 import ContactBar from "./site/ContactBar";
+import useIsDesktop from "./site/useIsDesktop";
 import PhotoSlab from "./site/PhotoSlab";
 import DuotonePhoto from "./site/DuotonePhoto";
 import { PHOTOS, type Photo } from "./site/photos";
@@ -98,6 +100,18 @@ const PANEL_END = [
 /* The shared panel box (and why it's shared) lives in site/panelBox.ts — the focus
    panels are built on the same one. `shell` is that box stacked: every panel authored
    here uses it; the three service panels get theirs from <FocusPanel>. */
+/* La deriva del gruppo del ritratto mentre l'hero se ne va. SOLO DESKTOP, e il perche' e'
+   geometrico: la` lei poggia sulla piega, quindi scendendo il taglio esce dalla videata e
+   non si vede nulla. Sul telefono il bordo inferiore della foto e' la sua VITA, appoggiata
+   sulla linea berry — e scendendo non esce da niente, entra nell'oro. Fermarla e' l'unico
+   modo di tenere l'appoggio, ed e' una decisione in JS perche' SDiv scrive la posa come
+   stile inline: nessuna classe `lg:` puo' scavalcarla. */
+const HERO_DRIFT: AnimSpec = [
+  { at: 0, y: 0 },
+  { at: 1, y: 14 },
+];
+const NO_DRIFT: AnimSpec = [];
+
 const shell = `${PANEL_BOX} flex-col`;
 const eyebrow = "font-mono text-sm uppercase tracking-[0.22em] text-primary";
 /* `xl:` and not `lg:` for the biggest step: from 1024 the service panels' text column is
@@ -194,6 +208,7 @@ function Corners({ color = "rgba(255,255,255,0.6)", topLeft = true }: { color?: 
 
 export default function Home() {
   const year = new Date().getFullYear();
+  const desktop = useIsDesktop();
   return (
     <ScrollShell>
       {/* ── 0 · HERO ───────────────────────────────────────────────────────
@@ -259,10 +274,10 @@ export default function Home() {
               aria-hidden="true"
               className="pointer-events-none absolute inset-x-[-50vw] bottom-[-100svh] top-full border-t-4 border-emphasis bg-secondary lg:hidden"
             />
-            {/* La deriva dell'intero gruppo allo scroll. Va verso il BASSO, non verso
-                l'alto: adesso lei poggia sul bordo inferiore della videata, e sollevarla
-                aprirebbe una striscia bianca sotto ai piedi. Scendendo, invece, il taglio
-                dei pantaloni esce dalla piega e non si vede nulla.
+            {/* La deriva dell'intero gruppo allo scroll — solo su desktop (vedi HERO_DRIFT).
+                Va verso il BASSO, non verso l'alto: lei poggia sul bordo inferiore della
+                videata, e sollevarla aprirebbe una striscia bianca sotto ai piedi.
+                Scendendo, invece, il taglio dei pantaloni esce dalla piega.
 
                 Il cap non ha più un termine in rem — era `34rem` ed era LUI a legare, non
                 l'altezza: su 1920x1080 la teneva a 544px in una fascia da 883. Ora i due
@@ -279,10 +294,7 @@ export default function Home() {
             <SDiv
               start={0}
               budget={600}
-              anim={[
-                { at: 0, y: 0 },
-                { at: 1, y: 14 },
-              ]}
+              anim={desktop ? HERO_DRIFT : NO_DRIFT}
               className="relative mx-auto w-[min(13rem,24svh)] sm:w-[min(16rem,28svh)] lg:mx-0 lg:w-[min(69svh,39vw)]"
             >
               <HeroPortrait />

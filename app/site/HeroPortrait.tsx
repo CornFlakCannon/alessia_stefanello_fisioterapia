@@ -25,7 +25,13 @@
  * thighs, and butting that cut against the fold turns it from a crop into a BASE — she
  * continues past the frame instead of ending in mid-air. Everything about her size follows
  * from that (see the cap in page.tsx), and it is also why the scroll drift moves her DOWN
- * rather than up: lifting a bottom-anchored figure opens a strip of white under her feet.
+ * rather than up: lifting a bottom-anchored figure opens a strip of white under her feet,
+ * while sinking pushes the cut past the fold where nothing shows.
+ *
+ * On phones that drift is switched OFF, because the same reasoning inverts: there her
+ * bottom edge is her WAIST, resting on the gold band's berry rule, and there is no fold
+ * below it to sink into — she just slides down over the gold. Same geometry, opposite
+ * conclusion, so it cannot be one rule for both (`HERO_DRIFT` in page.tsx).
  *
  * ## The motion is on load, and it is CSS
  * Panel 0 is on screen at scroll 0, so its entrance can never be a scroll-gated reveal —
