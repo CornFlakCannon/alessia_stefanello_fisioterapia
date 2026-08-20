@@ -22,6 +22,32 @@ const SCROLL_HALF_LIFE = 200;
  *  is unscaled. */
 const TOUCH_SENSITIVITY = 3.5;
 
+/** Most scroll units ONE FRAME may consume.
+ *
+ *  The ±100 clamps in the handlers below are per EVENT, not per frame, and nothing
+ *  bounded the frame: a trackpad or a 120Hz digitizer delivers several events per
+ *  frame, and touch is multiplied by TOUCH_SENSITIVITY *after* its clamp — so a fling
+ *  frame carried 300-700 units and crossed a 2200-unit panel in ~7 frames (~105ms).
+ *  That is far inside the 90ms half-life every animation's progress is smoothed with,
+ *  which is why a fast scroll used to teleport past panels instead of playing them.
+ *
+ *  At 200 the same panel takes ~11 frames (~183ms) and a full-page fling ~1.1s. The
+ *  line is drawn ABOVE a normal swipe (~105-175 units/frame at 3.5x) and below a
+ *  fling, so ordinary scrolling never meets this clamp at all.
+ *
+ *  Note what this does NOT do: rate-limiting alone can never *finish* an animation,
+ *  because the smoother is chasing a moving target and its lag is proportional to
+ *  speed — even an unusable cap of 40 leaves a residual gap of ~0.25. Finishing is
+ *  `useSequenceProgress`'s job (it eases to rest off-section). This knob only decides
+ *  how much of a panel you SEE play on the way past. */
+const MAX_FRAME_DELTA = 200;
+/** Ceiling on the carried-over queue. The excess of a frame is CARRIED, not discarded,
+ *  so a bursty event stream loses nothing — but a fling must not leave the page
+ *  coasting after the finger stops, so the queue holds at most 3 frames (~50ms of
+ *  tail). Reversing direction cancels it naturally: new input of the opposite sign
+ *  sums against what is queued. */
+const MAX_CARRY = MAX_FRAME_DELTA * 3;
+
 export default function ScrollShell ({children} : {children: React.ReactNode[]}) {
   const mainContainer = useRef<HTMLDivElement>(null);
 
@@ -41,23 +67,37 @@ export default function ScrollShell ({children} : {children: React.ReactNode[]})
     // reference — requestAnimationFrame(animate) — is lint-clean (a component
     // -level useCallback that references itself is not).
     const animate = (time: number) => {
-      // Consume this frame's accumulated scroll delta and reset it, so each
-      // frame reports only its own movement. Widgets integrate this into their
-      // own scroll budget (see ImageSequence).
-      const delta = scrollAccumulator.current;
-      scrollAccumulator.current = 0;
+      // Consume this frame's accumulated scroll delta, so each frame reports only its
+      // own movement. Widgets integrate this into their own scroll budget (see
+      // ImageSequence). Bounded at MAX_FRAME_DELTA and the REMAINDER IS CARRIED rather
+      // than reset to 0: a fling then reads as a fast scrub through the panels instead
+      // of a jump over them, and no unit of the gesture is lost — it is only spread
+      // over the next frames, up to MAX_CARRY.
+      const pending = Math.max(-MAX_CARRY, Math.min(MAX_CARRY, scrollAccumulator.current));
+      const delta = Math.max(-MAX_FRAME_DELTA, Math.min(MAX_FRAME_DELTA, pending));
+      scrollAccumulator.current = pending - delta;
 
       // Advance the active section when its scroll crosses the threshold it
       // declares (and back when it returns to the bottom). Decided from the
       // previous frame's integrated position, so the hand-off lags one frame;
       // see app/_scroll/sections.ts.
-      const active = advanceSection(store, currentSectionIndex.current, delta);
+      const previous = currentSectionIndex.current;
+      const active = advanceSection(store, previous, delta);
       currentSectionIndex.current = active;
 
       // Integrate the active section's own scroll position this frame (once —
       // widgets on it read the same value below). Doing it here also advances
       // panels that own no widgets, so `snap` slides still progress.
-      integrateIndexPos(store, active, { time, accumulator: delta });
+      //
+      // On a HAND-OFF frame it integrates nothing. This delta has already done its
+      // job — it is what pushed the outgoing panel over its threshold — and `active`
+      // is the index AFTER the advance, so spending it again here dropped the incoming
+      // panel straight into the middle of its own budget: `snap` part-resolved before
+      // it was ever seen, first reveals already past. One zero frame (at most
+      // MAX_FRAME_DELTA units, and the rest is still queued) is imperceptible, and it
+      // guarantees every panel starts its entrance from 0. The full delta is still
+      // broadcast below, so the global counter a `rawAnim` reads is untouched.
+      integrateIndexPos(store, active, { time, accumulator: active === previous ? delta : 0 });
 
       // Publish this frame's gamestate and fan out to widgets. Values go through
       // notify() (not store.state.x = ...) so the mutation stays inside the store.

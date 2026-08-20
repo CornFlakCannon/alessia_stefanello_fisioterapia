@@ -5,7 +5,7 @@ export type { ScrollState, ScrollStore, FrameListener } from './store';
 export { ScrollStateProvider, useScrollStore, useSection } from './context';
 export type { SectionCtx } from './context';
 export { useScrollFrame } from './useScrollFrame';
-export { useSequenceProgress, integrateIndexPos } from './useSequenceProgress';
+export { useSequenceProgress, integrateIndexPos, readIndexPos } from './useSequenceProgress';
 export type { SequenceSpec, LoopSpec } from './useSequenceProgress';
 export { Section, advanceSection, sectionScrollTop } from './sections';
 export { smoothLerp, noSmoothing, defaultSmoother } from './smoothing';

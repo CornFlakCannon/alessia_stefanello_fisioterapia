@@ -236,14 +236,31 @@ library**. Build the site *with* it; do not edit it. If a feature needs an engin
 change, write it up as a spec (see `JUMP_TO_FEATURE.md`) for the library's own repo
 instead of patching here.
 
-**There is exactly one exception, and it is marked in the file.** `handlePointerDown` in
+**There are exactly two exceptions, and both are marked in the files.**
+
+**(1)** `handlePointerDown` in
 `ScrollShell.tsx` carries `if (!e.isPrimary) return;` and a `try/catch` around
 `setPointerCapture`, which throws `NotFoundError` when the pointer is no longer active —
 a short tap, which is what the hero's index invites. It surfaced as an uncaught console
 error on an ordinary interaction. Capture there is an optimisation, not a requirement
 (the container already has `touch-action: none` and owns the move/up listeners), so
 failing is harmless. Written up as seam 3 in `JUMP_TO_FEATURE.md`, where the slop
-deferral would make the guard redundant. Don't take this as licence for a second one.
+deferral would make the guard redundant.
+
+**(2) Seam 4 — animations were abandoned mid-flight at a hand-off.** `advanceSection`
+decides on the RAW scroll position while a widget's pose is drawn from a 90ms-smoothed
+one, and `useSequenceProgress` used to `return` outright when its section went inactive —
+so a fast scroll left every panel it passed frozen in a half-played pose, for good.
+Patched in three places, all documented in-file and written up as seam 4:
+`useSequenceProgress` now **eases to rest off-section** before going quiet (`settled` ref;
+`auto` loops keep the old gate, and off-section reads go through `readPos` so an inactive
+index can never integrate); `ScrollShell` bounds a frame's delta at `MAX_FRAME_DELTA` and
+**carries** the remainder rather than discarding it; and the hand-off frame no longer
+spends its delta twice on the incoming panel. Note the arithmetic recorded in the seam:
+**more `DWELL` cannot fix this** — the smoother chases a moving target, so a residual gap
+survives at any usable scroll speed. Only the settle is a guarantee.
+
+Two is the limit. Don't take these as licence for a third.
 
 ### Model
 
@@ -470,7 +487,7 @@ deferral would make the guard redundant. Don't take this as licence for a second
   hiding a physiotherapist's phone number behind a click would be decluttering the wrong
   thing.
 
-### Three engine seams the site works around (see `JUMP_TO_FEATURE.md`)
+### Four engine seams the site works around (see `JUMP_TO_FEATURE.md`)
 
 1. **No scroll-to-section API.** The hero's `ServiceIndex` jumps via
    **`app/site/useSectionJump.ts`** — a site-side workaround that drives the engine **from
@@ -510,8 +527,15 @@ deferral would make the guard redundant. Don't take this as licence for a second
    scrollable element inside a panel therefore needs `touch-none` **on itself**
    (`ContactForm`'s `inputBase` does this). Don't delete it as redundant with the shell's.
 
-3. **`setPointerCapture` throws on a short tap.** The one place the engine is patched
-   here — see «The scroll engine» above for the guard and why it is safe. The proper fix
+3. **`setPointerCapture` throws on a short tap.** One of the two places the engine is
+   patched here — see «The scroll engine» above for the guard and why it is safe. The proper fix
    (capture on the first committed move, not at `pointerdown`) is written up in
    `JUMP_TO_FEATURE.md`; if it lands, delete the guard *and* `useTapVsSwipe`, since it
    settles seam 2 as well.
+
+4. **Animations abandoned mid-flight at a hand-off.** The second place the engine is
+   patched here — see «The scroll engine» above for what changed and why. `MAX_FRAME_DELTA`
+   (`ScrollShell.tsx`) is the one knob a designer touches: it sets how much of a panel you
+   see play when someone flings the page, and its docblock carries the table. Lower it if
+   panels still flick past, raise it if a fast scroll feels sluggish. It does NOT control
+   whether animations finish — that is unconditional now.

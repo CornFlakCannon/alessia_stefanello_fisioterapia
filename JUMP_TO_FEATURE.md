@@ -283,3 +283,168 @@ const handlePointerDown = (e: PointerEvent) => {
 **The slop deferral above supersedes this.** Capturing on the first committed move means
 the pointer is provably active at capture time, so the throw cannot happen and the guard
 becomes redundant — delete it if that patch lands.
+
+---
+
+## Seam 4 — a panel's animations are abandoned mid-flight at the hand-off (APPLIED here)
+
+> Status: **the second edit this repo makes to the engine** — `app/ScrollShell.tsx` and
+> `app/_scroll/useSequenceProgress.ts`, plus one additive line in `app/_scroll/index.ts`
+> (re-export `readIndexPos`, so the DevHud can show the engine's real per-section position
+> instead of a mirror that disagreed with it). Unlike seam 3 this is the fix, not a guard:
+> there is no site-side version of it, because the freeze happens inside the widget hook.
+
+Scroll fast, then scroll back up: the panels you flew past are sitting in half-played
+poses that never complete. Three separate mechanisms produce it, and they need three
+separate answers.
+
+### 1. The hand-off is decided on a different quantity than the one that is drawn
+
+`useSequenceProgress` derives `target` from the raw integrated position, then eases a
+`displayed` value toward it with `defaultSmoother = smoothLerp(90)`. What reaches the
+element is `displayed` — **`onProgress` never receives `target`**:
+
+```ts
+let next = defaultSmoother(displayed.current, target, dt);
+if (Math.abs(target - next) < 1e-4) next = target;
+displayed.current = next;
+onProgress(next, s);
+```
+
+`advanceSection`, meanwhile, tests the **raw** position:
+
+```ts
+if (threshold > 0 && readIndexPos(store, current) >= threshold && hasSection(store, current + 1)) {
+```
+
+A 90ms half-life needs ~390ms to close 95% of a gap. At speed the two quantities are
+nowhere near each other, so the page is free to leave a panel whose poses are still 50-60%
+behind.
+
+### 2. Leaving a section freezes the pose *permanently*
+
+```ts
+if (!raw && s.sectionIndex !== idx) return;
+```
+
+That short-circuits before `displayed` is eased and before `lastTime` is updated. The last
+inline style written stays on the element for good — **there is no "settle on deactivate"
+step anywhere in the engine.** This is the artefact the user actually sees.
+
+### 3. Nothing bounds a frame's scroll delta
+
+The `±100` clamps are per EVENT; the frame drain is unconditional. Several wheel or
+pointer events land per frame, and touch is multiplied by `TOUCH_SENSITIVITY` *after* its
+clamp, so a fling frame carries 300-700 units — a 2200-unit panel crossed in ~7 frames
+(~105ms). And `integrateIndexPos(store, active, …)` is called with the **post**-advance
+index, so the hand-off frame's delta is spent a second time on the incoming panel, which
+therefore arrives with its `snap` glide part-resolved and its first reveals already past.
+
+### The tempting workaround is the trap
+
+The obvious site-side answer is "give each panel more dwell, so its windows finish well
+before the threshold". Measured, that is not a fix. Simulating the real smoother against a
+real panel (`rev(0..3)`, a focus landing at 1300, three cross-fading photos over 320→2050,
+hand-off at 2200), the worst residual gap at the hand-off is:
+
+| frame cap | ms to cross the panel | `rev0` displayed | worst gap |
+|---|---|---|---|
+| 350 (unbounded, today) | 105ms | 0.54 | 0.74 |
+| 200 | 183ms | 0.68 | 0.49 |
+| 150 | 244ms | 0.79 | 0.51 |
+| 40 (unusably slow) | 917ms | 1.00 | **0.25** |
+
+**Rate-limiting alone never finishes an animation**, at any speed a person would accept:
+the smoother is chasing a *moving* target, so its lag is proportional to scroll speed and
+a residual gap survives however much dwell or however low a cap you choose. Dwell only
+buys frames, and at fling speed the existing `DWELL = 500` is worth one or two of them.
+
+The animation has to be *finished*, not *outrun*. That is mechanism 2's answer, and it is
+the only one that is a guarantee rather than a tuning.
+
+### Applied — 1. `app/_scroll/useSequenceProgress.ts`, ease to rest off-section
+
+A widget leaving its section may not simply stop; it must settle first, then go quiet. A
+`settled` ref (initialised `true`, so an unvisited section costs nothing) gates it:
+
+```ts
+const settled = useRef(true);
+
+useScrollFrame((s) => {
+  const onSection = raw || s.sectionIndex === idx;
+  if (!onSection && (settled.current || loop?.by === "auto")) return;
+```
+
+with `settled.current = next === target;` recorded after the existing `1e-4` snap, in both
+the loop branch and the ordinary one.
+
+Two constraints shape it:
+
+- **An `auto` loop is excluded.** `LoopSpec` documents it as pausing off-section and
+  resuming on return; letting it tick off-section would break that contract.
+- **Off-section must READ the position, never integrate it.** `sharedScroll` folds
+  `s.accumulator` into its index under a per-frame time guard, so an inactive section
+  calling it would integrate the frame's delta — and with every panel doing so, the whole
+  page would advance at once. Hence a small helper:
+
+```ts
+function readPos(store, index, end, onSection, s) {
+  return onSection ? sharedScroll(store, index, end, s) : readIndexPos(store, index);
+}
+```
+
+Off-section the index's position is frozen, so `target` is constant, the ease converges in
+~400ms and stops. Cost: one panel's widgets ticking for a beat after you leave it.
+
+**It also removes a pop nobody had named.** `lastTime` used to go stale while a section was
+away, so the first frame back ran with `dt` clamped to 64ms and jumped ~39% of the gap in
+one frame. A widget that settled before going quiet has no gap left to jump.
+
+### Applied — 2. `app/ScrollShell.tsx`, bound the frame and carry the remainder
+
+```ts
+const MAX_FRAME_DELTA = 200;
+const MAX_CARRY = MAX_FRAME_DELTA * 3;
+...
+const pending = Math.max(-MAX_CARRY, Math.min(MAX_CARRY, scrollAccumulator.current));
+const delta = Math.max(-MAX_FRAME_DELTA, Math.min(MAX_FRAME_DELTA, pending));
+scrollAccumulator.current = pending - delta;
+```
+
+The excess is **carried, not discarded**, so no unit of the gesture is lost — it is spread
+over the following frames, and the queue is capped at three of them so the page cannot
+coast on after the finger stops. Reversing direction cancels the queue naturally, since
+new input of the opposite sign sums against what is pending.
+
+`200` is drawn above a normal swipe (~105-175 units/frame at `TOUCH_SENSITIVITY = 3.5`)
+and below a fling, so ordinary scrolling never meets the clamp. Per the table above this
+does not *finish* anything — that is the settle's job. It decides how much of a panel you
+SEE play on the way past.
+
+### Applied — 3. `app/ScrollShell.tsx`, don't spend the hand-off frame twice
+
+```ts
+const previous = currentSectionIndex.current;
+const active = advanceSection(store, previous, delta);
+currentSectionIndex.current = active;
+integrateIndexPos(store, active, { time, accumulator: active === previous ? delta : 0 });
+```
+
+On a hand-off frame the delta has already done its job — it is what pushed the outgoing
+panel over its threshold — so spending it again on the incoming one is a double count. One
+zero frame (and the rest is still queued) is imperceptible and guarantees every panel
+starts its entrance from 0. `store.notify` still broadcasts the true `delta`, so the global
+counter a `rawAnim` reads is untouched.
+
+### For the library's own repo
+
+Parts 1 and 3 are unconditional bug fixes and should land as-is. Part 2 introduces two
+constants that belong next to `TOUCH_SENSITIVITY` as documented knobs — a library might
+prefer to expose them as props on `ScrollShell` rather than module constants, since the
+right cap depends on how long the host's panels are.
+
+One knock-on to note for a consumer: a site that drives the engine by dispatching
+synthetic wheel events (this one does — `app/site/useSectionJump.ts`) is subject to the
+same cap. `UNITS_PER_FRAME = 70` is well under it, but `REDUCED_UNITS_PER_FRAME = 400` is
+not, so a jump under `prefers-reduced-motion` now runs at 200/frame — about twice as long,
+still far inside that hook's own `MAX_FRAMES` budget.

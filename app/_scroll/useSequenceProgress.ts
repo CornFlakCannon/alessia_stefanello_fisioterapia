@@ -96,6 +96,29 @@ function sharedScroll(
 }
 
 /**
+ * The position a widget on `index` should read this frame.
+ *
+ * While its section is ACTIVE it integrates, via `sharedScroll` — the normal path.
+ * While it is INACTIVE it must only READ: `sharedScroll` folds `s.accumulator` into
+ * that index under a per-frame time guard, so letting an off-section widget call it
+ * would integrate the frame's delta into a section that is not the active one — and
+ * with every panel's widgets doing that, the whole page would advance at once. An
+ * off-section widget is only here to ease its pose to rest against a position that is
+ * standing still, which is exactly what `readIndexPos` gives it. It does not grow the
+ * ceiling either: it can only have got here by having been active, where its `end` was
+ * already folded in.
+ */
+function readPos(
+  store: ScrollStore,
+  index: number,
+  end: number,
+  onSection: boolean,
+  s: Readonly<ScrollState>,
+): number {
+  return onSection ? sharedScroll(store, index, end, s) : readIndexPos(store, index);
+}
+
+/**
  * Total reachable scroll across every section — the sum of each index's ceiling
  * (`max`). This is the true extent the GLOBAL counter spans: cumulative scroll from
  * the top of the page to the bottom. It grows as later sections register/activate
@@ -244,15 +267,32 @@ export function useSequenceProgress(
   const displayed = useRef(0); // eased progress (or, for a wheel loop, eased cycle count)
   const lastTime = useRef(0);  // previous frame's clock, for the smoother's dt
   const elapsed = useRef(0);   // armed wall-clock ms accumulated (auto loop only)
+  // Has `displayed` caught up with `target`? Starts true: a widget that has never run
+  // has nothing to finish, so an unvisited section costs nothing. See the gate below.
+  const settled = useRef(true);
 
   useScrollFrame((s) => {
-    if (!raw && s.sectionIndex !== idx) return;
+    const onSection = raw || s.sectionIndex === idx;
+    // Off-section a widget must still EASE TO REST before it goes quiet — it may not
+    // just stop. Returning unconditionally here (as this did) freezes `displayed`, and
+    // with it the inline style last written, at whatever mid-window value the hand-off
+    // caught it at, FOR GOOD: the hand-off is decided on the RAW position (see
+    // `advanceSection`) while the pose is drawn from the smoothed one, and at speed the
+    // two are far apart. The panel you scrolled past then sits in a half-played pose
+    // that never completes, which is what you find when you scroll back up to it.
+    // So: quiet only once there is nothing left to finish. The position is frozen while
+    // off-section (only the active index is integrated), so `target` is constant and the
+    // ease converges in ~400ms and stops — roughly one panel's widgets ticking for a beat
+    // after you leave it, then silence.
+    // An `auto` loop is the deliberate exception: it is DOCUMENTED to pause off-section
+    // and resume on return (see LoopSpec), so it keeps the old, unconditional gate.
+    if (!onSection && (settled.current || loop?.by === "auto")) return;
 
     // Loop mode: emit a repeating PHASE instead of a one-shot ramp. Kept ahead of
     // the ordinary path (which it fully replaces for a loop widget), so the two
     // never share state — a loop reuses `displayed`/`lastTime` for its own meaning.
     if (loop) {
-      const pos = raw ? globalScroll(store, s) : sharedScroll(store, idx, to, s);
+      const pos = raw ? globalScroll(store, s) : readPos(store, idx, to, onSection, s);
       const local = pos - offset;
       const dt = lastTime.current ? Math.min(64, s.time - lastTime.current) : 0;
       lastTime.current = s.time;
@@ -261,8 +301,8 @@ export function useSequenceProgress(
       let cycles: number;
       if (loop.by === "auto") {
         // Wall-clock advance, but only while armed (scrolled past `start`). The
-        // section gate above already freezes it off-section, so `elapsed` holds and
-        // the phase resumes where it paused on return.
+        // section gate above still returns unconditionally for THIS kind of loop, so
+        // `elapsed` holds off-section and the phase resumes where it paused on return.
         if (local >= start) elapsed.current += dt;
         cycles = elapsed.current / period;
       } else {
@@ -272,6 +312,7 @@ export function useSequenceProgress(
         let next = defaultSmoother(displayed.current, target, dt);
         if (Math.abs(target - next) < 1e-4) next = target;
         displayed.current = next;
+        settled.current = next === target;
         cycles = next;
       }
       onProgress(loopPhase(cycles, loop), s);
@@ -283,7 +324,7 @@ export function useSequenceProgress(
     // space, then take this widget's window slice. Because the position is shared,
     // a widget past its `end` holds until the position reverses back into range —
     // so reversing unwinds the end of the queue, not everyone at once.
-    const pos = raw ? globalScroll(store, s) : sharedScroll(store, idx, to, s);
+    const pos = raw ? globalScroll(store, s) : readPos(store, idx, to, onSection, s);
     const local = pos - offset;
     const target = span > 0 ? Math.min(1, Math.max(0, (local - start) / span)) : 1;
 
@@ -296,6 +337,7 @@ export function useSequenceProgress(
     let next = defaultSmoother(displayed.current, target, dt);
     if (Math.abs(target - next) < 1e-4) next = target;
     displayed.current = next;
+    settled.current = next === target;
 
     onProgress(next, s);
   });
