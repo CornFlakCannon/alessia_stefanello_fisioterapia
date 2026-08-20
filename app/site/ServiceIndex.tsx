@@ -25,6 +25,15 @@ import useSectionJump from "./useSectionJump";
  * Two columns even on phones: full-width rows would cost the panel too much of the 100svh
  * it must fit inside. If it ever doesn't fit on an iPhone SE, `max-lg:short:hidden` on the
  * <nav> is the valve — the index is the least load-bearing block in the panel.
+ *
+ * ## Why it is all `ink` and no accent colour
+ * It sits on the hero's GOLD half, and gold is a ground that eats the palette: measured
+ * against `--brand-secondary`, `text-secondary` is invisible by definition, `text-emphasis`
+ * comes out at 2.88:1 and even full `text-primary` at 3.75:1 — enough for large text, not
+ * for an 11px ordinal. So the hierarchy here is carried by WEIGHT of ink rather than by
+ * hue: the number at `/75` (4.53:1) under the label at full ink (7.26:1). The blue is
+ * spent where it can be: the headline, which is large, and the rules beside the role,
+ * which are non-text and only owe 3:1.
  */
 
 /** One row: the shared hit target, hover/focus lift and underline.
@@ -52,11 +61,11 @@ function Entry({
       className="group flex w-full items-baseline justify-center gap-2 py-2 transition-transform hover:translate-x-0.5 focus-visible:translate-x-0.5 focus-visible:outline-none short:py-1.5"
     >
       {n && (
-        <span className="font-mono text-[0.7rem] text-secondary transition-colors group-hover:text-emphasis group-focus-visible:text-emphasis">
+        <span className="font-mono text-[0.7rem] text-ink/75 transition-colors group-hover:text-ink group-focus-visible:text-ink">
           {n}
         </span>
       )}
-      <span className="font-sans text-sm text-primary/85 underline-offset-4 group-hover:underline group-focus-visible:underline sm:text-[0.95rem]">
+      <span className="font-sans text-sm text-ink underline-offset-4 group-hover:underline group-focus-visible:underline sm:text-[0.95rem]">
         {label}
       </span>
     </button>
@@ -68,19 +77,19 @@ export default function ServiceIndex({ className = "" }: { className?: string })
 
   return (
     <nav aria-label="Sezioni del sito" className={className}>
-      <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-primary/60">
+      <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-ink/80">
         {HERO_INDEX_TITLE}
       </p>
       <ul className="mt-1.5 grid grid-cols-2 gap-x-6 gap-y-1 short:mt-1 short:gap-y-0.5">
         {HERO_INDEX.map(({ n, label, section, land }) => (
-          <li key={n} className="border-t border-primary/15">
+          <li key={n} className="border-t border-ink/25">
             <Entry jumpTo={jumpTo} n={n} label={label} section={section} land={land} />
           </li>
         ))}
       </ul>
       {/* staccata: non è un servizio. Il margine è il separatore — nessun filetto in più,
           il pannello deve stare in 100svh. */}
-      <div className="mt-4 border-t border-primary/25 short:mt-2.5">
+      <div className="mt-4 border-t border-ink/40 short:mt-2.5">
         <Entry jumpTo={jumpTo} label={HERO_INDEX_EXTRA.label} section={HERO_INDEX_EXTRA.section} />
       </div>
     </nav>

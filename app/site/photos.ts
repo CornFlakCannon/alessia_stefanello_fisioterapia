@@ -167,12 +167,22 @@ export const PHOTOS = {
  * gold behind her is just the slab's own CSS colour — nothing to match, no seam to
  * measure, and the entrance is a plain CSS animation.
  *
+ * ## She stands on WHITE, and the gold moved to the text half
+ * The cut-out first shipped on the gold slab and wore a pale halo around the hair. It is
+ * not an edge artefact and no matte tuning removes it: the pale pixels are the ~11k the
+ * flood fill deliberately keeps INSIDE her (trouser and hair highlights), and eroding
+ * three times over barely touches the count. What decides whether they read as a halo is
+ * the ground — composited on gold the palest of them lands 83 levels ABOVE it, on white 29
+ * below. So the hero's gold is now the text half and she stands on white, where the
+ * leftovers are invisible by construction. See `scripts/hero-cutout.mjs`.
+ *
  * `width`/`height` are the encodes' real pixels here (unlike the video's, which were only
- * the ratio): they reserve the box and feed `next/image`-style sizing.
+ * the ratio): they reserve the box and feed `next/image`-style sizing. They drift by a
+ * pixel when a framing is retuned, so the script PRINTS these two lines ready to paste.
  */
 export const HERO_PHOTO = {
   /** Desktop: 3:4, cropped tight top and bottom so she is as large as the slab allows. */
-  desktop: { src: "/foto/hero.webp", width: 1100, height: 1467 },
+  desktop: { src: "/foto/hero.webp", width: 1100, height: 1466 },
   /** Phone: 4:5, head and half torso. */
   mobile: { src: "/foto/hero-mobile.webp", width: 800, height: 1000 },
   alt: "Alessia Stefanello, fisioterapista",

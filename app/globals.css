@@ -85,12 +85,13 @@
    the right — and plays it ON LOAD. Panel 0 is on screen at scroll 0, so its entrance
    can never be a scroll-gated reveal; it would arrive blank.
 
-   Three owners, three delays, one per element (an SDiv must never carry one of these:
-   a filled `both` animation outranks the inline transform it writes, permanently):
-     0.10s  the berry blade slides in
-     0.22s  the gold slab — and the photo inside it — follows, covering the blade down
-            to a ~50px strip. The lag IS the effect: the blade has to be seen first.
-     1.12s  the photo lifts off the slab (0.22 + 0.9 = when the slab is home)
+   Four owners, one animation each (an SDiv must never carry one of these: a filled
+   `both` animation outranks the inline transform it writes, permanently):
+     0.10s  the gold half comes in from the LEFT, the berry blade from the right
+     0.22s  the white slab — and the photo inside it — covers the blade down to a ~50px
+            strip, which lands exactly on the gold/white seam. The lag IS the effect:
+            the blade has to be seen before it is covered.
+     1.12s  the photo lifts off the page (0.22 + 0.9 = when the slab is home)
 
    `both` on each, so the from-state already applies during the delay: no flash of a
    settled hero before its own animation starts. */
@@ -105,6 +106,22 @@
 .fisio-slide-in {
   transform: translateX(0); /* resting pose (also the reduced-motion pose) */
   animation: fisio-slide-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* The mirror, for the gold half: it lives on the LEFT now (the portrait moved onto white
+   — see HeroPortrait), so bringing it in from the right would drag it across the whole
+   screen to land where it started. The two halves close in on each other instead. */
+@keyframes fisio-slide-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.fisio-slide-left {
+  transform: translateX(0);
+  animation: fisio-slide-left 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* The rilievo: she grows a little and casts a shadow, so she reads as sitting ON the
@@ -138,7 +155,8 @@
   }
   /* The hero is shown already arrived: slabs home, portrait at its lifted resting pose
      (the composed end state, not an interrupted one). */
-  .fisio-slide-in {
+  .fisio-slide-in,
+  .fisio-slide-left {
     animation: none;
     transform: translateX(0);
   }

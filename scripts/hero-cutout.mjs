@@ -37,8 +37,27 @@
  * silently.
  *
  * `ERODE` then removes the boundary pixels, which are a BLEND of her and the plate and so
- * would ship as a pale fringe, and `FEATHER` softens what is left so the silhouette is not
- * a staircase. Both are small on purpose: raise `ERODE` and you start eating hair.
+ * would ship as a hard contaminated ring, and `FEATHER` softens what is left so the
+ * silhouette is not a staircase.
+ *
+ * ## Why `ERODE` is small, and what it is NOT for
+ * The cut-out first shipped on the gold slab, and there it wore a visible pale halo around
+ * the hair. The obvious reading is "erode harder". Measured, that is wrong: the pale
+ * pixels are the ~11k the flood fill deliberately KEEPS — interior highlights on the white
+ * trousers and in the hair — and the count barely moves between 0 and 3 erosion passes
+ * (10923 → 10824) because they are nowhere near the boundary. You cannot trim them without
+ * eating the subject.
+ *
+ * What decides whether they read as a halo is the GROUND:
+ *
+ *   | composited on | the palest kept pixel lands at | vs the ground |
+ *   | gold (luma 172) | 255 | +83 — a bright halo |
+ *   | white (luma 255) | 226 | −29 — invisible |
+ *
+ * So the hero puts her on WHITE and moves the gold to the text half (the client's call,
+ * and the numbers agree). With the ground no longer punishing leftover plate, `ERODE` only
+ * has to remove the single hard-contaminated ring, which is why it is 1 and not more —
+ * every extra pass is hair we lose for nothing.
  *
  * ## Two derivatives, because the phone needs a different picture
  * She is tall and narrow (the subject is ~1250 x 2340 in a 1920 x 2560 frame), so one crop
@@ -70,9 +89,10 @@ const SAT_MAX = 6;
 /** Min mean luma for the plate. Its two tones are 235 and 255; her brightest trouser
  *  highlight is 229. 226 is below the plate and above her, by 6 and 3 levels. */
 const LUMA_MIN = 226;
-/** Boundary pixels to drop. They are part her, part plate, so they ship as a pale halo.
- *  2 is enough at this resolution; 4+ starts thinning hair. */
-const ERODE = 2;
+/** Boundary pixels to drop: the one ring that is part her, part plate. NOT a halo control
+ *  — see the docblock, the halo is interior and the ground is what fixes it. Keep it
+ *  minimal; every pass past this is hair thrown away. */
+const ERODE = 1;
 /** Gaussian sigma on the finished matte — enough to kill the staircase, not enough to
  *  make her edge mushy. */
 const FEATHER = 1.2;
@@ -187,6 +207,7 @@ function window_(top, bottom, ratio, label, subjectBottom = bottom) {
 }
 
 await mkdir(OUT, { recursive: true });
+const manifest = [];
 const jobs = [
   { id: "hero", win: window_(Math.max(0, minY - HEAD_ROOM), H, DESK_RATIO, "hero"), w: DESK_W },
   { id: "hero-mobile", win: window_(Math.max(0, minY - HEAD_ROOM), MOB_BOTTOM, MOB_RATIO, "hero-mobile"), w: MOB_W },
@@ -196,4 +217,10 @@ for (const { id, win, w } of jobs) {
   const { size } = await cut.clone().extract(win).resize(w).webp({ quality: 84 }).toFile(dest);
   const h = Math.round((win.height / win.width) * w);
   console.log(`${id.padEnd(12)} ${w}x${h} ${(size / 1024).toFixed(0)} KB -> public/foto/${id}.webp`);
+  // The exact box, ready to paste: the crop's height follows HEAD_ROOM/MOB_BOTTOM and the
+  // ratio only rounds to 3:4, so these drift by a pixel whenever a framing is retuned.
+  // Printing them is cheaper than remembering (and a stale height is a layout shift).
+  manifest.push(`  ${id === "hero" ? "desktop" : "mobile"}: { src: "/foto/${id}.webp", width: ${w}, height: ${h} },`);
 }
+console.log("\napp/site/photos.ts — HERO_PHOTO:");
+for (const line of manifest) console.log(line);

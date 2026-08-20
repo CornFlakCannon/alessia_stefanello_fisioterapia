@@ -85,10 +85,20 @@ stato fatto.
      prima una lama fucsia, poi l'oro che la copre lasciandone una barra di ~50px, poi la
      foto che si solleva (scale 1.1 + ombra sotto). Via il video.
    - Sorpresa tecnica: la foto `HERO_PHOTO.png` **sembrava** già scontornata ed era invece
-     opaca, con la scacchiera *dipinta dentro*. È stata scontornata davvero, quindi ora
-     dietro Alessia c'è direttamente il colore della fascia — niente rettangolo, niente
-     giunta. *(Se salta fuori il file originale con la trasparenza vera, tanto meglio: il
-     nostro passaggio diventa superfluo.)*
+     opaca, con la scacchiera *dipinta dentro*. È stata scontornata davvero. *(Se salta
+     fuori il file originale con la trasparenza vera, tanto meglio: il nostro passaggio
+     diventa superfluo.)*
+   - **Alessia sta sul bianco e l'oro è passato alla metà del testo.** Sull'oro il ritaglio
+     portava un alone chiaro attorno ai capelli, e non era una frangia da limare: quei
+     pixel sono ~11k luci *dentro* di lei (pantaloni e capelli), e limarli vuol dire
+     mangiarle i capelli. Misurato: su oro il più chiaro sta 83 livelli sopra il fondo, su
+     bianco 29 sotto — invisibile. Non era una soglia da tarare, era il fondo da cambiare.
+     La lama fucsia ci ha guadagnato: adesso cade sulla cucitura oro/bianco e fa da
+     divisore invece che da bordo.
+   - Conseguenza sui colori: sull'oro il blu del marchio regge solo come testo *grande*
+     (3.75:1), quindi il titolo resta blu e tutto il resto passa al quasi-nero del
+     marchio. Sul telefono la stessa cosa si ribalta: foto in alto su bianco, oro dietro
+     al testo fino in fondo alla videata (con un filetto fucsia a segnare il confine).
    - Testo a sinistra **centrato**, con il ruolo fra due stanghette oro.
    - Via il pulsante "Contattami" e il numero, al loro posto **l'indirizzo dello studio**.
    - Indice ristrutturato: "Lavoro in ambito:" sopra i tre servizi, "A domicilio" diventa
@@ -112,8 +122,11 @@ stato fatto.
 8. **Formazione dal CV.** — FATTO. Sedici voci vere (esperienza, esperienze extra,
    educazione, corsi) sfogliate in **quattro fogli che si sovrappongono** entrando da
    destra, esattamente l'animazione chiesta: un CV più lungo aggiunge pagine, non altezza.
-9. **Mobile: banda bianca in cima / crop della foto.** — FATTO: l'oro arriva fino al bordo
-   superiore, e sul telefono la foto è inquadrata su **testa e mezzo busto**.
+9. **Mobile: banda bianca in cima / crop della foto.** — FATTO, con una precisazione: la
+   foto è inquadrata su **testa e mezzo busto** come chiesto, ma il fondo pieno in cima ora
+   è **bianco**, non giallo — l'oro si è spostato sotto, dietro al testo, insieme al
+   ribaltamento del punto 3. La banda bianca "di risulta" che avevi visto non c'è più: il
+   colore arriva a filo del bordo, da una parte o dall'altra.
 10. **Mappa mobile affollata.** — FATTO: la card non viene più rimpicciolita a 12rem (a
     quella misura i pulsanti di Google *erano* la mappa) e la nostra pillola "Apri in
     Google Maps" compare solo da tablet in su.

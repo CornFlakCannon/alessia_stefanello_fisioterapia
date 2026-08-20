@@ -128,14 +128,24 @@ The camera originals (15 JPG at 6000x4000, the hero PNG, plus the 4K studio vide
   checked against the measured subject box before it is written, because a window that
   clips a shoulder is invisible at 208px on a phone.
 
+  **She stands on WHITE, and that is why the gold moved to the text half.** The cut-out
+  first shipped on the gold slab and wore a pale halo around the hair. The obvious reading
+  is "erode harder"; measured, that is wrong. Those pale pixels are the ~11k the flood fill
+  deliberately KEEPS inside her, and the count barely moves between 0 and 3 erosion passes
+  (10923 → 10824) because they are nowhere near the boundary — you cannot trim them without
+  eating the subject. What decides whether they read as a halo is the ground: composited on
+  gold the palest of them lands **83 levels above** it, on white **29 below**, i.e.
+  invisible. So it is not a threshold to tune, it is a ground to change. `ERODE` is 1 and
+  only removes the single hard-contaminated ring.
+
   **What this replaced, and why it is simpler.** The hero was a `<video>` that played
   once on load, and before that a 27-frame `ImageSequence`. Both existed to solve a
   problem that has now evaporated: the source was a clip on an unkeyable wall, so the
   background had to be composited at build time and then *made to agree* with
   `--brand-secondary` to within a level or two — hence `check-gold.mjs`, `probe-bg.mjs`,
   `fill-matte.mjs` and the whole matte branch of `hero-video.sh`. With a real alpha
-  channel there is no background in the file at all: what sits behind her is the slab's
-  own CSS colour. Nothing to match, no seam to measure.
+  channel there is no background in the file at all: what sits behind her is the panel's
+  own white. Nothing to match, no seam to measure.
 
   Those scripts **stay on disk**, with their docblocks — the measurements in them are
   hard-won and the video may come back — but they are out of `npm run photos`, and
@@ -330,13 +340,12 @@ deferral would make the guard redundant. Don't take this as licence for a second
   pretends to have one.
 
   Its entrance is on load, like everything else in panel 0, and it is the leitmotiv of the
-  service panels played once: the **berry blade** slides in at `0.10s`, the **gold slab**
-  (carrying the photo) covers it at `0.22s` leaving a ~50px strip, and at `1.12s` the
-  photo **lifts** — `scale(1.1)` plus a `drop-shadow`. `drop-shadow` and not `box-shadow`:
-  a cut-out's box is mostly transparent, so a box shadow would draw a rectangle in mid-air
-  around her. `origin-bottom` under `lg` is load-bearing — on phones the slab's bottom
-  edge IS the photo's bottom edge, and a centred scale would push her hard cut-off 5% past
-  it onto the white.
+  service panels played once: at `0.10s` the **gold half** comes in from the left and the
+  **berry blade** from the right; at `0.22s` the **white slab** carrying the photo covers
+  the blade down to a ~50px strip, which lands exactly on the gold/white seam and so reads
+  as a divider rather than an edge; at `1.12s` the photo **lifts** — `scale(1.1)` plus a
+  `drop-shadow`. `drop-shadow` and not `box-shadow`: a cut-out's box is mostly transparent,
+  so a box shadow would draw a rectangle in mid-air around her.
 
   Its size is capped in `page.tsx` as `lg:w-[min(34rem,55svh,38vw)]`. The `55svh` is the
   one that usually binds — **viewport HEIGHT is the real constraint**: a 3:4 portrait is
@@ -346,12 +355,22 @@ deferral would make the guard redundant. Don't take this as licence for a second
   permanently clipped and unreachable. The `38vw` guards the other axis — the band is
   `46vw`. Raise the `55svh` to grow her, then re-check at 768px tall.
 
-  The hero's gold is a **slab**, not the whole panel: a right-hand slab on desktop, a band
-  hanging off the photo on phones — and that band now bleeds to the very TOP of the
-  viewport (`-top-[100svh]`, cut exactly on the fold by the panel's `overflow-hidden`),
-  which is the white strip the client saw.
-  The **gold is the wrapper's own background** and the portrait is centred inside it —
-  one box, not two. It used to be a `<span>` hung off the photo's grid cell bleeding
+  **The gold is the TEXT's half now** — `left-0 w-[54vw]` on desktop, and on phones a band
+  behind the copy that bleeds to the bottom of the viewport (`bottom-[-100svh]`, cut
+  exactly on the fold by the panel's `overflow-hidden`). It swapped sides with the
+  portrait for the halo reason above; before that it was on the right and, on phones, ran
+  to the TOP of the viewport instead.
+
+  ⚠️ **Gold is a ground that eats the palette.** Measured against `--brand-secondary`:
+  `text-secondary` is invisible by definition, `text-emphasis` is 2.88:1, and even full
+  `text-primary` only reaches 3.75:1 — which buys large text (3:1) and nothing else. So on
+  that half the hierarchy is carried by weights of `ink` (4.53 at `/75`, 7.26 at full), and
+  the blue is spent only where it can be: the headline, which is large, and the rules
+  beside the role, which are non-text and owe 3:1. `node scripts/check-contrast.mjs` prints
+  the whole table — add a line there before adding a colour here.
+
+  The **white slab is the wrapper's own background** and the portrait is centred inside it
+  — one box, not two (and that background is also what covers the blade). It used to be a `<span>` hung off the photo's grid cell bleeding
   `-right-[50vw]` to the screen edge while the photo was centred in that cell: two
   reference frames for two things that must look concentric, which put the photo 164px
   left of the gold's centre on a 1883px window and got worse as the monitor grew. The old

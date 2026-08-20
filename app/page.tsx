@@ -202,42 +202,47 @@ export default function Home() {
           scroll 0, quindi ogni sua entrata è una CSS animation (vedi globals.css). */}
       <Section index={0} end={PANEL_END[0]}>
         <div className={`${shell} bg-white lg:px-0`}>
-          {/* was white-on-gold; on the white ground white brackets would vanish */}
-          <Corners color="rgba(0,78,143,0.22)" topLeft={false} />
+          {/* ink and not primary: these brackets now cross both halves, and blue at 22%
+              disappears on the gold one */}
+          <Corners color="rgba(20,33,46,0.25)" topLeft={false} />
 
-          {/* LA LAMA BERRY. Entra per prima e l'oro la ricopre quasi tutta: quello che
-              avanza è una barra verticale di ~50px, il terzo colore del marchio che si
-              affaccia sul hero senza occupare spazio. Solo da lg — è verticale per
-              definizione, e sul telefono la fascia oro è orizzontale. */}
+          {/* LA METÀ ORO, che è quella del TESTO.
+              Ci è arrivata perché la foto è un ritaglio e sull'oro portava un alone
+              chiaro attorno ai capelli. Non era una frangia di bordo da erodere: quei
+              pixel sono gli ~11k che il flood fill tiene DENTRO di lei (le luci sui
+              pantaloni e nei capelli), ed erodere tre volte non li scalfisce. Su oro il
+              più chiaro sta 83 livelli SOPRA il fondo, su bianco 29 sotto — cioè
+              invisibile. Quindi lei sta sul bianco e l'oro passa di qua.
+              Conseguenza da non perdere di vista: su oro `text-primary` regge solo come
+              testo GRANDE (3.75:1). Il titolo lo è; tutto il resto è passato a `ink`. */}
           <span
             aria-hidden="true"
-            className="fisio-slide-in pointer-events-none absolute inset-y-0 right-0 z-0 hidden bg-emphasis lg:block lg:w-[calc(46vw+50px)]"
+            className="fisio-slide-left pointer-events-none absolute inset-y-0 left-0 z-0 hidden bg-secondary lg:block lg:w-[54vw]"
             style={{ animationDelay: "0.10s" }}
           />
 
-          {/* LA FASCIA ORO E IL RITRATTO — deliberatamente UN box, non due.
-              L'oro used to be a `<span>` hung off the photo's grid cell, bleeding
-              `-right-[50vw]` to the screen edge, while the photo was centred inside the
-              cell: two reference frames for two things that have to look concentric, and
-              on a 1883px window the photo sat 164px left of the gold's centre. Now the
-              gold IS this element's background and the photo is centred in it, so they
-              are concentric by construction at every width. Don't restore the old shape.
+          {/* LA LAMA BERRY. Entra da destra insieme all'oro e la fascia bianca la copre
+              quasi tutta: quello che avanza è una barra verticale di ~50px, che ora cade
+              esattamente sulla cucitura oro/bianco e fa da divisore invece che da bordo.
+              Solo da lg — è verticale per definizione. */}
+          <span
+            aria-hidden="true"
+            className="fisio-slide-in pointer-events-none absolute inset-y-0 right-0 z-[1] hidden bg-emphasis lg:block lg:w-[calc(46vw+50px)]"
+            style={{ animationDelay: "0.10s" }}
+          />
 
-              Entra 0.12s dopo la lama: il ritardo È l'effetto, la lama deve farsi vedere
-              prima di essere coperta.
+          {/* LA FASCIA BIANCA E IL RITRATTO — deliberatamente UN box, non due.
+              Il fondo era oro e ora è bianco, ma la regola non cambia: lo sfondo È di
+              questo elemento e la foto è centrata dentro, quindi sono concentrici per
+              costruzione a ogni larghezza. Prima erano due cose in due sistemi di
+              riferimento diversi e su una finestra da 1883px la foto stava 164px a
+              sinistra del centro dell'oro. Non tornare indietro.
 
-              Mobile keeps its own device: a band that now bleeds all the way to the top
-              of the viewport (the panel is overflow-hidden, so `-top-[100svh]` is cut
-              exactly on the fold) — prima si fermava a `-top-8` e sopra restava una
-              striscia bianca. In basso il bordo della fascia è il bordo della foto. */}
+              È anche ciò che copre la lama berry lasciandone i 50px. */}
           <div
-            className="fisio-slide-in relative z-[1] mb-10 w-full max-w-6xl max-lg:short:mb-4 lg:absolute lg:inset-y-0 lg:right-0 lg:mb-0 lg:flex lg:w-[46vw] lg:max-w-none lg:items-center lg:justify-center lg:bg-secondary lg:py-12 lg:short:py-6"
+            className="fisio-slide-in relative z-[2] mb-10 w-full max-w-6xl max-lg:short:mb-4 lg:absolute lg:inset-y-0 lg:right-0 lg:mb-0 lg:flex lg:w-[46vw] lg:max-w-none lg:items-center lg:justify-center lg:bg-white lg:py-12 lg:short:py-6"
             style={{ animationDelay: "0.22s" }}
           >
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-[-50vw] -top-[100svh] bottom-0 bg-secondary lg:hidden"
-            />
             {/* La deriva dell'intero gruppo allo scroll; il ritratto ci si appoggia sopra
                 (il nesting compone le due).
                 Il cap è in `svh` e non in rem perché il vincolo vero è l'ALTEZZA: 3:4 vuol
@@ -262,24 +267,39 @@ export default function Home() {
 
           {/* IL TESTO — `self-start` perché il pannello è `flex-col items-center`, quindi
               l'asse trasversale è orizzontale: senza, un box da 54vw finirebbe centrato
-              nella viewport e sotto l'oro.
+              nella viewport e sotto la fascia bianca.
               Dentro, tutto è CENTRATO (richiesta del cliente) e `mx-auto`: il testo sta al
-              centro della metà BIANCA esattamente come il ritratto sta al centro di quella
-              oro. Aveva già avuto due giri di "lo spazio è distribuito male" da `ml-auto`. */}
-          <div className="relative z-10 w-full max-w-6xl text-center lg:w-[54vw] lg:max-w-none lg:self-start">
-            <div className="mx-auto max-w-[34rem] lg:px-10">
-              <p className="fisio-rise font-mono text-xs uppercase tracking-[0.28em] text-primary/70 sm:text-sm" style={{ animationDelay: "0.05s" }}>
+              centro della metà ORO esattamente come il ritratto sta al centro di quella
+              bianca. Aveva già avuto due giri di "lo spazio è distribuito male" da
+              `ml-auto`. */}
+          {/* `54vw - 50px` e non `54vw`: la colonna si ferma dove comincia la lama berry,
+              così è centrata nell'oro VISIBILE. A 54vw pieni, su una finestra da 1024 il
+              bordo destro del testo finiva 5px sotto la lama. */}
+          <div className="relative z-10 w-full max-w-6xl text-center lg:w-[calc(54vw-50px)] lg:max-w-none lg:self-start">
+            {/* Sul telefono l'oro sta DIETRO AL TESTO e scende fino in fondo alla videata
+                (il pannello è overflow-hidden, quindi `bottom-[-100svh]` è tagliato esatto
+                sulla piega). Prima stava dietro alla foto e saliva fino in cima: si è
+                ribaltato con lei. Il filetto berry in alto è la stessa lama del desktop,
+                girata di 90° — sul telefono le due metà sono sopra/sotto, non dx/sx. */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-[-50vw] -top-8 bottom-[-100svh] border-t-4 border-emphasis bg-secondary lg:hidden"
+            />
+            <div className="relative mx-auto max-w-[34rem] lg:px-10">
+              <p className="fisio-rise font-mono text-xs uppercase tracking-[0.28em] text-ink/80 sm:text-sm" style={{ animationDelay: "0.05s" }}>
                 {HERO.kicker}
               </p>
+              {/* l'unico blu su fondo oro, e può esserlo perché è testo GRANDE: 3.75:1
+                  passa il minimo WCAG per il large text (3:1), non quello per il corpo */}
               <h1 className="fisio-rise mt-3 font-display text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-primary max-lg:short:text-4xl sm:text-6xl lg:text-7xl" style={{ animationDelay: "0.15s" }}>
                 {HERO.name}
               </h1>
-              {/* il ruolo fra due stanghette oro, simmetriche — è l'unico punto in cui
-                  l'oro entra nella colonna del testo, e tiene insieme le due metà */}
-              <p className="fisio-rise mt-3 flex items-center justify-center gap-3 font-display text-xl italic text-primary/90 short:mt-2 sm:text-2xl" style={{ animationDelay: "0.28s" }}>
-                <span aria-hidden="true" className="h-px w-8 shrink-0 bg-secondary sm:w-10" />
+              {/* il ruolo fra due stanghette, ora BLU: l'oro su oro sparirebbe. Un filetto
+                  è un elemento non testuale, quindi la soglia è 3:1 e il blu la passa. */}
+              <p className="fisio-rise mt-3 flex items-center justify-center gap-3 font-display text-xl italic text-ink short:mt-2 sm:text-2xl" style={{ animationDelay: "0.28s" }}>
+                <span aria-hidden="true" className="h-px w-8 shrink-0 bg-primary sm:w-10" />
                 {HERO.role}
-                <span aria-hidden="true" className="h-px w-8 shrink-0 bg-secondary sm:w-10" />
+                <span aria-hidden="true" className="h-px w-8 shrink-0 bg-primary sm:w-10" />
               </p>
               <p className="fisio-rise mx-auto mt-5 max-w-md text-base leading-relaxed text-ink/85 short:mt-3 sm:text-lg" style={{ animationDelay: "0.42s" }}>
                 {HERO.tagline}
@@ -296,7 +316,7 @@ export default function Home() {
                     {CONTACT.address.line1}, {CONTACT.address.line2} — {CONTACT.address.city}
                   </span>
                 </p>
-                <p className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-primary/70">
+                <p className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-ink/75">
                   {CONTACT.note}
                 </p>
               </div>
@@ -316,7 +336,7 @@ export default function Home() {
               { at: 0, opacity: 1, y: 0 },
               { at: 1, opacity: 0, y: 8 },
             ]}
-            className="absolute inset-x-0 bottom-8 z-10 flex flex-col items-center gap-1 text-primary/80"
+            className="absolute inset-x-0 bottom-8 z-10 flex flex-col items-center gap-1 text-ink/80"
           >
             <span className="font-mono text-[0.7rem] uppercase tracking-[0.2em]">{HERO.scrollHint}</span>
             <span aria-hidden="true" className="text-lg leading-none">↓</span>

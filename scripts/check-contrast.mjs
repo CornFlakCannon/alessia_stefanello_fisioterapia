@@ -117,6 +117,39 @@ const CASES = SWEEP ? [0.45, 0.55, 0.65, 0.75, 0.85].flatMap((op) => [0.9, 0.85,
   },
 ];
 
+/** The hero's gold half is a FLAT ground, not a photographic one — but the same question
+ *  (does every piece of text clear 4.5:1?) and the same answer shape. It is here because
+ *  gold is the ground that eats the palette: `text-secondary` on it is invisible,
+ *  `text-emphasis` is 2.88 and even full `text-primary` only reaches 3.75, which buys
+ *  large text and nothing else. */
+const FLAT = [
+  {
+    label: "hero · metà oro (fondo piatto)",
+    ground: [0xe7, 0x9e, 0x33],
+    texts: [
+      ["h1       text-primary  (LARGE)", PRIMARY, 1, 3],
+      ["role     text-ink", INK, 1],
+      ["kicker   text-ink/80", INK, 0.8],
+      ["tagline  text-ink/85", INK, 0.85],
+      ["address  text-ink/85", INK, 0.85],
+      ["nota     text-ink/75", INK, 0.75],
+      ["indice   text-ink   (label)", INK, 1],
+      ["indice   text-ink/75 (numero)", INK, 0.75],
+      ["scorri   text-ink/80", INK, 0.8],
+      ["filetti  bg-primary  (non testo)", PRIMARY, 1, 3],
+    ],
+  },
+];
+
+for (const c of FLAT) {
+  console.log(`\n${c.label}`);
+  for (const [name, colour, alpha, floor = 4.5] of c.texts) {
+    const fg = alpha === 1 ? colour : over(colour, alpha, c.ground);
+    const r = ratio(fg, c.ground);
+    console.log(`  ${name.padEnd(34)} ${r.toFixed(2)}:1  ${r >= floor ? "OK" : "FAIL"} (soglia ${floor})`);
+  }
+}
+
 for (const c of CASES) {
   const px = await groundPixels(c.ground);
   console.log(`\n${c.label}`);
