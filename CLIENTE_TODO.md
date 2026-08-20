@@ -64,3 +64,70 @@ In realtà si potrebbe pensare di mettere un ‘focus a destra’ anche per le a
   chiedeva. Timeline compatta (anno · titolo · ente), due colonne su desktop.
   ⚠️ **Le voci sono segnaposto con dei trattini**: servono i dati veri di Alessia (laurea, master,
   corsi, esperienze) prima di pubblicare — non si inventano titoli di studio di una persona reale.
+
+---
+
+# Secondo giro (`NUOVA_TODO.md`, agosto 2026)
+
+Le note del cliente dopo aver visto il branch `sezioni-focus` in funzione. Sotto, cosa è
+stato fatto.
+
+1. **Scheda contatti in alto a sinistra a comparsa.** — FATTO. Un solo motivo su tutti gli
+   schermi, quello del telefono: una pillola con l'**avatar di Alessia** (il ritratto vero,
+   non il cerchio segnaposto — a 32px una faccia si riconosce, un logo no), il richiamo
+   telefono, il richiamo email e una freccetta che apre il dettaglio (nome, ruolo,
+   indirizzo, "solo su prenotazione"). Telefono ed email restano link diretti **anche a
+   scheda chiusa**: nascondere il numero di una fisioterapista dietro un click sarebbe
+   declutterare la cosa sbagliata.
+2. **Via la mascotte.** — FATTO. Sparisce l'omino che seguiva lo scroll.
+3. **Hero.** — FATTO, per intero.
+   - **La foto entra da destra insieme alla fascia oro**, in automatico al caricamento:
+     prima una lama fucsia, poi l'oro che la copre lasciandone una barra di ~50px, poi la
+     foto che si solleva (scale 1.1 + ombra sotto). Via il video.
+   - Sorpresa tecnica: la foto `HERO_PHOTO.png` **sembrava** già scontornata ed era invece
+     opaca, con la scacchiera *dipinta dentro*. È stata scontornata davvero, quindi ora
+     dietro Alessia c'è direttamente il colore della fascia — niente rettangolo, niente
+     giunta. *(Se salta fuori il file originale con la trasparenza vera, tanto meglio: il
+     nostro passaggio diventa superfluo.)*
+   - Testo a sinistra **centrato**, con il ruolo fra due stanghette oro.
+   - Via il pulsante "Contattami" e il numero, al loro posto **l'indirizzo dello studio**.
+   - Indice ristrutturato: "Lavoro in ambito:" sopra i tre servizi, "A domicilio" diventa
+     "Fisioterapia Domiciliare", e "La mia formazione" sta **staccata** sotto.
+4. **Muscoloscheletrica: la fascia non compare più, è già lì.** — FATTO su desktop: la
+   fascia arriva col pannello, già vestita delle foto che scorrono, e sono **il testo e il
+   logo delle Olimpiadi** a entrare da destra. Sul telefono lo slide-in dell'intera fascia
+   resta, come chiesto. Logo Olimpiadi ingrandito.
+5. **Pavimento pelvico: le due foto nuove.** — FATTO. `PELVICO_CROPPATA.jpg` e
+   `LETTINO.jpg` in duotone blu al posto del disegno animato del ponte. Era l'ultima
+   sezione senza fotografie: **adesso non c'è più nessun disegno segnaposto sul sito.**
+6. **Mappa: via il raggio, focus su Padova centro.** — FATTO, e risolve anche il "non si
+   vede dove punta": ora c'è un **pin vero sull'indirizzo dello studio**. L'anello
+   tratteggiato costringeva a inquadrare ~120 km di Veneto per starci dentro, ed è per
+   quello che non si leggeva niente. Il raggio d'azione si dice a parole sul pannello.
+7. **Contattami: la foto non era leggibile.** — FATTO, e il problema era peggiore di come
+   si vedeva: il testo del titolo stava a **1.97:1** di contrasto (la soglia è 4.5). La
+   foto però doveva diventare **più** visibile, non meno. Soluzione: la foto sale, e
+   testo e form si appoggiano su una **card bianca traslucida** — così il contrasto torna
+   a misurarsi sul bianco. Caratteri del form più grandi.
+8. **Formazione dal CV.** — FATTO. Sedici voci vere (esperienza, esperienze extra,
+   educazione, corsi) sfogliate in **quattro fogli che si sovrappongono** entrando da
+   destra, esattamente l'animazione chiesta: un CV più lungo aggiunge pagine, non altezza.
+9. **Mobile: banda bianca in cima / crop della foto.** — FATTO: l'oro arriva fino al bordo
+   superiore, e sul telefono la foto è inquadrata su **testa e mezzo busto**.
+10. **Mappa mobile affollata.** — FATTO: la card non viene più rimpicciolita a 12rem (a
+    quella misura i pulsanti di Google *erano* la mappa) e la nostra pillola "Apri in
+    Google Maps" compare solo da tablet in su.
+11. **L'errore in console cliccando l'indice.** — FATTO.
+
+## ⚠️ Da chiedere ad Alessia prima di pubblicare
+
+- **L'email.** Il CV riporta `alessiastefanello@gmail.com`, il sito pubblica
+  `alessiastefanello.fisio@gmail.com`. Quale delle due?
+- **Alcuni refusi nel CV**, resi qui nella forma che sembra corretta ma da confermare:
+  *Kisesis medical* → Kinesis? · *Collaboratirce* → Collaboratrice · *Laura Triennale* →
+  Laurea · *Strenght* → Strength · *NCSA* → NSCA? · *Phisiovit* → Physiovit?
+- **Le Skills del CV** (lingue, database scientifici, soft skill) sono rimaste fuori dal
+  sito: sono quello che un CV dice a chi assume, non quello su cui decide un paziente.
+  Se le vuole, si aggiunge una quinta pagina.
+- **Il consenso dei pazienti** resta il punto aperto di sempre: nelle foto ci sono persone
+  riconoscibili, serve la liberatoria firmata di ognuna prima di andare online.

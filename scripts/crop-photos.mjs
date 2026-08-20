@@ -1,5 +1,8 @@
 /**
- * One-shot derivative builder for the studio photos.
+ * One-shot derivative builder for the studio photos (the camera JPEGs).
+ *
+ * The hero is NOT here — it is an alpha cut-out with its own script and its own reasons,
+ * scripts/hero-cutout.mjs. `npm run photos` runs both.
  *
  * The originals are 6000x4000 landscape camera files (~35 MB total) living OUTSIDE the
  * repo, in FOTO_ORIGINALI/. The site needs small, already-cropped WebP: the slabs are
@@ -13,7 +16,7 @@
  * ratio of the crop is what the output ratio will be — keep 3:4 (e.g. 3000x4000) for
  * anything that goes in a slab, 16:10 for the background textures.
  *
- * All 13 photos are built, not just the 7 currently placed: re-casting a section is
+ * All of them are built, not just the ones currently placed: re-casting a section is
  * then one line in app/site/photos.ts rather than a re-run of this script.
  */
 import { mkdir } from "node:fs/promises";

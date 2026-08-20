@@ -131,7 +131,11 @@ CROP_RATIO=0.75
 CROP_BIAS=0.50
 W=1080        # renders at ~542 CSS px on desktop, so this is 2x density
 H=1440
-GOLD=0xEDAB39 # == --brand-secondary
+# ⚠️ STALE: --brand-secondary moved to #e79e33, and the hero is no longer a video at all
+# (it is an alpha cut-out — see scripts/hero-cutout.mjs and CLAUDE.md «Photos»). This
+# script is kept for its measurements, not for its output: fix this constant before ever
+# running it again, or check-gold will fail on a difference that is real.
+GOLD=0xEDAB39 # == --brand-secondary (was; see the note above)
 
 rm -rf "$OUT"
 mkdir -p "$OUT"
