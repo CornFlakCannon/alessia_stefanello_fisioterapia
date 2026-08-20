@@ -21,7 +21,7 @@ import ContactForm from "./site/ContactForm";
 import CvSheets, { sheetsEnd } from "./site/CvSheets";
 import ServiceIndex from "./site/ServiceIndex";
 import ContactBar from "./site/ContactBar";
-import useIsDesktop from "./site/useIsDesktop";
+import { useIsDesktop } from "./site/useViewport";
 import PhotoSlab from "./site/PhotoSlab";
 import DuotonePhoto from "./site/DuotonePhoto";
 import { PHOTOS, type Photo } from "./site/photos";
@@ -111,6 +111,22 @@ const HERO_DRIFT: AnimSpec = [
   { at: 1, y: 14 },
 ];
 const NO_DRIFT: AnimSpec = [];
+
+/* SOLO TELEFONO: la coda dell'hero (indirizzo e indice) entra SCORRENDO invece che al
+   caricamento.
+   Il pannello 0 ha 1100 unita' di scroll da spendere e sul telefono non le spendeva per
+   niente — nessuna animazione dal primo pixel all'ultimo, quindi lo scroll dentro l'hero
+   si sentiva come un ritardo prima della pagina vera. Su desktop quel budget lo consumano
+   la deriva del ritratto e lo scroll hint; sul telefono entrambi sono spenti.
+
+   Questo va CONTRO la regola del pannello 0 ("e' a schermo a scroll 0, quindi niente
+   reveal scroll-gated, o arriva vuoto") ed e' deliberato: qui la meta' bassa dell'hero
+   diventa una rivelazione progressiva, non contenuto che deve esserci all'arrivo. Il
+   prezzo, da sapere: chi atterra e non scorre non vede indirizzo e indice. Sopra la piega
+   restano foto, nome, ruolo e la frase di posizionamento — cioe' tutto quello che serve a
+   capire chi e' e cosa fa. */
+const MOB_ADDRESS = { start: 200, budget: 380 };
+const MOB_INDEX = { start: 560, budget: 440 };
 
 const shell = `${PANEL_BOX} flex-col`;
 const eyebrow = "font-mono text-sm uppercase tracking-[0.22em] text-primary";
@@ -216,12 +232,7 @@ export default function Home() {
           qui e suonato AL CARICAMENTO, non allo scroll: il pannello 0 è a schermo a
           scroll 0, quindi ogni sua entrata è una CSS animation (vedi globals.css). */}
       <Section index={0} end={PANEL_END[0]}>
-        {/* `max-lg:py-*`: il PANEL_BOX porta `py-24 short:py-12`, budget scritto per il
-            desktop. Sul telefono l'hero e' il pannello piu' carico della pagina (ritratto
-            + cinque blocchi di testo + indice) e 192px di padding erano la prima cosa da
-            restituire. Composto con `short:` invece di lasciarli correre uno contro
-            l'altro — sotto lg e sotto 740px di altezza matcherebbero entrambi. */}
-        <div className={`${shell} bg-white max-lg:py-8 max-lg:short:py-5 lg:px-0`}>
+        <div className={`${shell} bg-white lg:px-0`}>
           {/* ink and not primary: these brackets now cross both halves, and blue at 22%
               disappears on the gold one */}
           <Corners color="rgba(20,33,46,0.25)" topLeft={false} />
@@ -338,24 +349,38 @@ export default function Home() {
               {/* Dov'è lo studio, al posto del CTA + numero che stavano qui: chi arriva
                   sul sito di una fisioterapista vuole prima sapere DOVE. Telefono ed email
                   restano a un tap nella targhetta in alto a sinistra e nel footer. */}
-              <div className="fisio-rise mt-6 flex flex-col items-center gap-1.5 short:mt-4" style={{ animationDelay: "0.56s" }}>
-                <p className="flex items-start justify-center gap-2 text-sm leading-relaxed text-ink/85 sm:text-base">
-                  <span className="mt-0.5 shrink-0 text-primary">
-                    <PinIcon />
-                  </span>
-                  <span>
-                    {CONTACT.address.line1}, {CONTACT.address.line2} — {CONTACT.address.city}
-                  </span>
-                </p>
-                <p className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-ink/75">
-                  {CONTACT.note}
-                </p>
-              </div>
+              <SDiv
+                {...MOB_ADDRESS}
+                anim={desktop ? NO_DRIFT : UP}
+                className="mt-6 short:mt-4"
+              >
+                <div
+                  className={`flex flex-col items-center gap-1.5${desktop ? " fisio-rise" : ""}`}
+                  style={desktop ? { animationDelay: "0.56s" } : undefined}
+                >
+                  <p className="flex items-start justify-center gap-2 text-sm leading-relaxed text-ink/85 sm:text-base">
+                    <span className="mt-0.5 shrink-0 text-primary">
+                      <PinIcon />
+                    </span>
+                    <span>
+                      {CONTACT.address.line1}, {CONTACT.address.line2} — {CONTACT.address.city}
+                    </span>
+                  </p>
+                  <p className="font-mono text-[0.62rem] uppercase tracking-[0.16em] text-ink/75">
+                    {CONTACT.note}
+                  </p>
+                </div>
+              </SDiv>
               {/* l'indice della pagina — dà al pannello un bordo inferiore e una gerarchia,
                   e ogni voce scorre fino alla sua sezione (vedi useSectionJump) */}
-              <div className="fisio-rise mt-6 short:mt-5" style={{ animationDelay: "0.7s" }}>
-                <ServiceIndex className="mx-auto max-w-md" />
-              </div>
+              <SDiv {...MOB_INDEX} anim={desktop ? NO_DRIFT : UP} className="mt-6 short:mt-5">
+                <div
+                  className={desktop ? "fisio-rise" : undefined}
+                  style={desktop ? { animationDelay: "0.7s" } : undefined}
+                >
+                  <ServiceIndex className="mx-auto max-w-md" />
+                </div>
+              </SDiv>
             </div>
           </div>
 

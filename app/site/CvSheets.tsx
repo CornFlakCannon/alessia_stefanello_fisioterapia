@@ -3,7 +3,7 @@
 import SDiv from "@/app/widgets/SDiv";
 import { easeOutCubic } from "@/app/_scroll/easing";
 import type { AnimSpec } from "@/app/widgets/anim";
-import useIsDesktop from "./useIsDesktop";
+import { useIsDesktop, useIsShort } from "./useViewport";
 
 /**
  * The CV, dealt out one sheet at a time.
@@ -68,15 +68,23 @@ export const PAGE_IN = 900;
 export const PAGE_SPAN = 330;
 /** Total scroll from `PAGE_IN` to the last sheet being home. Fixed on purpose: the step
  *  between sheets is divided out of it, so the number of sheets can differ between phone
- *  and desktop while the panel's budget stays one authored value. */
-export const SHEETS_SPAN = 1600;
+ *  and desktop while the panel's budget stays one authored value. Raised from 1600 when a
+ *  short phone started dealing nine sheets — the step is this divided by the count, so the
+ *  most crowded case is what sets how fast the fastest deal feels. */
+export const SHEETS_SPAN = 1900;
 /** Where the last sheet is home. `PANEL_END[5]` is this plus a dwell. */
 export const sheetsEnd = () => PAGE_IN + SHEETS_SPAN;
 
-/** Entries per sheet. Desktop lays them out in two columns, the phone in one — which is
- *  the whole reason these differ, and why they are not "how many look nice". */
+/** Entries per sheet — a question about available HEIGHT, which is why there are three of
+ *  them and not one "how many look nice".
+ *
+ *  Desktop lays entries out in two columns, so six is three rows. A phone gets one column,
+ *  so the same six would be six rows. And a SHORT phone (iPhone SE and friends) does not
+ *  even have room for three: measured there, the third entry's second line ran past the
+ *  fold and the panel was sheared — the failure `100svh` panels always have. */
 const PER_SHEET_DESKTOP = 6;
 const PER_SHEET_PHONE = 3;
+const PER_SHEET_SHORT = 2;
 
 const DEAL: AnimSpec = [
   { at: 0, x: "100%", scale: 1.2, opacity: 0 },
@@ -122,13 +130,13 @@ const windowFor = (i: number, n: number) => ({
 
 function Sheet({ page }: { page: CvPage }) {
   return (
-    <div className="flex h-full flex-col rounded-2xl bg-white px-7 py-6 ring-1 ring-primary/10 short:px-5 short:py-4">
-      <p className="mb-4 font-mono text-[0.68rem] uppercase tracking-[0.2em] text-emphasis short:mb-2.5">
+    <div className="flex h-full flex-col rounded-2xl bg-white px-7 py-6 ring-1 ring-primary/10 short:px-5 short:py-3">
+      <p className="mb-4 font-mono text-[0.68rem] uppercase tracking-[0.2em] text-emphasis short:mb-2">
         {page.label}
       </p>
-      <ul className="grid gap-x-10 gap-y-4 short:gap-y-2.5 sm:grid-cols-2">
+      <ul className="grid gap-x-10 gap-y-4 short:gap-y-2 sm:grid-cols-2">
         {page.items.map(({ year, title, place }) => (
-          <li key={`${year}-${title}`} className="border-t border-primary/15 pt-2.5 short:pt-2">
+          <li key={`${year}-${title}`} className="border-t border-primary/15 pt-2.5 short:pt-1.5">
             <p className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-secondary">{year}</p>
             <p className="mt-1 font-display text-base leading-snug text-primary short:text-[0.95rem]">{title}</p>
             <p className="mt-0.5 text-sm text-ink/70 short:text-[0.8rem]">{place}</p>
@@ -141,7 +149,9 @@ function Sheet({ page }: { page: CvPage }) {
 
 export default function CvSheets({ pages }: { pages: readonly CvPage[] }) {
   const desktop = useIsDesktop();
-  const sheets = deal(pages, desktop ? PER_SHEET_DESKTOP : PER_SHEET_PHONE);
+  const short = useIsShort();
+  // `desktop` first: a short DESKTOP window still has two columns and the room for six.
+  const sheets = deal(pages, desktop ? PER_SHEET_DESKTOP : short ? PER_SHEET_SHORT : PER_SHEET_PHONE);
   const n = sheets.length;
 
   return (
@@ -177,7 +187,7 @@ export default function CvSheets({ pages }: { pages: readonly CvPage[] }) {
           scorrendo, e un controllo qui dentro riaprirebbe il seam tap-vs-swipe. */}
       <div className="mt-4 flex items-center justify-center gap-2 short:mt-2.5">
         {sheets.map((page, i) => (
-          <span key={page.id} className="relative h-1 w-6 overflow-hidden rounded-full bg-primary/15 sm:w-8">
+          <span key={page.id} className="relative h-1 w-5 overflow-hidden rounded-full bg-primary/15 sm:w-8">
             {i === 0 ? (
               <span className="absolute inset-0 rounded-full bg-secondary" />
             ) : (

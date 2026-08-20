@@ -280,17 +280,24 @@ deferral would make the guard redundant. Don't take this as licence for a second
   (`opacity 0→1`, `y: 24→0`, `easeOutCubic`), staggered with `start`. This is why the
   same code works on phone and desktop — no per-device coordinate sets.
 - Panels 1-6 aren't active at load, so `at:0` = invisible reveals are fine there.
-  The **hero (index 0) is visible at scroll 0**, so every beat of it is an on-load CSS
-  animation (`.fisio-rise`, `.fisio-slide-in`, `.fisio-slide-left`, `.fisio-draw` — see
-  `globals.css`), NOT a scroll-gated reveal. Keep that rule for any always-on-screen
-  content. Each animation must sit on **its own element**: a filled (`both`) CSS animation
-  outranks inline styles permanently, so it would beat everything `SDiv` writes.
+  The **hero (index 0) is visible at scroll 0**, so its beats are on-load CSS animations
+  (`.fisio-rise`, `.fisio-slide-in`, `.fisio-slide-left`, `.fisio-draw` — see
+  `globals.css`), NOT scroll-gated reveals. Each animation must sit on **its own element**:
+  a filled (`both`) CSS animation outranks inline styles permanently, so it would beat
+  everything `SDiv` writes — which is also why the two cannot be stacked on one node.
+  **The one deliberate exception**: on phones the hero's tail (address + index) reveals on
+  scroll instead (`MOB_ADDRESS`/`MOB_INDEX` in `page.tsx`). Panel 0 owns 1100 units of
+  scroll and on a phone nothing used them — the portrait drift and the scroll hint are both
+  desktop-only — so scrolling through the hero felt like a delay before the page began. The
+  trade is real and accepted: a visitor who lands and never scrolls does not see the address
+  or the index; what stays above the fold is photo, name, role and the positioning line.
 - Shared reveal presets (`UP`, `rev(i)`, `SNAP`) live at the top of `app/page.tsx`.
-- **Everything else responsive is CSS** (`sm:`/`lg:`/`short:`) — with one deliberate
-  exception, `useIsDesktop`. `SDiv` writes its pose as an inline style every frame, so a
-  `lg:` class cannot override it: deciding whether a scroll animation *runs at all* is
-  necessarily a JS decision. `FocusPanel` is its only caller. Reach for it only when the
-  thing you need to vary is an `anim`, never for layout.
+- **Everything else responsive is CSS** (`sm:`/`lg:`/`short:`) — with the deliberate
+  exceptions in `app/site/useViewport.ts` (`useIsDesktop`, `useIsShort`). Each mirrors a
+  Tailwind breakpoint exactly, so the JS branch and the CSS layout flip on the same pixel.
+  Reach for them only for a decision CSS genuinely cannot express: whether an `SDiv`
+  animation *runs at all* (its pose is an inline style no `lg:` class can override), or a
+  count that depends on available room (`CvSheets`' entries per sheet). Never for layout.
 - Respect `prefers-reduced-motion` (the CSS entrance animations already opt out).
 
 ## Site code (`app/site/`)
@@ -317,8 +324,9 @@ deferral would make the guard redundant. Don't take this as licence for a second
   to the **inner wrapper** (leave them on the slab and the focus collapses into one flex
   item), and `backdrop` must stay **outside** that wrapper or the photos slide in with the
   text. A panel using it needs `end` past `FOCUS_LANDED` + dwell.
-- `useIsDesktop.ts` — the `matchMedia("(min-width: 1024px)")` gate above. 1024 is exactly
-  where the slab becomes `lg:w-[55%]`, so the JS branch and the CSS layout flip together.
+- `useViewport.ts` — `useIsDesktop` (`min-width: 1024px`, exactly where the slab becomes
+  `lg:w-[55%]`) and `useIsShort` (`max-height: 740px`, the `short:` variant in JS). Both
+  `useSyncExternalStore` over `matchMedia`, server snapshot `false`.
 - `panelBox.ts` — `PANEL_BOX`, the one full-viewport box string, shared by `page.tsx`'s
   `shell` and by `FocusPanel` so the 100svh budget can only be tuned in one place.
 - `photos.ts` — the photo manifest + `HERO_PHOTO` (see «Photos» above).
@@ -339,8 +347,11 @@ deferral would make the guard redundant. Don't take this as licence for a second
   col-start-1`), so the row is as tall as the fullest sheet and stretches the rest to
   match, instead of a `h-[min(…)]` guessed against desktop;
   **the panel's span is fixed and the step divides out of it** (`SHEETS_SPAN`), so the
-  phone's six sheets deal faster than the desktop's four rather than needing a different
-  `end` — which a `<Section>` cannot have, being authored once for both.
+  phone's six sheets — or a short phone's nine — deal faster than the desktop's four rather
+  than needing a different `end`, which a `<Section>` cannot have, being authored once for
+  all of them. Capacity is `PER_SHEET_DESKTOP` / `PER_SHEET_PHONE` / `PER_SHEET_SHORT`
+  (6 / 3 / 2): two columns, one column, and one column on a screen that cannot afford three
+  rows — the SE case, where the third entry's second line ran past the fold.
 - `HeroPortrait.tsx` — the portrait, **dead straight** (the client asked for it) and now a
   **cut-out with a real alpha channel**, in a `<picture>` with two framings (desktop 3:4,
   phone head-and-half-torso 4:5 — art direction `next/image` cannot express). There is no

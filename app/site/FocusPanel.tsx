@@ -4,7 +4,7 @@ import SDiv from "@/app/widgets/SDiv";
 import { easeOutCubic } from "@/app/_scroll/easing";
 import type { AnimSpec } from "@/app/widgets/anim";
 import { PANEL_BOX } from "./panelBox";
-import useIsDesktop from "./useIsDesktop";
+import { useIsDesktop } from "./useViewport";
 
 /**
  * A service panel with a **"focus a destra"** — the client's own name for the device
