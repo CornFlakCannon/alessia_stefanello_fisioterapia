@@ -133,28 +133,36 @@ function Points({ items }: { items: readonly string[] }) {
  * A studio photo as the ground of a TEXT panel (contatti, formazione).
  *
  * These two panels have no slab to put a photo in, and no vertical room to put one in
- * flow — panel 4 carries the form and panel 5 the timeline, and both have to fit inside
- * 100svh. So the photo goes behind everything, absolutely: it costs zero height and
- * nothing in the a11y tree.
+ * flow — panel 4 carries the form and panel 5 the CV, and both have to fit inside 100svh.
+ * So the photo goes behind everything, absolutely: it costs zero height and nothing in
+ * the a11y tree.
  *
  * The dose lives HERE, not in `intensity`: these grounds are light, so the way to make a
  * duotone recede is to fade the whole layer OVER the ground, not to pile more colour on
- * top of it — that would paint a solid blue rectangle over the panel. It is a `style`
- * and not a Tailwind class because the value is now a prop, and Tailwind cannot generate
- * an arbitrary class from a runtime number.
+ * top of it — that would paint a solid blue rectangle over the panel.
  *
  * ## Choosing `opacity`
- * It is a contrast budget, not a taste slider, and the ceiling is set by the panel's
- * palest text. Measured pixel-by-pixel on `studio.webp` against the contatti panel:
+ * It used to be a contrast budget, and a tight one: with text sitting directly on the
+ * photo, 0.22 was the last value where everything cleared 4.5:1 and the heading went
+ * under first, silently. That is the trap the panel had fallen into — it shipped at 0.40,
+ * where `text-primary` measures **1.97:1** against the photo's darkest pixel.
  *
- *   | opacity | heading (text-primary) | body | placeholder (text-ink/70) |
- *   |    0.22 |                   5.16 | 7.98 |                      4.72 |
- *   |    0.28 |                   4.43 | 7.00 |                      4.34 |
- *   |    0.35 |                   3.67 | 5.94 |                      3.89 |
+ * The fix was not to turn the photo down (the client wanted it MORE visible) but to stop
+ * asking it to be a text ground: on contatti the copy and the form now sit on a
+ * translucent card, so contrast is measured against near-white and the photo is free to
+ * be a photo. Measured with `scripts/check-contrast.mjs`, worst pixel of `studio.webp`:
  *
- * 0.22 is the last value where everything clears 4.5:1. Past ~0.25 the heading is the
- * first thing to go under — and it goes under silently: the panel still looks good, it
- * just stops being readable for anyone who needs the contrast. Re-measure, don't guess.
+ *   |                          | on the card (white/85) | bare panel |
+ *   | texture 0.55             |                   7.09 |       — |
+ *   | texture 0.75  ← shipping |                   6.63 |    1.97 |
+ *   | texture 0.85             |                   6.41 |       — |
+ *
+ * i.e. the card flattens the whole question: every dose in that range is comfortably AA
+ * on it, and none of them is legible off it. Formazione has no card, so it stays at the
+ * 0.08 default — a whisper, and it already carries the round portrait; two images at the
+ * same volume fight.
+ *
+ * Re-run the script after changing a dose; don't nudge it by eye.
  */
 function PanelTexture({ photo, opacity = 0.08 }: { photo: Photo; opacity?: number }) {
   return (
@@ -480,20 +488,26 @@ export default function Home() {
       <Section index={4} snap={SNAP} end={PANEL_END[4]}>
         <div className={`${shell} bg-white`}>
           {/* Lo studio dietro al form: "vieni qui" detto dall'ambiente invece che a
-              parole. La dose è alta rispetto alla formazione — è la richiesta — ma è
-              anche il tetto: vedi la tabella di contrasto su PanelTexture. */}
-          <PanelTexture photo={PHOTOS.studio} opacity={0.40} />
-          <div className="relative z-10 w-full max-w-3xl">
-            <SDiv {...rev(0)} anim={UP} className="mb-4 text-center">
+              parole, e ora abbastanza presente da vedersi davvero. */}
+          <PanelTexture photo={PHOTOS.studio} opacity={0.75} />
+
+          {/* La card. Non e' decorazione: e' cio' che permette alla foto di salire. Il
+              testo smette di essere misurato contro la fotografia (dove `text-primary`
+              stava a 1.97:1) e torna a esserlo contro un quasi-bianco, dove ogni riga sta
+              sopra 5:1 — vedi la tabella su PanelTexture. `backdrop-blur` non e' solo
+              gusto: sfoca cio' che le sta dietro, quindi riduce anche la varianza del
+              fondo, cioe' proprio la grandezza che rende infido un ground fotografico. */}
+          <div className="relative z-10 w-full max-w-xl rounded-3xl bg-white/85 p-8 shadow-xl shadow-primary/10 ring-1 ring-primary/10 backdrop-blur-md short:p-5 sm:p-10">
+            <SDiv {...rev(0)} anim={UP} className="mb-3 text-center">
               <p className={eyebrow}>{CONTACT_COPY.eyebrow}</p>
             </SDiv>
             <SDiv {...rev(1)} anim={UP} className="mb-3 text-center">
               <h2 className={heading}>{CONTACT_COPY.title}</h2>
             </SDiv>
-            <SDiv {...rev(2)} anim={UP} className="mb-3 text-center">
+            <SDiv {...rev(2)} anim={UP} className="mb-2 text-center">
               <p className={`${body} mx-auto max-w-xl`}>{"Raccontami di cosa hai bisogno:"}</p>
             </SDiv>
-            <SDiv {...rev(3)} anim={RIGHT} className="mb-8 text-center font-contact italic">
+            <SDiv {...rev(3)} anim={RIGHT} className="mb-7 text-center font-contact italic short:mb-5">
               <p className={`${body} mx-auto max-w-xl`}>{"ti ricontatto per fissare un appuntamento."}</p>
             </SDiv>
             <SDiv {...rev(4)} anim={UP}>

@@ -126,15 +126,23 @@ function useTapVsSwipe<T extends HTMLElement>() {
 // user-select stops that drag from beginning; focus restores normal editing/selection.
 /**
  * The fields have no box: they are transparent inputs on the panel's own ground, with a
- * hairline underneath and the PLACEHOLDER as their only label. That works on a flat
- * ground; panel 4 now carries a photo behind it (see PanelTexture in page.tsx), so both
- * faint values had to come up to survive it:
+ * hairline underneath and the PLACEHOLDER as their only label.
  *
- *   placeholder /40 -> /70   2.45:1 on the old plain white  ->  4.72:1 on the photo
- *   border      /20 -> /30   1.51:1 on the old plain white  ->  1.75:1 on the photo
+ * ## The type is one step up from a default form, on purpose
+ * `text-lg` because the client asked for it and because of WHY: this form sits on a panel
+ * whose ground is a photograph. Small type on a busy ground is where legibility goes even
+ * when the contrast ratio says it is fine — ratio is measured on a solid glyph, and thin
+ * strokes at 14px simply have less of one. `short:text-base` gives it back on a viewport
+ * that cannot afford the height (panel 4 must fit inside 100svh).
  *
- * i.e. both end up BETTER than they were before the photo existed, not merely no worse.
- * The placeholder was already under 4.5:1 on white — the photo is what forced the fix.
+ * ## The faint values, and what they are measured against now
+ * `placeholder:text-ink/70` and `border-ink/30` came up from `/40` and `/20` when the
+ * photo first arrived behind them. The photo is now much stronger (0.75), but the form
+ * sits on a translucent card, so the ground under these is near-white again:
+ *
+ *   placeholder text-ink/70   5.39:1   (measured, scripts/check-contrast.mjs)
+ *   body        text-ink/90   9.88:1
+ *   input       text-ink     12.81:1
  *
  * ⚠️ The underline is still under the 3:1 WCAG asks of an input's border. Getting there
  * means roughly `/55`, which is a visibly heavier form than the one that was signed off;
@@ -146,7 +154,7 @@ function useTapVsSwipe<T extends HTMLElement>() {
  */
 const inputBase =
   "w-full touch-none select-none rounded-none border-0 border-b border-ink/30 bg-transparent px-0 py-2.5 " +
-  "font-sans text-ink outline-none transition-colors placeholder:text-ink/70 " +
+  "font-sans text-lg text-ink outline-none transition-colors placeholder:text-ink/70 short:text-base " +
   "focus:select-text focus:border-primary";
 
 function MinimalForm() {
@@ -160,7 +168,7 @@ function MinimalForm() {
   };
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-7">
+    <form onSubmit={onSubmit} className="flex flex-col gap-6 short:gap-4">
       <input
         id="nome"
         aria-label="Nome"
@@ -185,14 +193,14 @@ function MinimalForm() {
         aria-label="Messaggio"
         placeholder="Il disturbo, la richiesta, qualsiasi cosa…"
         required
-        rows={4}
+        rows={3}
         className={`${inputBase} resize-none`}
         value={f.descrizione ?? ""}
         onChange={set("descrizione")}
       />
       <button
         type="submit"
-        className="mt-1 self-start rounded-lg bg-primary px-6 py-2.5 font-mono text-sm font-semibold uppercase tracking-[0.14em] text-white transition-transform hover:-translate-y-0.5 active:translate-y-0"
+        className="mt-1 self-start rounded-lg bg-primary px-7 py-3 font-mono text-base font-semibold uppercase tracking-[0.14em] text-white transition-transform hover:-translate-y-0.5 active:translate-y-0 short:py-2.5 short:text-sm"
       >
         Invia
       </button>
