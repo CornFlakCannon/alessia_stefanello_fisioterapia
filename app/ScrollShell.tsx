@@ -111,9 +111,24 @@ export default function ScrollShell ({children} : {children: React.ReactNode[]})
     let lastPointerY = 0;
     const handlePointerDown = (e: PointerEvent) => {
       if (e.pointerType === "mouse") return; // desktop stays wheel-driven
+      if (!e.isPrimary) return; // a second finger must not restart the drag
       dragging = true;
       lastPointerY = e.clientY;
-      mainContainer.current?.setPointerCapture(e.pointerId);
+      // ── UPSTREAM FIX (the ONE edit this site makes to the engine) ──────────────
+      // `setPointerCapture` throws NotFoundError when `pointerId` matches no ACTIVE
+      // pointer — a very short tap can be released before this handler runs, and the
+      // uncaught throw surfaced in the console on every tap of the hero's index.
+      // Capture is an optimisation here, not a requirement: the container already has
+      // `touch-action: none` and owns the pointermove/up listeners, so it only matters
+      // if the finger leaves the container mid-drag. Failing is therefore harmless.
+      // The real fix is the SLOP deferral specced in JUMP_TO_FEATURE.md (capture on the
+      // first committed move, when the pointer is provably active) — this guard holds
+      // until that lands in the library's own repo.
+      try {
+        mainContainer.current?.setPointerCapture(e.pointerId);
+      } catch {
+        /* pointer already released — drag still works, just uncaptured */
+      }
     };
     const handlePointerMove = (e: PointerEvent) => {
       if (!dragging) return;

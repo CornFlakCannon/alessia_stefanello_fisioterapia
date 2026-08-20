@@ -3,7 +3,7 @@
 import Image from "next/image";
 
 import { Section } from "./_scroll";
-import { easeInCubic, easeInOutCubic, easeOutCubic } from "./_scroll/easing";
+import { easeInCubic, easeOutCubic } from "./_scroll/easing";
 import ScrollShell from "./ScrollShell";
 import SDiv from "./widgets/SDiv";
 import SMask from "./widgets/SMask";
@@ -19,7 +19,6 @@ import PadovaMap from "./site/PadovaMap";
 import ContactForm from "./site/ContactForm";
 import ServiceIndex from "./site/ServiceIndex";
 import ContactBar from "./site/ContactBar";
-import TravellingFigure from "./site/TravellingFigure";
 import ScrollLottie from "./site/ScrollLottie";
 import PhotoSlab from "./site/PhotoSlab";
 import DuotonePhoto from "./site/DuotonePhoto";
@@ -72,13 +71,14 @@ const tableReveal = [
   { at: 1, x: MASK_LEFT, y: MASK_CY - MASK_RADIUS, width: 2 * MASK_RADIUS, height: 2 * MASK_RADIUS, rounding: 9999, ease: easeInCubic },
 ];
 
-/* Travelling mascot — a viewport-fixed stickman driven by a global-scroll `rawAnim`
-   (see TravellingFigure). Its beats sit at each panel's global-scroll boundary. */
-
-/** Per-panel scroll ceiling (each Section's hand-off threshold) — single source of
- *  truth shared by the <Section>s below and the figure's beats, so tuning a panel's
- *  budget keeps them in sync. Panel 6 has no `end`; its furthest child window
- *  (MASK_END) stands in for the boundary math only. */
+/** Per-panel scroll ceiling — each `<Section>`'s hand-off threshold, kept here so a
+ *  panel's budget and the windows its children are authored against sit side by side.
+ *
+ *  These used to be load-bearing FAR beyond their own panel: a travelling mascot ran on
+ *  a `rawAnim` keyed to the prefix sums of this array, so shortening any panel silently
+ *  re-timed the whole page. The mascot is gone (the client asked for it), and with it
+ *  that coupling — each entry now only has to satisfy its own panel. Panel 6 has no
+ *  `end`; its furthest child window (MASK_END) stands in for it. */
 const PANEL_END = [
   600 + DWELL, // 0 hero
   FIGURE_OUT + 150, // 1 muscolo + focus sport — the slab photos reuse the athlete's window
@@ -88,22 +88,6 @@ const PANEL_END = [
   holdEnd(3), // 5 formazione
   MASK_END, // 6 footer
 ] as const;
-/** Global-scroll position where panel `i` begins — the prefix sum of prior ceilings. */
-const boundAt = (i: number) => PANEL_END.slice(0, i).reduce((a, b) => a + b, 0);
-
-/* The mascot's journey, keyed to ABSOLUTE global scroll (px translates around its
-   fixed lower-left anchor). Starting values — fine-tune by eye with the DevHud
-   `global` readout at each panel. */
-const JOURNEY = [
-  { at: 0, opacity: 0, y: 24, scale: 0.9, rotate: 0 },                                    // hero: hidden (the hero has its own figure)
-  { at: boundAt(1) - 200, opacity: 0, y: 24, scale: 0.9 },                                // stay hidden until the hero hands off
-  { at: boundAt(1), opacity: 1, y: 0, scale: 1, rotate: -2, ease: easeOutCubic },         // panel 1: fade + rise in
-  { at: boundAt(2), opacity: 1, y: -8, scale: 1.04, rotate: 3, ease: easeInOutCubic },    // panel 2 (pelvico): little hop + lean
-  { at: boundAt(3), opacity: 1, y: 0, scale: 1, rotate: -3, ease: easeInOutCubic },       // panel 3 (domiciliare)
-  { at: boundAt(4), opacity: 0.3, y: 10, scale: 0.85, rotate: 0, ease: easeInCubic },     // panel 4 (contatti): duck back out of the way
-  { at: boundAt(5), opacity: 1, y: -6, scale: 1.03, rotate: 2, ease: easeInOutCubic },    // panel 5 (formazione): back up for the CV
-  { at: boundAt(6), opacity: 0, y: 20, scale: 0.8, ease: easeInCubic },                   // panel 6 (footer): bow out
-];
 
 /* The shared panel box (and why it's shared) lives in site/panelBox.ts — the focus
    panels are built on the same one. `shell` is that box stacked: every panel authored
@@ -561,10 +545,9 @@ export default function Home() {
         <div className={`${shell} bg-primary text-white`}>
           <Corners color="rgba(255,255,255,0.35)" topLeft={false} />
 
-          {/* The line figure signs off here (it left the hero to the photo). Bottom
-              RIGHT: the travelling mascot is fixed bottom-left. `draw={false}` — the
-              on-load stroke-in would be long over by the time you scroll this far, so
-              it just fades up with the panel. */}
+          {/* The line figure signs off here (it left the hero to the photo).
+              `draw={false}` — the on-load stroke-in would be long over by the time you
+              scroll this far, so it just fades up with the panel. */}
           <SDiv
             {...rev(2)}
             anim={UP}
@@ -620,9 +603,6 @@ export default function Home() {
 
       {/* Always-visible quick-contact badge (portaled to body). */}
       <ContactBar />
-
-      {/* Travelling mascot — a viewport-fixed stickman that follows the scroll (portaled to body). */}
-      <TravellingFigure journey={JOURNEY} />
 
       {process.env.NODE_ENV === "development" && <DevHud />}
     </ScrollShell>

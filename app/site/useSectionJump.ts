@@ -11,10 +11,11 @@ import { useScrollStore } from "../_scroll";
  * The obvious alternative — writing each section's integrated position directly, as the
  * proposed engine patch does — desynchronises the page: the *global* scroll counter
  * (`globalScroll` in `_scroll/useSequenceProgress.ts`) only ever advances from the wheel
- * accumulator, and it is what every `rawAnim` is measured against — the travelling
- * mascot's whole journey (`JOURNEY` in page.tsx), for one. Setting per-index positions
- * leaves that counter behind, so after a jump the mascot is animating for a panel the
- * page has left.
+ * accumulator, and it is what every `rawAnim` is measured against. Setting per-index
+ * positions leaves that counter behind, so after a jump anything keyed to global scroll
+ * is animating for a panel the page has already left. (Nothing on this site uses
+ * `rawAnim` today — the travelling mascot that did was removed — but the argument is
+ * about the engine's contract, not about the current cast.)
  *
  * Feeding the accumulator instead keeps *everything* in phase by construction — active
  * section, `snap` glide, per-panel reveals, global counter — because the engine sees the

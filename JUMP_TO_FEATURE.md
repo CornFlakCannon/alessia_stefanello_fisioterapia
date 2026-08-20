@@ -236,3 +236,50 @@ scrollable inner regions, but it solves a *different* problem from this one and 
 substitute. `ContactForm` already carries the `data-native` marker for that day.
 
 If the slop deferral lands, delete `useTapVsSwipe` from `ContactForm.tsx`.
+
+---
+
+## Seam 3 — `setPointerCapture` throws on a short tap (APPLIED here, as a guard)
+
+> Status: **the only edit this repo makes to `app/ScrollShell.tsx`.** It is a guard, not
+> the fix; the fix is the slop deferral above.
+
+`handlePointerDown` captures the pointer unconditionally:
+
+```ts
+mainContainer.current?.setPointerCapture(e.pointerId);
+```
+
+Per spec, `setPointerCapture` throws `NotFoundError` when `pointerId` matches no **active**
+pointer. A touch that is released before the handler runs — a quick tap, which is exactly
+what the hero's section index invites — leaves nothing to capture, and the throw surfaces
+as an uncaught console error on a perfectly ordinary interaction:
+
+```
+Uncaught NotFoundError: Element.setPointerCapture: Invalid pointer id
+    at handlePointerDown (app/ScrollShell.tsx:116)
+```
+
+Two things make this safe to simply guard rather than restructure:
+
+- capture is an **optimisation** here. The container already sets `touch-action: none` and
+  owns the `pointermove`/`pointerup` listeners, so a drag works uncaptured; capture only
+  matters if the finger leaves the container mid-gesture.
+- a non-primary pointer (a second finger landing on the panel) should never restart the
+  drag anyway, and `e.isPrimary` is the documented way to say so.
+
+Applied:
+
+```ts
+const handlePointerDown = (e: PointerEvent) => {
+  if (e.pointerType === "mouse") return;
+  if (!e.isPrimary) return;
+  dragging = true;
+  lastPointerY = e.clientY;
+  try { mainContainer.current?.setPointerCapture(e.pointerId); } catch {}
+};
+```
+
+**The slop deferral above supersedes this.** Capturing on the first committed move means
+the pointer is provably active at capture time, so the throw cannot happen and the guard
+becomes redundant — delete it if that patch lands.

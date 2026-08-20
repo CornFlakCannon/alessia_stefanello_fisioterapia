@@ -144,10 +144,6 @@
     animation: none;
     transform: translateY(var(--emerge-rest));
   }
-  /* The travelling mascot is motion by definition — hide it for opt-out users. */
-  .fisio-travel {
-    display: none;
-  }
 }
 
 body {
