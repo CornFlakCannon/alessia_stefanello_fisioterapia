@@ -201,7 +201,12 @@ export default function Home() {
           qui e suonato AL CARICAMENTO, non allo scroll: il pannello 0 è a schermo a
           scroll 0, quindi ogni sua entrata è una CSS animation (vedi globals.css). */}
       <Section index={0} end={PANEL_END[0]}>
-        <div className={`${shell} bg-white lg:px-0`}>
+        {/* `max-lg:py-*`: il PANEL_BOX porta `py-24 short:py-12`, budget scritto per il
+            desktop. Sul telefono l'hero e' il pannello piu' carico della pagina (ritratto
+            + cinque blocchi di testo + indice) e 192px di padding erano la prima cosa da
+            restituire. Composto con `short:` invece di lasciarli correre uno contro
+            l'altro — sotto lg e sotto 740px di altezza matcherebbero entrambi. */}
+        <div className={`${shell} bg-white max-lg:py-8 max-lg:short:py-5 lg:px-0`}>
           {/* ink and not primary: these brackets now cross both halves, and blue at 22%
               disappears on the gold one */}
           <Corners color="rgba(20,33,46,0.25)" topLeft={false} />
@@ -240,9 +245,20 @@ export default function Home() {
 
               È anche ciò che copre la lama berry lasciandone i 50px. */}
           <div
-            className="fisio-slide-in relative z-[2] mb-10 w-full max-w-6xl max-lg:short:mb-4 lg:absolute lg:inset-y-0 lg:right-0 lg:mb-0 lg:flex lg:w-[46vw] lg:max-w-none lg:items-end lg:justify-center lg:bg-white lg:pb-0 lg:pt-12 lg:short:pt-6"
+            className="fisio-slide-in relative z-[2] mb-6 w-full max-w-6xl max-lg:short:mb-4 lg:absolute lg:inset-y-0 lg:right-0 lg:mb-0 lg:flex lg:w-[46vw] lg:max-w-none lg:items-end lg:justify-center lg:bg-white lg:pb-0 lg:pt-12 lg:short:pt-6"
             style={{ animationDelay: "0.22s" }}
           >
+            {/* SUL TELEFONO l'oro sta DIETRO AL TESTO e comincia a `top-full`, cioe' esatto
+                sul bordo inferiore della foto: cosi' lei POGGIA sulla linea invece di
+                fluttuarci sopra. Stava nel blocco del testo con un `-top-8` che doveva
+                indovinare il margine fra i due, e i px che avanzavano erano lo stacco.
+                Scende oltre la piega (`bottom-[-100svh]`, tagliato dall'overflow-hidden del
+                pannello); il filetto berry in alto e' la stessa lama del desktop, girata di
+                90°, visto che qui le meta' sono sopra/sotto e non dx/sx. */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-[-50vw] bottom-[-100svh] top-full border-t-4 border-emphasis bg-secondary lg:hidden"
+            />
             {/* La deriva dell'intero gruppo allo scroll. Va verso il BASSO, non verso
                 l'alto: adesso lei poggia sul bordo inferiore della videata, e sollevarla
                 aprirebbe una striscia bianca sotto ai piedi. Scendendo, invece, il taglio
@@ -267,7 +283,7 @@ export default function Home() {
                 { at: 0, y: 0 },
                 { at: 1, y: 14 },
               ]}
-              className="relative mx-auto w-52 max-lg:short:w-36 sm:w-64 lg:mx-0 lg:w-[min(69svh,39vw)]"
+              className="relative mx-auto w-[min(13rem,24svh)] sm:w-[min(16rem,28svh)] lg:mx-0 lg:w-[min(69svh,39vw)]"
             >
               <HeroPortrait />
             </SDiv>
@@ -284,22 +300,17 @@ export default function Home() {
               così è centrata nell'oro VISIBILE. A 54vw pieni, su una finestra da 1024 il
               bordo destro del testo finiva 5px sotto la lama. */}
           <div className="relative z-10 w-full max-w-6xl text-center lg:w-[calc(54vw-50px)] lg:max-w-none lg:self-start">
-            {/* Sul telefono l'oro sta DIETRO AL TESTO e scende fino in fondo alla videata
-                (il pannello è overflow-hidden, quindi `bottom-[-100svh]` è tagliato esatto
-                sulla piega). Prima stava dietro alla foto e saliva fino in cima: si è
-                ribaltato con lei. Il filetto berry in alto è la stessa lama del desktop,
-                girata di 90° — sul telefono le due metà sono sopra/sotto, non dx/sx. */}
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-[-50vw] -top-8 bottom-[-100svh] border-t-4 border-emphasis bg-secondary lg:hidden"
-            />
             <div className="relative mx-auto max-w-[34rem] lg:px-10">
               <p className="fisio-rise font-mono text-xs uppercase tracking-[0.28em] text-ink/80 sm:text-sm" style={{ animationDelay: "0.05s" }}>
                 {HERO.kicker}
               </p>
               {/* l'unico blu su fondo oro, e può esserlo perché è testo GRANDE: 3.75:1
                   passa il minimo WCAG per il large text (3:1), non quello per il corpo */}
-              <h1 className="fisio-rise mt-3 font-display text-[2.6rem] font-semibold leading-[1.02] tracking-tight text-primary max-lg:short:text-4xl sm:text-6xl lg:text-7xl" style={{ animationDelay: "0.15s" }}>
+              {/* `clamp` e non due gradini: sotto sm il nome e' lungo 18 caratteri e il
+                  costo di mandarlo a capo e' una riga intera del budget del pannello. Legato
+                  alla LARGHEZZA sta su una riga da 320px in su, e il tetto e' la misura di
+                  prima. */}
+              <h1 className="fisio-rise mt-3 font-display text-[clamp(1.7rem,8vw,2.6rem)] font-semibold leading-[1.02] tracking-tight text-primary sm:text-6xl lg:text-7xl" style={{ animationDelay: "0.15s" }}>
                 {HERO.name}
               </h1>
               {/* il ruolo fra due stanghette, ora BLU: l'oro su oro sparirebbe. Un filetto
@@ -315,7 +326,7 @@ export default function Home() {
               {/* Dov'è lo studio, al posto del CTA + numero che stavano qui: chi arriva
                   sul sito di una fisioterapista vuole prima sapere DOVE. Telefono ed email
                   restano a un tap nella targhetta in alto a sinistra e nel footer. */}
-              <div className="fisio-rise mt-7 flex flex-col items-center gap-1.5 short:mt-4" style={{ animationDelay: "0.56s" }}>
+              <div className="fisio-rise mt-6 flex flex-col items-center gap-1.5 short:mt-4" style={{ animationDelay: "0.56s" }}>
                 <p className="flex items-start justify-center gap-2 text-sm leading-relaxed text-ink/85 sm:text-base">
                   <span className="mt-0.5 shrink-0 text-primary">
                     <PinIcon />
@@ -330,13 +341,15 @@ export default function Home() {
               </div>
               {/* l'indice della pagina — dà al pannello un bordo inferiore e una gerarchia,
                   e ogni voce scorre fino alla sua sezione (vedi useSectionJump) */}
-              <div className="fisio-rise mt-8 short:mt-5" style={{ animationDelay: "0.7s" }}>
+              <div className="fisio-rise mt-6 short:mt-5" style={{ animationDelay: "0.7s" }}>
                 <ServiceIndex className="mx-auto max-w-md" />
               </div>
             </div>
           </div>
 
-          {/* scroll hint — visible at rest, fades as you begin */}
+          {/* scroll hint — visible at rest, fades as you begin. Solo da lg: sul telefono
+              e' centrato in basso esattamente dove finisce l'indice, e li' non c'e' un
+              pixel da regalare. La fascia oro che esce dalla piega dice gia' "continua". */}
           <SDiv
             start={0}
             budget={200}
@@ -344,7 +357,7 @@ export default function Home() {
               { at: 0, opacity: 1, y: 0 },
               { at: 1, opacity: 0, y: 8 },
             ]}
-            className="absolute inset-x-0 bottom-8 z-10 flex flex-col items-center gap-1 text-ink/80"
+            className="absolute inset-x-0 bottom-8 z-10 hidden flex-col items-center gap-1 text-ink/80 lg:flex"
           >
             <span className="font-mono text-[0.7rem] uppercase tracking-[0.2em]">{HERO.scrollHint}</span>
             <span aria-hidden="true" className="text-lg leading-none">↓</span>

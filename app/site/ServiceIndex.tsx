@@ -23,8 +23,13 @@ import useSectionJump from "./useSectionJump";
  * keeps every scroll-driven animation on the way in phase.
  *
  * Two columns even on phones: full-width rows would cost the panel too much of the 100svh
- * it must fit inside. If it ever doesn't fit on an iPhone SE, `max-lg:short:hidden` on the
- * <nav> is the valve — the index is the least load-bearing block in the panel.
+ * it must fit inside. The type steps down to `0.8rem` below `sm` for the same reason and it
+ * is not cosmetic — at `text-sm` the longest label ("Fisioterapia Domiciliare") wrapped to a
+ * second line in a half-width column, which made that one row 18px taller than the others
+ * AND ragged. Shrinking it buys the height twice.
+ *
+ * If it ever still doesn't fit, `max-lg:short:hidden` on the <nav> is the valve — the index
+ * is the least load-bearing block in the panel.
  *
  * ## Why it is all `ink` and no accent colour
  * It sits on the hero's GOLD half, and gold is a ground that eats the palette: measured
@@ -58,14 +63,14 @@ function Entry({
       type="button"
       onClick={(e) => jumpTo(section, e.currentTarget, land)}
       aria-label={`Vai alla sezione ${label}`}
-      className="group flex w-full items-baseline justify-center gap-2 py-2 transition-transform hover:translate-x-0.5 focus-visible:translate-x-0.5 focus-visible:outline-none short:py-1.5"
+      className="group flex w-full items-baseline justify-center gap-2 py-1.5 transition-transform hover:translate-x-0.5 focus-visible:translate-x-0.5 focus-visible:outline-none"
     >
       {n && (
         <span className="font-mono text-[0.7rem] text-ink/75 transition-colors group-hover:text-ink group-focus-visible:text-ink">
           {n}
         </span>
       )}
-      <span className="font-sans text-sm text-ink underline-offset-4 group-hover:underline group-focus-visible:underline sm:text-[0.95rem]">
+      <span className="font-sans text-[0.8rem] text-ink underline-offset-4 group-hover:underline group-focus-visible:underline sm:text-[0.95rem]">
         {label}
       </span>
     </button>

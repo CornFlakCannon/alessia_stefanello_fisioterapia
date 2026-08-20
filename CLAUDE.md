@@ -382,6 +382,21 @@ deferral would make the guard redundant. Don't take this as licence for a second
   portrait for the halo reason above; before that it was on the right and, on phones, ran
   to the TOP of the viewport instead.
 
+  On phones that band is a child of the PORTRAIT's wrapper at `top-full`, not of the text
+  block: `top-full` is the photo's bottom edge by construction, so she stands ON the line
+  the way she stands on the fold on desktop. It first shipped inside the text block with a
+  `-top-8` that had to guess the margin between the two, and the pixels that guess was off
+  by were the gap the client saw.
+
+  ⚠️ **The hero is the page's tightest panel on a phone** — portrait plus five blocks of
+  copy plus the index — and `short:` (≤740px tall) does not help the case that actually
+  fails, a 390x844-class phone. Its height budget is therefore trimmed on WIDTH:
+  `max-lg:py-8` (against `PANEL_BOX`'s desktop-sized `py-24`), a portrait capped by
+  `24svh` rather than a fixed `w-52`, an `h1` on `clamp(1.7rem,8vw,2.6rem)` so
+  "Alessia Stefanello" stays on ONE line (a wrap there costs a whole line of the budget),
+  and the index at `0.8rem` below `sm` so its longest label stops wrapping. The scroll hint
+  is `lg`-only: centred at the bottom, it lands exactly on the index.
+
   ⚠️ **Gold is a ground that eats the palette.** Measured against `--brand-secondary`:
   `text-secondary` is invisible by definition, `text-emphasis` is 2.88:1, and even full
   `text-primary` only reaches 3.75:1 — which buys large text (3:1) and nothing else. So on
