@@ -87,6 +87,25 @@ NEL MOBILE MANTENIAMO LE ANIMAZIONI DI SLIDE IN DELLE SEZIONI FOCUS LATERALI!!!
 Nel mobile on top c'è una banda bianca... togliamola e facciamo andare lo sfondo giallo fino in cima.
 Anche qui la foto è già presente, ma la croppiamo in modo che si vedano la testa e mezzo busto, diamo importanza al viso.
 
+[x] 1-bis. SECONDO GIRO sullo stesso punto (richiesta di Matti sugli screenshot del telefono):
+"rendiamo la foto piu' prominente, tagliando piu' corpo per dare risalto a spalle/viso/collo,
+parte delle spalle puo' anche uscire a destra e sinistra"; e "sotto e' abbastanza vuoto...
+recuperiamo quello spazio e facciamo che la foto prenda 3/4 dell'altezza dello schermo; quando
+si trascina su, l'indice entra spingendo su il contenitore giallo con i dati".
+
+FATTO — sono due cose e si tengono a vicenda:
+- il ritaglio del telefono e' passato da 4:5 mezzo busto (fino alle braccia incrociate) a un
+  QUADRATO tagliato sotto la linea delle spalle. La testa passa da 84px a ~290px su un
+  390x844, e le spalle escono da entrambi i bordi (bleed misurato e messo a budget nello
+  script: MOB_BLEED / MOB_FACE_GUARD);
+- la foto e' ora una fascia a tutta larghezza alta 74svh in cima al pannello, e l'oro sotto e'
+  una CARD (filetto, fondo, nome, ruolo, frase, indirizzo, indice) che SALE allo scroll
+  portandosi in vista la propria coda. A riposo sopra la piega restano foto, nome, ruolo e la
+  frase di posizionamento; a fine corsa la card e' arrivata circa al collo.
+Il quadrato non e' estetica: la fascia ha altezza fissa e la foto la riempie con object-cover,
+quindi un box piu' largo che alto le taglierebbe il cranio. Sorgente 1:1 + box mai piu' largo
+che alto (`w-[min(100vw,74svh)]`) e' la garanzia. Vedi CLAUDE.md §Photos e HeroPortrait.
+
 [x] 2. Mappa mobile in anziani cluttered
 La mappa nella versione mobile ha troppi pulsanti in overlap e non si vede dove punta.
 Proviamo a declutterarla.

@@ -116,17 +116,33 @@ The camera originals (15 JPG at 6000x4000, the hero PNG, plus the 4K studio vide
   and `FEATHER` softens what is left.
 
   **Two derivatives, because the phone needs a different picture.** She is tall and
-  narrow, so the desktop 3:4 and the phone's head-and-half-torso 4:5 are not two crops of
-  one frame — the phone's throws away ~60% of the height. That is art direction, which
-  `next/image` cannot express, so `HeroPortrait` uses a `<picture>` with two `<source>`s
-  and exactly one is ever fetched. Both `<source>` and `<img>` carry `width`/`height`,
-  since the two ratios differ and otherwise the desktop branch reserves the phone's box.
-  Vertical tightness is what makes her big — rendered height is
-  `(subject_height / crop_height) * box_height` — so trimming rows above her head buys
-  size while side margin costs nothing (it is transparent, and `drop-shadow` follows the
-  silhouette, not the box). `HEAD_ROOM` and `MOB_BOTTOM` are the two knobs; every crop is
-  checked against the measured subject box before it is written, because a window that
-  clips a shoulder is invisible at 208px on a phone.
+  narrow, so the desktop 3:4 and the phone's **square bust** are not two crops of one frame
+  — the phone's throws away ~75% of the height. That is art direction, which `next/image`
+  cannot express, so `HeroPortrait` uses a `<picture>` with two `<source>`s and exactly one
+  is ever fetched. Both `<source>` and `<img>` carry `width`/`height`, since the two ratios
+  differ and otherwise the desktop branch reserves the phone's box. Vertical tightness is
+  what makes her big — rendered height is `(subject_height / crop_height) * box_height` —
+  so trimming rows buys size while side margin costs nothing (it is transparent, and
+  `drop-shadow` follows the silhouette, not the box). Cutting the phone frame from 1695
+  rows to 1122 is what takes her head from 84px to ~290px on a 390x844 phone.
+
+  **The phone crop is SQUARE, and that is load-bearing, not a taste.** It is no longer laid
+  out at its own ratio: the phone box has a fixed height (a 74svh full-bleed band) and the
+  image fills it with `object-cover`. Cover crops whichever axis the container has to spare,
+  so a container **wider than it is tall** crops the HEIGHT — her skull. Below `lg` that is
+  not hypothetical: tablets live there, and so does a 900x600 desktop window (ratio 2.03).
+  The guarantee is arithmetic and it is **split across two files**: the source is 1:1
+  (`MOB_RATIO`) and the box is capped at `w-[min(100vw,74svh)]` in `page.tsx`, i.e. never
+  wider than tall. Container ratio ≤ source ratio ⇒ cover can only eat WIDTH — the shoulders,
+  which is the point. Change either half alone and she is decapitated on some device.
+
+  `HEAD_ROOM` (desktop) and `MOB_HEAD_ROOM`/`MOB_BOTTOM` (phone) are the framing knobs. Every
+  crop is still measured against the subject before it is written, but the phone frame now
+  *wants* a clip, so the check is **budgeted rather than absolute**: `MOB_BLEED` is how much
+  may run off per side and `MOB_FACE_GUARD` is the row above which nothing may be cut at all,
+  so a budget meant for shoulders can never be spent on her head. The measured bleed is
+  printed on every run — a clip is invisible by eye at phone size, which is why any of this
+  exists.
 
   **She stands on WHITE, and that is why the gold moved to the text half.** The cut-out
   first shipped on the gold slab and wore a pale halo around the hair. The obvious reading
@@ -371,7 +387,7 @@ Two is the limit. Don't take these as licence for a third.
   rows — the SE case, where the third entry's second line ran past the fold.
 - `HeroPortrait.tsx` — the portrait, **dead straight** (the client asked for it) and now a
   **cut-out with a real alpha channel**, in a `<picture>` with two framings (desktop 3:4,
-  phone head-and-half-torso 4:5 — art direction `next/image` cannot express). There is no
+  phone a square bust — art direction `next/image` cannot express). There is no
   background in the file, so what sits behind her is the slab's own CSS gold: nothing to
   match, no seam. See «Photos» for how the alpha is recovered from a source that only
   pretends to have one.
@@ -394,10 +410,11 @@ Two is the limit. Don't take these as licence for a third.
   DOWN (`y: 0 → 14`): lifting a bottom-anchored figure opens a strip of white under her
   feet, while sinking just pushes the cut past the fold where nothing shows.
 
-  That drift is **desktop only** (`HERO_DRIFT` in `page.tsx`), and the reason is the same
-  geometry reaching the opposite conclusion: on phones her bottom edge is her WAIST, resting
-  on the band's berry rule, and there is no fold under it to sink into — she simply slides
-  down over the gold. One rule cannot serve both, which is why it is gated in JS.
+  That drift is **desktop only** (`HERO_DRIFT` in `page.tsx`). On phones she does not move
+  at all, for two reasons that agree: the motion in that half of the screen is already
+  spoken for (the gold CARD rises over her — see below), and she has only ~55px of air over
+  her crown there, so any upward travel, parallax included, shaves it off against the
+  panel's `overflow-hidden`. One rule cannot serve both, which is why it is gated in JS.
 
   Her size is capped in `page.tsx` as `lg:w-[min(69svh,39vw)]`, and both terms are
   viewport-relative on purpose — the cap used to carry a `34rem` term and THAT is what
@@ -409,26 +426,51 @@ Two is the limit. Don't take these as licence for a third.
     side. It is the term that binds below 16:9 — on 1024x768 it resolves to 399px inside a
     471px slab.
 
-  **The gold is the TEXT's half now** — `left-0 w-[54vw]` on desktop, and on phones a band
-  behind the copy that bleeds to the bottom of the viewport (`bottom-[-100svh]`, cut
-  exactly on the fold by the panel's `overflow-hidden`). It swapped sides with the
-  portrait for the halo reason above; before that it was on the right and, on phones, ran
-  to the TOP of the viewport instead.
+  **The gold is the TEXT's half now** — `left-0 w-[54vw]` on desktop. It swapped sides with
+  the portrait for the halo reason above; before that it was on the right and, on phones,
+  ran to the TOP of the viewport instead.
 
-  On phones that band is a child of the PORTRAIT's wrapper at `top-full`, not of the text
-  block: `top-full` is the photo's bottom edge by construction, so she stands ON the line
-  the way she stands on the fold on desktop. It first shipped inside the text block with a
-  `-top-8` that had to guess the margin between the two, and the pixels that guess was off
-  by were the gap the client saw.
+  **On phones the gold is not a band any more, it is a CARD that RISES.** The panel used to
+  waste its viewport in two opposite ways at once: a 202x253 portrait (her head at 84px) and,
+  under it, ~220px of empty gold, because the address and the index only fade in on scroll.
+  Now the photo is a **74svh full-bleed band** at the top (`short:` 56svh) and the gold —
+  rule, background, copy, address and index, all one group — sits below it and **translates
+  up** as you scroll (`SHEET_RISE`/`SHEET_DY` in `page.tsx`), bringing its own tail into
+  view. The berry rule is still the line she stands on at rest; by the end of the panel it
+  has climbed to about her neck.
+
+  Four things in that arrangement are not free-form:
+  - **The band bleeds past the panel's padding** (`max-lg:-mt-8`, `w-[min(100vw,74svh)]`
+    centred by `items-center`) and carries `shrink-0` — this column's main axis is vertical
+    and it deliberately overflows, so without it the flex algorithm compresses the band to
+    make the numbers work.
+  - **The panel gets `max-lg:h-[100svh]`**, because `min-h-[100svh]` alone GROWS with its
+    content, and a panel 1054px tall instead of 844 shifts every later panel's `offsetTop`
+    while the engine pins `scrollTop` to it each frame. Definite height + the
+    `overflow-hidden` `PANEL_BOX` already has: the tail exists, sits outside, and costs
+    nothing. Also `max-lg:justify-start` — `justify-center` would split the overflow between
+    top and bottom, i.e. shear her crown.
+  - **`SHEET_DY` is the one knob, and it is read with a formula, not by eye.** The band shows
+    all 1122 rows of the crop, so at the end of the rise `rows = 1122 * (1 - SHEET_DY/band)`
+    of her are still visible, counted from source row 128. Landmarks: chin ~760, shoulder
+    join 875. Raise it and the card climbs onto her chin; lower it and the index stays under
+    the fold. It is also why `short:` uses a much lower band (56svh, not 70): on a 667px
+    screen a tall band makes that ratio explode and the card cuts her across the face.
+  - **The final photo height is decided by the card's content, not by the resting height** —
+    `viewport − padding − content` either way. That is why "3/4 at rest" was free, and why
+    the neck is where the card stops.
+
+  `MOB_ADDRESS`/`MOB_INDEX` are still scroll windows but now carry **opacity only**: with
+  `UP` their `y: 24 → 0` would run against the card's rise, two vertical motions at once.
 
   ⚠️ **The hero is the page's tightest panel on a phone** — portrait plus five blocks of
   copy plus the index — and `short:` (≤740px tall) does not help the case that actually
   fails, a 390x844-class phone. Its height budget is therefore trimmed on WIDTH:
-  `max-lg:py-8` (against `PANEL_BOX`'s desktop-sized `py-24`), a portrait capped by
-  `24svh` rather than a fixed `w-52`, an `h1` on `clamp(1.7rem,8vw,2.6rem)` so
-  "Alessia Stefanello" stays on ONE line (a wrap there costs a whole line of the budget),
-  and the index at `0.8rem` below `sm` so its longest label stops wrapping. The scroll hint
-  is `lg`-only: centred at the bottom, it lands exactly on the index.
+  `max-lg:py-8` (against `PANEL_BOX`'s desktop-sized `py-24`), an `h1` on
+  `clamp(1.7rem,8vw,2.6rem)` so "Alessia Stefanello" stays on ONE line (a wrap there costs a
+  whole line of the budget), and the index at `0.8rem` below `sm` so its longest label stops
+  wrapping. The scroll hint is `lg`-only: centred at the bottom, it lands exactly on the
+  index.
 
   ⚠️ **Gold is a ground that eats the palette.** Measured against `--brand-secondary`:
   `text-secondary` is invisible by definition, `text-emphasis` is 2.88:1, and even full

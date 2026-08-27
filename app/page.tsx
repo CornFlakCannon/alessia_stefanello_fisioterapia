@@ -21,7 +21,7 @@ import ContactForm from "./site/ContactForm";
 import CvSheets, { sheetsEnd } from "./site/CvSheets";
 import ServiceIndex from "./site/ServiceIndex";
 import ContactBar from "./site/ContactBar";
-import { useIsDesktop } from "./site/useViewport";
+import { useIsDesktop, useIsShort } from "./site/useViewport";
 import PhotoSlab from "./site/PhotoSlab";
 import DuotonePhoto from "./site/DuotonePhoto";
 import { PHOTOS, type Photo } from "./site/photos";
@@ -124,9 +124,59 @@ const NO_DRIFT: AnimSpec = [];
    diventa una rivelazione progressiva, non contenuto che deve esserci all'arrivo. Il
    prezzo, da sapere: chi atterra e non scorre non vede indirizzo e indice. Sopra la piega
    restano foto, nome, ruolo e la frase di posizionamento — cioe' tutto quello che serve a
-   capire chi e' e cosa fa. */
-const MOB_ADDRESS = { start: 200, budget: 380 };
-const MOB_INDEX = { start: 560, budget: 440 };
+   capire chi e' e cosa fa.
+
+   Nel primo giro questi due erano l'UNICA cosa che si muoveva, e il risultato era il
+   difetto opposto: sotto la foto restavano ~220px di oro vuoto a scroll 0. Ora quello
+   spazio se lo prende la foto (74svh) e questi due stanno SOTTO la piega, portati in vista
+   dalla salita della card (SHEET_RISE). Le finestre qui sotto servono ancora, ma solo a
+   dosare l'opacita' DENTRO quella corsa: entrambe finiscono prima dei 740 in cui la card
+   si ferma, cosi' nulla arriva ancora trasparente a corsa conclusa. */
+const MOB_ADDRESS = { start: 200, budget: 300 };
+const MOB_INDEX = { start: 420, budget: 320 };
+/* Sul telefono l'unico movimento verticale e' quello della card (vedi sotto): questi due
+   blocchi arrivano SOLO in dissolvenza. Con `UP` avrebbero un `y: 24 -> 0` che si sommerebbe
+   alla salita, cioe' due cose che si muovono l'una contro l'altra nello stesso momento. */
+const MOB_FADE: AnimSpec = [
+  { at: 0, opacity: 0 },
+  { at: 1, opacity: 1, ease: easeOutCubic },
+];
+
+/* SOLO TELEFONO: LA CARD ORO CHE SALE.
+   A scroll 0 la foto e' una fascia alta 74svh e sotto resta l'oro con kicker, nome, ruolo e
+   frase di posizionamento — il minimo che questo pannello deve avere sopra la piega. Il
+   resto (indirizzo e indice) sta SOTTO la piega e ci arriva perche' la card sale.
+
+   Perche' la foto sta ferma e sale solo la card: e' il modo di non muovere due cose insieme,
+   e soprattutto lei ha ~55px di aria sopra il cranio: qualunque traslazione verso l'alto,
+   anche una parallasse blanda, glielo rifila (il pannello e' overflow-hidden).
+
+   ## SHEET_DY non e' una scelta di gusto, ed e' l'unica manopola da ritoccare a occhio
+   Da sotto: la card deve finire la corsa con tutto il suo contenuto dentro la videata, quindi
+   il minimo e' `banda + contenuto - (altezza - padding)`. Su un 390x844 fa 625 + ~442 - 812
+   = 255, e 250 e' quello con un filo di respiro in meno sul fondo.
+
+   Da sopra: quel numero decide DOVE la card la taglia, e la formula e' corta —
+   la banda mostra tutte e 1122 le righe del ritaglio, quindi a fine corsa se ne vedono
+
+       righe = 1122 * (1 - SHEET_DY / banda)
+
+   contate dalla riga 128 del sorgente. I riferimenti sul suo corpo: mento ~760, attacco
+   spalle 875. Con 250 su una banda di 625 vengono 673 righe, cioe' y=801: meta' collo, che e'
+   l'assetto approvato ("testa e collo dietro la card"). Alzalo e sale sul mento; abbassalo e
+   la coda dell'indice resta sotto la piega. Non guardarlo come px, guardalo con questa
+   formula — e' il motivo per cui `short:` ha una banda molto piu' bassa (56svh e non 70): li'
+   la videata e' 667 e con una banda alta il RAPPORTO dy/banda esplode, tagliandola in faccia.
+
+   Conseguenza aritmetica da tenere presente: l'altezza FINALE della foto la decide il
+   contenuto della card, non l'altezza a riposo. "3/4 a riposo" e' quindi gratis. */
+const SHEET_RISE = { start: 120, budget: 620 }; // finisce a 740, dentro i 1100 del pannello
+const SHEET_DY = 250; // telefono ~390x844, banda 74svh
+const SHEET_DY_SHORT = 145; // short: (<=740px di altezza), banda 56svh — vedi la formula
+const mobSheet = (dy: number): AnimSpec => [
+  { at: 0, y: 0 },
+  { at: 1, y: -dy, ease: easeOutCubic },
+];
 
 const shell = `${PANEL_BOX} flex-col`;
 const eyebrow = "font-mono text-sm uppercase tracking-[0.22em] text-primary";
@@ -225,6 +275,7 @@ function Corners({ color = "rgba(255,255,255,0.6)", topLeft = true }: { color?: 
 export default function Home() {
   const year = new Date().getFullYear();
   const desktop = useIsDesktop();
+  const shortView = useIsShort();
   return (
     <ScrollShell>
       {/* ── 0 · HERO ───────────────────────────────────────────────────────
@@ -232,7 +283,19 @@ export default function Home() {
           qui e suonato AL CARICAMENTO, non allo scroll: il pannello 0 è a schermo a
           scroll 0, quindi ogni sua entrata è una CSS animation (vedi globals.css). */}
       <Section index={0} end={PANEL_END[0]}>
-        <div className={`${shell} bg-white lg:px-0`}>
+        {/* Due override locali, e sono la stessa frase detta due volte: sul telefono questa
+            colonna ECCEDE il pannello di proposito — la coda della card sta sotto la piega
+            finche' la salita non la porta su.
+              · `justify-start` perche' il `justify-center` di PANEL_BOX distribuirebbe
+                l'eccedenza meta' sopra e meta' sotto, cioe' le taglierebbe il cranio;
+              · `h-[100svh]` perche' `min-h-[100svh]` da solo CRESCE con il contenuto, e un
+                pannello alto 1054 invece di 844 sposta l'offsetTop di tutti quelli dopo
+                (l'engine ci aggancia lo scrollTop a ogni frame). Altezza definita, piu'
+                l'overflow-hidden che PANEL_BOX ha gia': la coda esiste, sta fuori, e non
+                conta. Gli item non si comprimono per starci dentro — `min-height:auto` li
+                tiene alla loro altezza di contenuto, e la fascia ha comunque `shrink-0`.
+            Locali qui e non su PANEL_BOX: e' questo pannello a essere diverso, non il box. */}
+        <div className={`${shell} bg-white max-lg:h-[100svh] max-lg:justify-start lg:px-0`}>
           {/* ink and not primary: these brackets now cross both halves, and blue at 22%
               disappears on the gold one */}
           <Corners color="rgba(20,33,46,0.25)" topLeft={false} />
@@ -269,22 +332,29 @@ export default function Home() {
               riferimento diversi e su una finestra da 1883px la foto stava 164px a
               sinistra del centro dell'oro. Non tornare indietro.
 
-              È anche ciò che copre la lama berry lasciandone i 50px. */}
+              È anche ciò che copre la lama berry lasciandone i 50px.
+
+              SUL TELEFONO lo stesso box è una FASCIA a tutta videata, alta 74svh, che sborda
+              il `px-6`/`py-8` del pannello (`w-[100vw]` centrato da `items-center`, più un
+              `-mt-8` che annulla il padding alto). Tre cose da non toccare separatamente:
+                · `shrink-0` — l'asse principale di questa colonna è VERTICALE e la colonna
+                  eccede il pannello di proposito, quindi senza questo il flex comprime
+                  proprio la fascia per far tornare i conti;
+                · `min(100vw, 74svh)` — non è un vezzo, è metà della garanzia che
+                  `object-cover` non le tagli il cranio: box mai più largo che alto, sorgente
+                  quadrata (l'altra metà sta in hero-cutout.mjs). Vedi HeroPortrait. Su ogni
+                  telefono vince `100vw` (74svh di 844 sono 625, ben più di 390) e la fascia è
+                  a tutta larghezza; su uno schermo basso e largo vince l'altra e diventa un
+                  quadrato centrato — che è la forma corretta lì, non un ripiego;
+                · `short:` scende a 56svh, e NON per far stare le cose: su 667px di altezza
+                  una banda alta fa esplodere il rapporto SHEET_DY/banda, che è ciò che decide
+                  dove la card la taglia. Vedi la formula su SHEET_DY;
+                · niente `mb`: la card oro comincia ESATTAMENTE sul bordo inferiore della
+                  foto, altrimenti il filetto berry non è più la linea su cui lei poggia. */}
           <div
-            className="fisio-slide-in relative z-[2] mb-6 w-full max-w-6xl max-lg:short:mb-4 lg:absolute lg:inset-y-0 lg:right-0 lg:mb-0 lg:flex lg:w-[46vw] lg:max-w-none lg:items-end lg:justify-center lg:bg-white lg:pb-0 lg:pt-12 lg:short:pt-6"
+            className="fisio-slide-in relative z-[2] max-lg:-mt-8 max-lg:h-[74svh] max-lg:w-[min(100vw,74svh)] max-lg:shrink-0 max-lg:short:-mt-5 max-lg:short:h-[56svh] max-lg:short:w-[min(100vw,56svh)] lg:absolute lg:inset-y-0 lg:right-0 lg:flex lg:w-[46vw] lg:items-end lg:justify-center lg:bg-white lg:pb-0 lg:pt-12 lg:short:pt-6"
             style={{ animationDelay: "0.22s" }}
           >
-            {/* SUL TELEFONO l'oro sta DIETRO AL TESTO e comincia a `top-full`, cioe' esatto
-                sul bordo inferiore della foto: cosi' lei POGGIA sulla linea invece di
-                fluttuarci sopra. Stava nel blocco del testo con un `-top-8` che doveva
-                indovinare il margine fra i due, e i px che avanzavano erano lo stacco.
-                Scende oltre la piega (`bottom-[-100svh]`, tagliato dall'overflow-hidden del
-                pannello); il filetto berry in alto e' la stessa lama del desktop, girata di
-                90°, visto che qui le meta' sono sopra/sotto e non dx/sx. */}
-            <span
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-x-[-50vw] bottom-[-100svh] top-full border-t-4 border-emphasis bg-secondary lg:hidden"
-            />
             {/* La deriva dell'intero gruppo allo scroll — solo su desktop (vedi HERO_DRIFT).
                 Va verso il BASSO, non verso l'alto: lei poggia sul bordo inferiore della
                 videata, e sollevarla aprirebbe una striscia bianca sotto ai piedi.
@@ -306,7 +376,7 @@ export default function Home() {
               start={0}
               budget={600}
               anim={desktop ? HERO_DRIFT : NO_DRIFT}
-              className="relative mx-auto w-[min(13rem,24svh)] sm:w-[min(16rem,28svh)] lg:mx-0 lg:w-[min(69svh,39vw)]"
+              className="relative mx-auto max-lg:h-full max-lg:w-full lg:mx-0 lg:w-[min(69svh,39vw)]"
             >
               <HeroPortrait />
             </SDiv>
@@ -322,8 +392,25 @@ export default function Home() {
           {/* `54vw - 50px` e non `54vw`: la colonna si ferma dove comincia la lama berry,
               così è centrata nell'oro VISIBILE. A 54vw pieni, su una finestra da 1024 il
               bordo destro del testo finiva 5px sotto la lama. */}
-          <div className="relative z-10 w-full max-w-6xl text-center lg:w-[calc(54vw-50px)] lg:max-w-none lg:self-start">
-            <div className="relative mx-auto max-w-[34rem] lg:px-10">
+          <SDiv
+            {...SHEET_RISE}
+            anim={desktop ? NO_DRIFT : mobSheet(shortView ? SHEET_DY_SHORT : SHEET_DY)}
+            className="relative z-10 w-full max-w-6xl text-center lg:w-[calc(54vw-50px)] lg:max-w-none lg:self-start"
+          >
+            {/* SUL TELEFONO l'oro sta DIETRO AL TESTO e comincia a `top-0` — che, non
+                essendoci margine sulla foto, È il suo bordo inferiore: lei POGGIA sulla
+                linea invece di fluttuarci sopra. Stava nel wrapper della foto, con `top-full`
+                a dire la stessa cosa; è passato di qua perché ora è questo gruppo a MUOVERSI
+                (SHEET_RISE) e la fascia deve salire con il testo che contiene — è la card.
+                Scende oltre la piega (`bottom-[-100svh]`, tagliato dall'overflow-hidden del
+                pannello), il che è anche ciò che le dà la corsa: il contenuto sotto la piega
+                è quello che la salita porta in vista. Il filetto berry in alto è la stessa
+                lama del desktop girata di 90°, visto che qui le metà sono sopra/sotto. */}
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-[-50vw] bottom-[-100svh] top-0 z-0 border-t-4 border-emphasis bg-secondary lg:hidden"
+            />
+            <div className="relative z-10 mx-auto max-w-[34rem] max-lg:pt-6 max-lg:short:pt-4 lg:px-10">
               <p className="fisio-rise font-mono text-xs uppercase tracking-[0.28em] text-ink/80 sm:text-sm" style={{ animationDelay: "0.05s" }}>
                 {HERO.kicker}
               </p>
@@ -351,7 +438,7 @@ export default function Home() {
                   restano a un tap nella targhetta in alto a sinistra e nel footer. */}
               <SDiv
                 {...MOB_ADDRESS}
-                anim={desktop ? NO_DRIFT : UP}
+                anim={desktop ? NO_DRIFT : MOB_FADE}
                 className="mt-6 short:mt-4"
               >
                 <div
@@ -373,7 +460,7 @@ export default function Home() {
               </SDiv>
               {/* l'indice della pagina — dà al pannello un bordo inferiore e una gerarchia,
                   e ogni voce scorre fino alla sua sezione (vedi useSectionJump) */}
-              <SDiv {...MOB_INDEX} anim={desktop ? NO_DRIFT : UP} className="mt-6 short:mt-5">
+              <SDiv {...MOB_INDEX} anim={desktop ? NO_DRIFT : MOB_FADE} className="mt-6 short:mt-5">
                 <div
                   className={desktop ? "fisio-rise" : undefined}
                   style={desktop ? { animationDelay: "0.7s" } : undefined}
@@ -382,7 +469,7 @@ export default function Home() {
                 </div>
               </SDiv>
             </div>
-          </div>
+          </SDiv>
 
           {/* scroll hint — visible at rest, fades as you begin. Solo da lg: sul telefono
               e' centrato in basso esattamente dove finisce l'indice, e li' non c'e' un

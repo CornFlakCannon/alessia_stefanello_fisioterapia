@@ -155,9 +155,19 @@ export const PHOTOS = {
  * ## Why two files rather than one plus `object-position`
  * She is tall and narrow, and the phone hero is a different PICTURE, not a different crop
  * of the same one: the client asked for head and half torso, face first (NUOVA_TODO.md
- * §MOBILE/1). Getting there from the 3:4 frame means throwing away ~60% of its height —
- * art direction, which `next/image` cannot express. Hence a `<picture>` with two sources
- * in `HeroPortrait`, and exactly one of them is ever fetched.
+ * §MOBILE/1), and then for that bust to carry three quarters of the screen. Getting there
+ * from the 3:4 frame means throwing away ~75% of its height — art direction, which
+ * `next/image` cannot express. Hence a `<picture>` with two sources in `HeroPortrait`, and
+ * exactly one of them is ever fetched.
+ *
+ * ## Why the phone one is SQUARE, and why that is not a style choice
+ * It is not laid out at its own ratio any more: the phone box has a fixed height and the
+ * image fills it with `object-cover`. Cover crops whichever axis the container has to spare,
+ * so a container WIDER than it is tall would crop the HEIGHT — her skull. Below `lg` that
+ * includes tablets and any short desktop window. The source is therefore 1:1 and the box is
+ * capped at `w-[min(100vw,74svh)]`, never wider than tall: container ratio <= source ratio,
+ * so cover can only ever eat WIDTH (the shoulders, which is the point). Break either half of
+ * that pair and she loses the top of her head on some device, silently.
  *
  * ## What replaced what
  * This used to be a `<video>` that played once on load (and before that a 27-frame
@@ -183,7 +193,8 @@ export const PHOTOS = {
 export const HERO_PHOTO = {
   /** Desktop: 3:4, cropped tight top and bottom so she is as large as the slab allows. */
   desktop: { src: "/foto/hero.webp", width: 1100, height: 1466 },
-  /** Phone: 4:5, head and half torso. */
-  mobile: { src: "/foto/hero-mobile.webp", width: 800, height: 1000 },
+  /** Phone: 1:1, a BUST — crown to just under the shoulder line, shoulders running off both
+   *  sides. Square because the box crops it in width; see above. */
+  mobile: { src: "/foto/hero-mobile.webp", width: 960, height: 960 },
   alt: "Alessia Stefanello, fisioterapista",
 } as const;
