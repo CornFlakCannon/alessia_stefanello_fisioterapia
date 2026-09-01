@@ -157,16 +157,22 @@ const MOB_FADE: AnimSpec = [
    = 255, e 250 e' quello con un filo di respiro in meno sul fondo.
 
    Da sopra: quel numero decide DOVE la card la taglia, e la formula e' corta —
-   la banda mostra tutte e 1122 le righe del ritaglio, quindi a fine corsa se ne vedono
+   la banda mostra tutte e 1217 le righe del ritaglio, quindi a fine corsa se ne vedono
 
-       righe = 1122 * (1 - SHEET_DY / banda)
+       righe = 1217 * (1 - SHEET_DY / banda)
 
-   contate dalla riga 128 del sorgente. I riferimenti sul suo corpo: mento ~760, attacco
-   spalle 875. Con 250 su una banda di 625 vengono 673 righe, cioe' y=801: meta' collo, che e'
-   l'assetto approvato ("testa e collo dietro la card"). Alzalo e sale sul mento; abbassalo e
-   la coda dell'indice resta sotto la piega. Non guardarlo come px, guardalo con questa
+   contate dalla riga 158 del sorgente. I riferimenti sul suo corpo: mento 859, collo 887,
+   attacco spalle 900. Con 250 su una banda di 625 vengono 730 righe, cioe' y=888: il collo,
+   che e' l'assetto approvato ("testa e collo dietro la card"). Alzalo e sale sul mento;
+   abbassalo e la coda dell'indice resta sotto la piega. Non guardarlo come px, guardalo con questa
    formula — e' il motivo per cui `short:` ha una banda molto piu' bassa (56svh e non 70): li'
    la videata e' 667 e con una banda alta il RAPPORTO dy/banda esplode, tagliandola in faccia.
+
+   ATTENZIONE: 1217 e 158 non sono costanti di questo file — escono da `MOB_BOTTOM` in
+   `scripts/hero-cutout.mjs`. Una foto nuova che la inquadra piu' stretta sposta l'atterraggio
+   senza che qui cambi niente (e' successo: il sorgente del 2026-09 le inquadra la testa il 14%
+   piu' grande, e con il vecchio ritaglio la card le finiva sulla mascella). Se cambi la foto,
+   la manopola da ritoccare e' MOB_BOTTOM di la', non SHEET_DY di qua.
 
    Conseguenza aritmetica da tenere presente: l'altezza FINALE della foto la decide il
    contenuto della card, non l'altezza a riposo. "3/4 a riposo" e' quindi gratis. */

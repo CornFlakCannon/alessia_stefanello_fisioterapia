@@ -86,7 +86,7 @@ The camera originals (15 JPG at 6000x4000, the hero PNG, plus the 4K studio vide
   point of the script. One `crop` line per photo is the only thing to touch when a
   framing is wrong.
 - `public/foto/hero.webp` + `hero-mobile.webp` — the hero portrait, a **cut-out with a
-  real alpha channel**, 1100x1467 (3:4) and 800x1000 (4:5). Built by
+  real alpha channel**, 1100x1467 (3:4) and 960x960 (square). Built by
   `scripts/hero-cutout.mjs` (sharp) from `FOTO_ORIGINALI/HERO_PHOTO.png`.
 
   **The source only pretends to have transparency.** It looks like a
@@ -109,7 +109,7 @@ The camera originals (15 JPG at 6000x4000, the hero PNG, plus the 4K studio vide
 
   **It is a flood fill from the border, not a colour key**, and that is the second half
   of the safety: a pixel counts as background only if it is pale, neutral *and reachable
-  from the edge without crossing her*. That keeps ~11k pale pixels **inside** the
+  from the edge without crossing her*. That keeps ~7k pale pixels **inside** the
   trousers, which a global key would have punched into holes. The count is printed on
   every run, because it is precisely the number that would go wrong silently. `ERODE`
   then drops the boundary pixels (part her, part plate — they would ship as a pale halo)
@@ -124,7 +124,7 @@ The camera originals (15 JPG at 6000x4000, the hero PNG, plus the 4K studio vide
   what makes her big — rendered height is `(subject_height / crop_height) * box_height` —
   so trimming rows buys size while side margin costs nothing (it is transparent, and
   `drop-shadow` follows the silhouette, not the box). Cutting the phone frame from 1695
-  rows to 1122 is what takes her head from 84px to ~290px on a 390x844 phone.
+  rows to 1217 is what takes her head from 84px to ~303px on a 390x844 phone.
 
   **The phone crop is SQUARE, and that is load-bearing, not a taste.** It is no longer laid
   out at its own ratio: the phone box has a fixed height (a 74svh full-bleed band) and the
@@ -146,9 +146,9 @@ The camera originals (15 JPG at 6000x4000, the hero PNG, plus the 4K studio vide
 
   **She stands on WHITE, and that is why the gold moved to the text half.** The cut-out
   first shipped on the gold slab and wore a pale halo around the hair. The obvious reading
-  is "erode harder"; measured, that is wrong. Those pale pixels are the ~11k the flood fill
+  is "erode harder"; measured, that is wrong. Those pale pixels are the ~7k the flood fill
   deliberately KEEPS inside her, and the count barely moves between 0 and 3 erosion passes
-  (10923 → 10824) because they are nowhere near the boundary — you cannot trim them without
+  (6900 → 6779) because they are nowhere near the boundary — you cannot trim them without
   eating the subject. What decides whether they read as a halo is the ground: composited on
   gold the palest of them lands **83 levels above** it, on white **29 below**, i.e.
   invisible. So it is not a threshold to tune, it is a ground to change. `ERODE` is 1 and
@@ -451,10 +451,13 @@ Two is the limit. Don't take these as licence for a third.
     nothing. Also `max-lg:justify-start` — `justify-center` would split the overflow between
     top and bottom, i.e. shear her crown.
   - **`SHEET_DY` is the one knob, and it is read with a formula, not by eye.** The band shows
-    all 1122 rows of the crop, so at the end of the rise `rows = 1122 * (1 - SHEET_DY/band)`
-    of her are still visible, counted from source row 128. Landmarks: chin ~760, shoulder
-    join 875. Raise it and the card climbs onto her chin; lower it and the index stays under
-    the fold. It is also why `short:` uses a much lower band (56svh, not 70): on a 667px
+    all 1217 rows of the crop, so at the end of the rise `rows = 1217 * (1 - SHEET_DY/band)`
+    of her are still visible, counted from source row 158. Landmarks: chin 859, neck 887,
+    shoulder join 900. Raise it and the card climbs onto her chin; lower it and the index
+    stays under the fold. **The other half of this formula is `MOB_BOTTOM`** in
+    `hero-cutout.mjs`, which sets both the crop height and the source row it starts from: a
+    new hero photo that frames her differently moves the landing without either constant
+    changing, so re-derive it there whenever the source is replaced. It is also why `short:` uses a much lower band (56svh, not 70): on a 667px
     screen a tall band makes that ratio explode and the card cuts her across the face.
   - **The final photo height is decided by the card's content, not by the resting height** —
     `viewport − padding − content` either way. That is why "3/4 at rest" was free, and why

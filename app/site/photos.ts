@@ -179,7 +179,7 @@ export const PHOTOS = {
  *
  * ## She stands on WHITE, and the gold moved to the text half
  * The cut-out first shipped on the gold slab and wore a pale halo around the hair. It is
- * not an edge artefact and no matte tuning removes it: the pale pixels are the ~11k the
+ * not an edge artefact and no matte tuning removes it: the pale pixels are the ~7k the
  * flood fill deliberately keeps INSIDE her (trouser and hair highlights), and eroding
  * three times over barely touches the count. What decides whether they read as a halo is
  * the ground — composited on gold the palest of them lands 83 levels ABOVE it, on white 29
@@ -192,7 +192,7 @@ export const PHOTOS = {
  */
 export const HERO_PHOTO = {
   /** Desktop: 3:4, cropped tight top and bottom so she is as large as the slab allows. */
-  desktop: { src: "/foto/hero.webp", width: 1100, height: 1466 },
+  desktop: { src: "/foto/hero.webp", width: 1100, height: 1467 },
   /** Phone: 1:1, a BUST — crown to just under the shoulder line, shoulders running off both
    *  sides. Square because the box crops it in width; see above. */
   mobile: { src: "/foto/hero-mobile.webp", width: 960, height: 960 },

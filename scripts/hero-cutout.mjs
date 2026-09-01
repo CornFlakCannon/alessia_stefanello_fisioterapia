@@ -32,7 +32,7 @@
  * her — the specular highlights on the white trousers are exactly that. Filling from the
  * image border instead makes background a matter of CONNECTIVITY: a pixel is background
  * only if it is pale, neutral AND reachable from the edge without crossing her. The run
- * below keeps ~11k interior pixels that a global key would have punched into holes; that
+ * below keeps ~7k interior pixels that a global key would have punched into holes; that
  * count is printed on every run precisely because it is the number that would go wrong
  * silently.
  *
@@ -43,9 +43,9 @@
  * ## Why `ERODE` is small, and what it is NOT for
  * The cut-out first shipped on the gold slab, and there it wore a visible pale halo around
  * the hair. The obvious reading is "erode harder". Measured, that is wrong: the pale
- * pixels are the ~11k the flood fill deliberately KEEPS — interior highlights on the white
+ * pixels are the ~7k the flood fill deliberately KEEPS — interior highlights on the white
  * trousers and in the hair — and the count barely moves between 0 and 3 erosion passes
- * (10923 → 10824) because they are nowhere near the boundary. You cannot trim them without
+ * (6900 → 6779) because they are nowhere near the boundary. You cannot trim them without
  * eating the subject.
  *
  * What decides whether they read as a halo is the GROUND:
@@ -60,7 +60,7 @@
  * every extra pass is hair we lose for nothing.
  *
  * ## Two derivatives, because the phone needs a different picture
- * She is tall and narrow (the subject is ~1250 x 2340 in a 1920 x 2560 frame), so one crop
+ * She is tall and narrow (the subject is ~1264 x 2292 in a 1920 x 2560 frame), so one crop
  * cannot serve both places:
  *   - `hero.webp`        3:4, cropped tight top and bottom — the desktop slab.
  *   - `hero-mobile.webp` SQUARE, a BUST: crown to just under the shoulder line. The client
@@ -69,8 +69,8 @@
  * Vertical tightness is what makes her big: rendered height is
  * `(subject_height / crop_height) * box_height`, so trimming rows buys size, while side
  * margin costs nothing (it is transparent, and `drop-shadow` follows the silhouette rather
- * than the box). Cutting the phone frame from 1695 rows to 1135 is what takes her head from
- * 84px to ~284px on a 390x844 phone.
+ * than the box). Cutting the phone frame from 1695 rows to 1217 is what takes her head from
+ * 84px to ~303px on a 390x844 phone.
  *
  * ## Why the phone crop is SQUARE, which is the load-bearing part
  * That derivative is no longer laid out at its own ratio: the phone box has a FIXED HEIGHT
@@ -126,30 +126,42 @@ const DESK_W = 1100;
 
 /* ── the phone frame ──────────────────────────────────────────────────────────────────
    Measured on the matte, which is what these numbers answer to:
-     crown 225 · chin/neck 775 (her narrowest, w=262) · shoulders start 875 (w jumps
-     306 -> 726) · widest ±607 from cx=1011 at y 1225..1275 · crossed arms below 1300.  */
+     crown 268 · chin 859 · neck 887 (her narrowest, w=282) · shoulders start 900 · widest
+     ±627 from cx=1008 at y~1379 · crossed arms below 1400.  */
 /** Air over the crown on the phone — less than the desktop's, because the frame is a third
- *  as tall and 160 rows would read as a hat. 110 lands at ~8% of the crop. */
+ *  as tall and 160 rows would read as a hat. 110 lands at ~9% of the crop. */
 const MOB_HEAD_ROOM = 110;
-/** How far down the body the phone frame reaches. 1250 cuts under the shoulder line and
- *  above the crossed arms: a bust. It was 1760 (arms included, "testa e mezzo busto") and
- *  the whole point of moving it is that the frame's height IS her rendered size. */
-const MOB_BOTTOM = 1250;
+/** How far down the body the phone frame reaches: under the shoulder line, above the crossed
+ *  arms — a bust. It was 1760 (arms included, "testa e mezzo busto"), and the whole point of
+ *  moving it is that the frame's height IS her rendered size.
+ *
+ *  It is ALSO what decides where the phone's gold card comes to rest ON HER, and that is the
+ *  constraint that actually pins it. The card rises `SHEET_DY` over a `74svh` band (page.tsx),
+ *  so at the end of the rise the lowest still-visible source row is
+ *
+ *      top + (bottom - top) * (1 - SHEET_DY / band)  =  158 + 1217 * 0.600  ≈  888
+ *
+ *  and 888 is her neck (887) — the card stops there, which is the composition that was signed
+ *  off. 1250, the value this frame carried for the PREVIOUS source, puts that landing at 813:
+ *  across her jaw, because this photo frames her head 14% larger (591 rows crown-to-chin,
+ *  against 519) and lower. Re-derive this line whenever the source photo changes. It cannot be
+ *  checked by eye at phone size, which is the entire reason the arithmetic is written down. */
+const MOB_BOTTOM = 1375;
 /** 1:1, and NOT a taste decision — see the docblock. The box is height-driven and capped at
  *  `min(100vw,74svh)`; square is what stops `object-cover` from ever cropping her head. */
 const MOB_RATIO = 1;
-/** The crop is natively 1135 across and the box shows ~61% of that width on a phone, so 960
+/** The crop is natively 1217 across and the box shows ~62% of that width on a phone, so 960
  *  is already oversampled. Raising it only costs LCP bytes. */
 const MOB_W = 960;
 /** Phone frame only: how far the subject may run off EACH side, in source px. At the current
- *  framing she is ±623 at the last row against a half-frame of 561, so 13px goes on the left
- *  and 63 on the right — the bleed the client asked for. A budget, not a licence: past this
- *  the framing has drifted and the run fails.
+ *  framing she spans 376..1629 against a frame of 400..1616, so 24px goes off the left and 13
+ *  off the right — the bleed the client asked for. A budget, not a licence: past this the
+ *  framing has drifted and the run fails.
  *  (The asymmetry is real and harmless: `cx` is the centre of her WHOLE body, and this frame
- *  keeps only the part of her that leans right of it.) */
+ *  keeps only the part of her above the crossed arms.) */
 const MOB_BLEED = 80;
-/** ...and the row above which NOTHING may be cut, whatever the budget says. 1050 is 175 rows
- *  BELOW the shoulder join (875) and 200 above the widest point: crown, hair, face, neck and
+/** ...and the row above which NOTHING may be cut, whatever the budget says. 1050 is 150 rows
+ *  BELOW the shoulder join (900) and 329 above the widest point: crown, hair, face, neck and
  *  the shoulder line itself are whole by construction, not by luck. A budget meant for
  *  shoulders can therefore never be spent on her head. */
 const MOB_FACE_GUARD = 1050;
