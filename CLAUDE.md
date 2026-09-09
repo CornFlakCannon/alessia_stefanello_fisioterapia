@@ -395,8 +395,10 @@ Two is the limit. Don't take these as licence for a third.
   Its entrance is on load, like everything else in panel 0, and it is the leitmotiv of the
   service panels played once: at `0.10s` the **gold half** comes in from the left and the
   **berry blade** from the right; at `0.22s` the **white slab** carrying the photo covers
-  the blade down to a ~50px strip, which lands exactly on the gold/white seam and so reads
-  as a divider rather than an edge. The portrait itself carries no animation.
+  the blade down to a strip `--hero-blade` wide (36px, one knob in `globals.css`; both the
+  blade and the text column are sized against it), which lands exactly on the gold/white
+  seam and so reads as a divider rather than an edge. The portrait itself carries no
+  animation.
 
   It used to: `.fisio-lift` grew her to 1.1 and switched on a `drop-shadow`. Both are gone,
   and not only because the shadow was dropped — **a final overshoot is in direct conflict

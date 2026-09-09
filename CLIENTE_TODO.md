@@ -154,3 +154,22 @@ stato fatto.
   Se le vuole, si aggiunge una quinta pagina.
 - **Il consenso dei pazienti** resta il punto aperto di sempre: nelle foto ci sono persone
   riconoscibili, serve la liberatoria firmata di ognuna prima di andare online.
+
+---
+
+# Terzo giro (settembre 2026)
+
+Le note del cliente dopo il secondo giro. Sotto, cosa è stato fatto.
+
+1. **La linea fucsia in mezzo all'hero un po' più sottile.** — FATTO: da 50px a 36px.
+   È una sola manopola (`--hero-blade` in `globals.css`): la lama e la colonna del testo
+   si misurano entrambe su quella, così il testo resta centrato nell'oro visibile. Sul
+   telefono il filetto sotto la foto era già sottile (4px) e resta com'è.
+2. **Titoli troppo grandi rispetto al testo delle sezioni.** — FATTO: i titoli di sezione
+   scendono di un gradino a ogni larghezza (30/36/48px invece di 36/48/60) e con loro i
+   titoli dentro le fasce colorate (24/30 invece di 30/36), così restano un gradino sotto.
+   Il nome nell'hero e nel footer non cambia.
+3. **Prova con le fasce alternate destra/sinistra.** — In prova sul branch
+   `alt-focus-alternati`: muscoloscheletrica a destra, pavimento pelvico a SINISTRA,
+   domiciliare a destra. Il layout attuale resta questo branch; si sceglie dopo averli
+   visti entrambi.

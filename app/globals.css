@@ -88,9 +88,9 @@
    Four owners, one animation each (an SDiv must never carry one of these: a filled
    `both` animation outranks the inline transform it writes, permanently):
      0.10s  the gold half comes in from the LEFT, the berry blade from the right
-     0.22s  the white slab — and the photo inside it — covers the blade down to a ~50px
-            strip, which lands exactly on the gold/white seam. The lag IS the effect:
-            the blade has to be seen before it is covered.
+     0.22s  the white slab — and the photo inside it — covers the blade down to a strip
+            `--hero-blade` wide (below), which lands exactly on the gold/white seam. The
+            lag IS the effect: the blade has to be seen before it is covered.
 
    There used to be a third beat, `.fisio-lift`: the portrait grew to 1.1 and switched on a
    drop-shadow, so she read as sitting ON the page. It is gone with the shadow, and not
@@ -101,6 +101,14 @@
 
    `both` on each, so the from-state already applies during the delay: no flash of a
    settled hero before its own animation starts. */
+/* The strip of the berry blade the white slab leaves uncovered — the divider on the
+   gold/white seam. ONE knob: page.tsx sizes both the blade (`46vw + blade`) and the
+   text column (`54vw - blade`) against it, so the copy stays centred in the VISIBLE
+   gold whatever the value. Was 50px; the client asked for thinner (settembre 2026). */
+:root {
+  --hero-blade: 36px;
+}
+
 @keyframes fisio-slide-in {
   from {
     transform: translateX(100%);

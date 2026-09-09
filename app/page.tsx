@@ -187,16 +187,20 @@ const mobSheet = (dy: number): AnimSpec => [
 const shell = `${PANEL_BOX} flex-col`;
 const eyebrow = "font-mono text-sm uppercase tracking-[0.22em] text-primary";
 /* `xl:` and not `lg:` for the biggest step: from 1024 the service panels' text column is
-   only the ~42% the focus slab leaves it (see FocusPanel), and a 60px heading in ~400px
+   only the ~42% the focus slab leaves it (see FocusPanel), and a 48px heading in ~400px
    wraps into a tower that pushes the panel past its 100svh. It gets its full size once
-   there is width to spend. */
-const heading = "font-display text-4xl font-semibold leading-tight text-primary sm:text-5xl xl:text-6xl";
+   there is width to spend.
+   One step down at every breakpoint (was 4xl/5xl/6xl): the client found the jump from
+   title to body too dramatic, 60px over a 20px body. Now 30/36/48 over 18/20. */
+const heading = "font-display text-3xl font-semibold leading-tight text-primary sm:text-4xl xl:text-5xl";
 const body = "text-lg leading-relaxed text-ink/90 sm:text-xl";
 /* Inside a focus slab the type is one step down from the panel's own (it's a sub-beat,
    not a second headline) and inherits the slab's colour, so it works on every ground.
-   `short:` trims the heading: the slab is the tallest thing on those panels. */
+   `short:` trims the heading: the slab is the tallest thing on those panels.
+   It stepped down WITH `heading`: had it stayed at 3xl/4xl, on a 1024-1279 laptop the
+   section title and the slab title would sit side by side at the same 36px. */
 const focusEyebrow = "font-mono text-[0.72rem] uppercase tracking-[0.2em] opacity-80";
-const focusHeading = "mt-2 font-display text-3xl font-semibold leading-tight short:text-2xl sm:text-4xl";
+const focusHeading = "mt-2 font-display text-2xl font-semibold leading-tight short:text-xl sm:text-3xl";
 const focusBody = "mt-3 text-base leading-relaxed opacity-90 sm:text-lg";
 
 function Check() {
@@ -322,12 +326,13 @@ export default function Home() {
           />
 
           {/* LA LAMA BERRY. Entra da destra insieme all'oro e la fascia bianca la copre
-              quasi tutta: quello che avanza è una barra verticale di ~50px, che ora cade
+              quasi tutta: quello che avanza è una barra verticale larga `--hero-blade`
+              (globals.css — 36px, era 50 e il cliente l'ha voluta più sottile), che cade
               esattamente sulla cucitura oro/bianco e fa da divisore invece che da bordo.
               Solo da lg — è verticale per definizione. */}
           <span
             aria-hidden="true"
-            className="fisio-slide-in pointer-events-none absolute inset-y-0 right-0 z-[1] hidden bg-emphasis lg:block lg:w-[calc(46vw+50px)]"
+            className="fisio-slide-in pointer-events-none absolute inset-y-0 right-0 z-[1] hidden bg-emphasis lg:block lg:w-[calc(46vw_+_var(--hero-blade))]"
             style={{ animationDelay: "0.10s" }}
           />
 
@@ -338,7 +343,7 @@ export default function Home() {
               riferimento diversi e su una finestra da 1883px la foto stava 164px a
               sinistra del centro dell'oro. Non tornare indietro.
 
-              È anche ciò che copre la lama berry lasciandone i 50px.
+              È anche ciò che copre la lama berry lasciandone la barra `--hero-blade`.
 
               SUL TELEFONO lo stesso box è una FASCIA a tutta videata, alta 74svh, che sborda
               il `px-6`/`py-8` del pannello (`w-[100vw]` centrato da `items-center`, più un
@@ -395,13 +400,15 @@ export default function Home() {
               centro della metà ORO esattamente come il ritratto sta al centro di quella
               bianca. Aveva già avuto due giri di "lo spazio è distribuito male" da
               `ml-auto`. */}
-          {/* `54vw - 50px` e non `54vw`: la colonna si ferma dove comincia la lama berry,
-              così è centrata nell'oro VISIBILE. A 54vw pieni, su una finestra da 1024 il
-              bordo destro del testo finiva 5px sotto la lama. */}
+          {/* `54vw - var(--hero-blade)` e non `54vw`: la colonna si ferma dove comincia la
+              lama berry, così è centrata nell'oro VISIBILE. A 54vw pieni, su una finestra da
+              1024 il bordo destro del testo finiva 5px sotto la lama. Gli underscore sono
+              spazi: `calc` li vuole attorno a `+`/`-`, e `54vw-var(` è proprio il token che
+              la spaziatura automatica di Tailwind potrebbe non spezzare. */}
           <SDiv
             {...SHEET_RISE}
             anim={desktop ? NO_DRIFT : mobSheet(shortView ? SHEET_DY_SHORT : SHEET_DY)}
-            className="relative z-10 w-full max-w-6xl text-center lg:w-[calc(54vw-50px)] lg:max-w-none lg:self-start"
+            className="relative z-10 w-full max-w-6xl text-center lg:w-[calc(54vw_-_var(--hero-blade))] lg:max-w-none lg:self-start"
           >
             {/* SUL TELEFONO l'oro sta DIETRO AL TESTO e comincia a `top-0` — che, non
                 essendoci margine sulla foto, È il suo bordo inferiore: lei POGGIA sulla
