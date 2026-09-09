@@ -363,7 +363,9 @@ Two is the limit. Don't take these as licence for a third.
   `PanelTexture` (local to this file) is the full-panel photo ground used by the two text
   panels — absolute, so it costs no height in a `100svh` budget.
   The order and the "focus a destra" on each service are the client's own sequencing
-  (`CLIENTE_TODO.md` §2) — sport is **not** a panel, it's the muscolo panel's focus.
+  (`CLIENTE_TODO.md` §2) — sport is **not** a panel, it's the muscolo panel's focus. On
+  this branch the pelvico focus is on the LEFT (terzo giro, point 3), so the three read
+  right · left · right.
 - `FocusPanel.tsx` — that device. **It tells the story differently on the two viewports**,
   which is the current shape of the client's request: on desktop the slab is already home
   when the panel lands, wearing its photos, and the CONTENT arrives from the right; on
@@ -374,6 +376,10 @@ Two is the limit. Don't take these as licence for a third.
   to the **inner wrapper** (leave them on the slab and the focus collapses into one flex
   item), and `backdrop` must stay **outside** that wrapper or the photos slide in with the
   text. A panel using it needs `end` past `FOCUS_LANDED` + dwell.
+  `side` (`"right"` default, `"left"`) mirrors the whole device — slab edge, diagonal,
+  text strip and every arrival direction — through the `SIDE` table in the file; a panel
+  says one word. **This branch (`alt-focus-alternati`) is the alternated layout**: the
+  pelvico panel is the one on the left.
 - `useViewport.ts` — `useIsDesktop` (`min-width: 1024px`, exactly where the slab becomes
   `lg:w-[55%]`) and `useIsShort` (`max-height: 740px`, the `short:` variant in JS). Both
   `useSyncExternalStore` over `matchMedia`, server snapshot `false`.

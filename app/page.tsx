@@ -609,11 +609,17 @@ export default function Home() {
         </FocusPanel>
       </Section>
 
-      {/* ── 2 · PAVIMENTO PELVICO (+ focus post parto) ────────────────────── */}
+      {/* ── 2 · PAVIMENTO PELVICO (+ focus post parto, a SINISTRA) ────────────
+          La visione alternativa di questo branch: le fasce si alternano — destra,
+          SINISTRA, destra — invece di stare tutte a destra. Solo questo pannello si
+          ribalta, cosi' la muscoloscheletrica tiene il "focus a destra" approvato e la
+          domiciliare rispecchia l'hero. Una parola: il resto lo fa la tabella SIDE in
+          FocusPanel. */}
       <Section index={2} snap={SNAP} end={PANEL_END[2]}>
         <FocusPanel
           ground="bg-mist"
           slab="bg-primary text-white"
+          side="left"
           backdrop={
             /* Finalmente due foto anche qui: era l'unica fascia senza, e teneva ancora
                il disegno animato del ponte. Il gesto prima, poi il luogo — e il lettino

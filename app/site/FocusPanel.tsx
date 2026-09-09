@@ -12,11 +12,20 @@ import { useIsDesktop } from "./useViewport";
  * right carrying a sub-beat of that service.
  *
  * ```tsx
- * <FocusPanel ground="bg-white" slab="bg-emphasis text-white"
+ * <FocusPanel ground="bg-white" slab="bg-emphasis text-white" side="left"
  *             backdrop={<PhotoSlab … />} focus={<>…text, logo…</>}>
  *   …the text column's SDiv reveals…
  * </FocusPanel>
  * ```
+ *
+ * ## `side` — the mirror, for the alternated layout
+ * "A destra" is the default. `side="left"` is the same device flipped (branch
+ * `alt-focus-alternati`, terzo giro): the slab and its diagonal sit on the LEFT edge, the
+ * text column is laid out in the strip on the right, and every arrival — slab on phones,
+ * content on desktop — comes from the slab's own side, with the text making room the
+ * other way. On phones the slab is full-width, so there `side` only decides which edge it
+ * slides in from. Everything that depends on it lives in the `SIDE` table below; a panel
+ * says one word and nothing else changes.
  *
  * ## Desktop and phone tell it differently, on purpose
  * It used to be one story everywhere: the slab arrived from off-stage while the text slid
@@ -42,9 +51,10 @@ import { useIsDesktop } from "./useViewport";
  * literals here would recompile every frame.
  *
  * ## On desktop the text column is LAID OUT, not translated
- * `lg:pr-[58%]` on the wrapper, with the block still `justify-center`ed inside what is
- * left: the column is literally the strip the slab does not cover, so the text is centred
- * in the white half the way the hero's copy is centred in its own.
+ * `lg:pr-[58%]` on the wrapper (`pl` for a left slab), with the block still
+ * `justify-center`ed inside what is left: the column is literally the strip the slab does
+ * not cover, so the text is centred in the white half the way the hero's copy is centred
+ * in its own.
  *
  * It is not a translate, and that distinction is the bug this shipped with once. A `%`
  * translate resolves against the ELEMENT'S OWN border box, so the same `-25%` means 25%
@@ -72,8 +82,8 @@ import { useIsDesktop } from "./useViewport";
  *   want.
  *
  * `%` on the wrapper's `x` resolves against the WRAPPER's width (the slab, 55vw on
- * desktop), not the viewport — so `100%` is one slab-width off to the right, and the
- * slab's `overflow-hidden` clips it on the way in.
+ * desktop), not the viewport — so `±100%` is one slab-width off to the slab's own side,
+ * and the slab's `overflow-hidden` clips it on the way in.
  *
  * A panel using this needs `end` past `FOCUS_LANDED` plus reading dwell, or the focus
  * never finishes arriving before the section hands off.
@@ -87,37 +97,79 @@ export const FOCUS_SPAN = 340;
 /** Where the focus is home — the earliest a panel can be considered "told", and what a
  *  jump's `land` in HERO_INDEX aims just past. */
 export const FOCUS_LANDED = FOCUS_IN + FOCUS_SPAN;
-/** PHONE ONLY: how far the text block slides left as the slab arrives. A share of the
+/** PHONE ONLY: how far the text block slides AWAY from the incoming slab. A share of the
  *  viewport, because it is applied to the full-width wrapper and a `%` translate resolves
  *  against the element's own box. On phones the slab is full-width and has covered the
  *  text by the time this finishes, so it reads as "explanation, then focus" rather than
  *  as a shift — it is the motion that matters, not the destination. Desktop does not use
  *  it at all: there the column is laid out inside the strip (see the docblock). */
-const SHIFT = "-25%";
+const SHIFT = "25%";
 
 /** Nothing to animate — the element keeps whatever CSS gives it (no inline pose). */
 const STATIC: AnimSpec = [];
-/** Phone: the slab arrives from off-stage right (`x: 100%` on a `right-0` box). */
-const SLAB_IN: AnimSpec = [
-  { at: 0, x: "100%" },
-  { at: 1, x: 0, ease: easeOutCubic },
-];
-/** Phone: the text makes room as the slab comes. */
-const TEXT_OUT: AnimSpec = [
-  { at: 0, x: 0 },
-  { at: 1, x: SHIFT, ease: easeOutCubic },
-];
-/** Desktop: the slab is already there and its CONTENT is what arrives. */
-const CONTENT_IN: AnimSpec = [
-  { at: 0, x: "100%", opacity: 0 },
-  { at: 1, x: 0, opacity: 1, ease: easeOutCubic },
-];
+
+export type Side = "right" | "left";
+
+/**
+ * Everything that depends on which side the slab lives on, side by side so the two can
+ * never drift apart. Class strings stay literals (Tailwind scans source for them) and
+ * the keyframe arrays are module constants (`SDiv` memoises its compiled anim on the
+ * array's identity — a literal in the render would recompile every frame).
+ *
+ * - `column`: the strip the text is laid out in — the side the slab does NOT cover.
+ * - `slab`: which edge the slab hugs, and the diagonal on its inner edge (the polygon is
+ *   the right one mirrored, x → 100% − x).
+ * - `content`: the slab's inner padding, the bigger value on the diagonal side.
+ * - `slabIn` (phone): the slab arrives from off-stage on its own side.
+ * - `textOut` (phone): the text makes room, moving the other way.
+ * - `contentIn` (desktop): the slab is already there and its CONTENT arrives, from its side.
+ */
+const SIDE: Record<
+  Side,
+  { column: string; slab: string; content: string; slabIn: AnimSpec; textOut: AnimSpec; contentIn: AnimSpec }
+> = {
+  right: {
+    column: "lg:pr-[58%]",
+    slab: "right-0 lg:[clip-path:polygon(12%_0,100%_0,100%_100%,0_100%)]",
+    content: "lg:pl-24 lg:pr-16",
+    slabIn: [
+      { at: 0, x: "100%" },
+      { at: 1, x: 0, ease: easeOutCubic },
+    ],
+    textOut: [
+      { at: 0, x: 0 },
+      { at: 1, x: `-${SHIFT}`, ease: easeOutCubic },
+    ],
+    contentIn: [
+      { at: 0, x: "100%", opacity: 0 },
+      { at: 1, x: 0, opacity: 1, ease: easeOutCubic },
+    ],
+  },
+  left: {
+    column: "lg:pl-[58%]",
+    slab: "left-0 lg:[clip-path:polygon(0_0,88%_0,100%_100%,0_100%)]",
+    content: "lg:pr-24 lg:pl-16",
+    slabIn: [
+      { at: 0, x: "-100%" },
+      { at: 1, x: 0, ease: easeOutCubic },
+    ],
+    textOut: [
+      { at: 0, x: 0 },
+      { at: 1, x: SHIFT, ease: easeOutCubic },
+    ],
+    contentIn: [
+      { at: 0, x: "-100%", opacity: 0 },
+      { at: 1, x: 0, opacity: 1, ease: easeOutCubic },
+    ],
+  },
+};
 
 export default function FocusPanel({
   ground,
   slab,
   backdrop,
   focus,
+  side = "right",
   children,
 }: {
   /** Tailwind background for the panel itself, e.g. `"bg-white"`. */
@@ -130,18 +182,22 @@ export default function FocusPanel({
   backdrop?: React.ReactNode;
   /** The sub-beat itself: the text and whatever signs it off. */
   focus: React.ReactNode;
+  /** Which edge the slab lives on. "right" is the client's "focus a destra"; "left" is
+   *  its mirror for the alternated layout — see the docblock. */
+  side?: Side;
   /** The service's explanation: the caller's own `SDiv` reveals. */
   children: React.ReactNode;
 }) {
   const desktop = useIsDesktop();
+  const s = SIDE[side];
 
   return (
     <div className={`${PANEL_BOX} ${ground}`}>
       <SDiv
         start={FOCUS_IN}
         budget={FOCUS_SPAN}
-        anim={desktop ? STATIC : TEXT_OUT}
-        className={`relative z-10 flex w-full justify-center${desktop ? " lg:pr-[58%]" : ""}`}
+        anim={desktop ? STATIC : s.textOut}
+        className={`relative z-10 flex w-full justify-center${desktop ? ` ${s.column}` : ""}`}
       >
         <div className="w-full max-w-2xl">{children}</div>
       </SDiv>
@@ -149,15 +205,15 @@ export default function FocusPanel({
       <SDiv
         start={FOCUS_IN}
         budget={FOCUS_SPAN}
-        anim={desktop ? STATIC : SLAB_IN}
-        className={`absolute inset-y-0 right-0 z-20 w-full overflow-hidden shadow-2xl lg:w-[55%] lg:[clip-path:polygon(12%_0,100%_0,100%_100%,0_100%)] ${slab}`}
+        anim={desktop ? STATIC : s.slabIn}
+        className={`absolute inset-y-0 z-20 w-full overflow-hidden shadow-2xl lg:w-[55%] ${s.slab} ${slab}`}
       >
         {backdrop}
         <SDiv
           start={FOCUS_IN}
           budget={FOCUS_SPAN}
-          anim={desktop ? CONTENT_IN : STATIC}
-          className="relative z-10 flex h-full w-full flex-col items-center justify-center gap-8 px-8 py-16 text-center short:gap-4 short:py-8 sm:px-12 lg:pl-24 lg:pr-16"
+          anim={desktop ? s.contentIn : STATIC}
+          className={`relative z-10 flex h-full w-full flex-col items-center justify-center gap-8 px-8 py-16 text-center short:gap-4 short:py-8 sm:px-12 ${s.content}`}
         >
           {focus}
         </SDiv>
