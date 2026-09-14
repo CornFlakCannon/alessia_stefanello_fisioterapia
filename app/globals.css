@@ -130,6 +130,22 @@
   animation: fisio-slide-left 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+/* The hero's scroll hint: the classic small up-and-down, forever. Its own element (a
+   pill INSIDE the SDiv that fades it out on scroll), because SDiv writes `transform`
+   inline and a running animation would outrank it for good. */
+@keyframes fisio-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.fisio-bounce {
+  animation: fisio-bounce 1.6s ease-in-out infinite;
+}
+
 /* Respect reduced-motion: show everything settled, skip the entrance animations. */
 @media (prefers-reduced-motion: reduce) {
   .fisio-draw path {
@@ -145,6 +161,9 @@
   .fisio-slide-left {
     animation: none;
     transform: translateX(0);
+  }
+  .fisio-bounce {
+    animation: none;
   }
 }
 
