@@ -320,7 +320,10 @@ Two is the limit. Don't take these as licence for a third.
   everything `SDiv` writes — which is also why the two cannot be stacked on one node.
   **The one deliberate exception**: on phones the hero's tail (address + index) reveals on
   scroll instead (`MOB_ADDRESS`/`MOB_INDEX` in `page.tsx`). Panel 0 owns 1100 units of
-  scroll and on a phone nothing used them — the portrait drift and the scroll hint are both
+  scroll on a phone — on desktop only `HERO_END_DESKTOP` = 100, one wheel notch: with the
+  drift gone it has nothing to tell on scroll, so it hands off at once; the `end` is
+  per-viewport via `useIsDesktop`, which `Section` picks up since it registers the
+  threshold in an effect keyed on it — and on a phone nothing used them — the portrait drift and the scroll hint are both
   desktop-only — so scrolling through the hero felt like a delay before the page began. The
   trade is real and accepted: a visitor who lands and never scrolls does not see the address
   or the index; what stays above the fold is photo, name, role and the positioning line.
@@ -335,7 +338,7 @@ Two is the limit. Don't take these as licence for a third.
 
 ## Site code (`app/site/`)
 
-- `data.ts` — all copy + contact + `SECTION` indices + `HERO_INDEX`/`HERO_INDEX_EXTRA` +
+- `data.ts` — all copy + contact + `SECTION` indices + `HERO_INDEX`/`HERO_INDEX_EXTRAS` +
   `FORMAZIONE`. `FORMAZIONE` now holds Alessia's **real** credentials, transcribed from
   the CV — with a ⚠️ block listing the two things still to confirm with her (a handful of
   probable typos in the PDF, and an email that disagrees with the one the site publishes).
@@ -408,25 +411,27 @@ Two is the limit. Don't take these as licence for a third.
 
   **She is bottom-anchored** (`lg:items-end`, `lg:pb-0`): the source is cut across her
   thighs, and butting that cut against the fold turns a crop into a BASE — she continues
-  past the frame instead of ending in mid-air. It is also why the scroll drift moves her
-  DOWN (`y: 0 → 14`): lifting a bottom-anchored figure opens a strip of white under her
-  feet, while sinking just pushes the cut past the fold where nothing shows.
+  past the frame instead of ending in mid-air.
 
-  That drift is **desktop only** (`HERO_DRIFT` in `page.tsx`). On phones she does not move
-  at all, for two reasons that agree: the motion in that half of the screen is already
-  spoken for (the gold CARD rises over her — see below), and she has only ~55px of air over
-  her crown there, so any upward travel, parallax included, shaves it off against the
-  panel's `overflow-hidden`. One rule cannot serve both, which is why it is gated in JS.
+  **She does not move on scroll, on any viewport.** There used to be a desktop-only
+  drift DOWN (`HERO_DRIFT`, `y: 0 → 14`); the client had it removed — 14px of motion with
+  no story behind it only broke the page's flow. If a drift ever comes back it must still go
+  down, not up: lifting a bottom-anchored figure opens a strip of white under her feet, and
+  on phones she has only ~55px of air over her crown, which any upward travel shaves off
+  against the panel's `overflow-hidden`.
 
-  Her size is capped in `page.tsx` as `lg:w-[min(69svh,39vw)]`, and both terms are
+  Her size is capped in `page.tsx` as `lg:w-[min(76svh,42vw)]`, and both terms are
   viewport-relative on purpose — the cap used to carry a `34rem` term and THAT is what
-  bound, holding her to 544px inside an 883px slab on a 1920x1080 screen.
-  - `69svh` is **height in disguise**: a 3:4 portrait is 1.33x as tall as it is wide, so
-    69svh of width is ~92svh of height — full to the fold with ~8svh of air over her head.
-    Raise it and you cut her head off (the panel is `overflow-hidden`).
-  - `39vw` guards the other axis: the slab is `46vw`, so this leaves ~3.5vw of air per
-    side. It is the term that binds below 16:9 — on 1024x768 it resolves to 399px inside a
-    471px slab.
+  bound, holding her to 544px inside an 883px slab on a 1920x1080 screen. The numbers are
+  read off the crop, not the box: in `hero.webp` her crown sits at row 97 of 1467 (6.6%).
+  - `76svh` is **height in disguise**: a 3:4 portrait is 1.33x as tall as it is wide, so
+    76svh of width is ~101svh of height — the box overruns the top by ~1svh of TRANSPARENT
+    rows and her crown lands ~5svh (~45px on 907) under the edge. Raise it and you cut her
+    head off (the panel is `overflow-hidden`). It was 69, which left 14svh of air.
+  - `42vw` guards the other axis: the slab is `46vw`, so this leaves 2vw of air per side.
+    It is the term that binds on 16:9 and below — 806px on 1920x1080 (crown at ~76px), 574
+    on 1366x768, 430 inside a 471px slab on 1024x768. It was 39, and on 16:9 it was already
+    the binding term, so raising the svh term alone would not have grown her there.
 
   **The gold is the TEXT's half now** — `left-0 w-[54vw]` on desktop. It swapped sides with
   the portrait for the halo reason above; before that it was on the right and, on phones,
@@ -475,7 +480,11 @@ Two is the limit. Don't take these as licence for a third.
   `clamp(1.7rem,8vw,2.6rem)` so "Alessia Stefanello" stays on ONE line (a wrap there costs a
   whole line of the budget), and the index at `0.8rem` below `sm` so its longest label stops
   wrapping. The scroll hint is `lg`-only: centred at the bottom, it lands exactly on the
-  index.
+  index. On desktop it is a **white pill centred on the berry blade** (`left-[calc(54vw-25px)]`,
+  the blade's midline), not on the viewport: the blade is the seam between the halves and
+  a viewport-centred hint sat visibly beside it. Straddling three colours is why it has a
+  ground of its own. It bounces (`.fisio-bounce`, off under reduced motion) on its own
+  element inside the SDiv that fades it — the two cannot share a node.
 
   ⚠️ **Gold is a ground that eats the palette.** Measured against `--brand-secondary`:
   `text-secondary` is invisible by definition, `text-emphasis` is 2.88:1, and even full
@@ -502,10 +511,20 @@ Two is the limit. Don't take these as licence for a third.
   itself is centred, the role hangs between two gold rules, and where the CTA and the
   phone number used to be there is now the **studio's address**: someone looking for a
   physiotherapist wants to know WHERE first, and call/email are one tap away in the badge.
+  The inner column is `max-w-[34rem]` and widens to `xl:max-w-[40rem]` so the full address
+  fits on ONE line (it measures ~535px at `text-base`); between 1024 and 1279 the visible
+  gold is too narrow for that column and the address wraps, accepted. The hero also
+  overrides the box's `py-24` with `lg:py-16 lg:short:py-12`: with the single-column index
+  the gold half carries ~615px of content and a 1366x768 laptop only has 576 left at
+  `py-24`.
 
 - `ServiceIndex.tsx` — the hero's index, in **two groups**: the three services under
-  "Lavoro in ambito:", and "La mia formazione" held apart under its own rule (it is not a
-  service and was reading as a fourth one). Each entry scrolls to its panel via
+  "Lavoro in ambito:", and "Contattami · La mia formazione" held apart under their own rule
+  (neither is a service, and the CV was reading as a fourth one). On desktop the services
+  are a **single-column list** — ordinal in a fixed column, labels aligned, a rule per row —
+  left-aligned inside a centred `lg:max-w-sm` block; on phones they stay a 2-column grid
+  because the rising card is sized against this block's height (`SHEET_DY`), and the extras
+  row is two columns on every viewport so "Contattami" cost zero rows there. Each entry scrolls to its panel via
   `useSectionJump` (seam 1 below) — `e.currentTarget` is load-bearing there, and the hook
   is called ONCE in the parent, since it keeps "at most one jump in flight" in a ref.
 - `HeroFigure.tsx` — hand-authored SVG line figure (approximation of the biglietto da

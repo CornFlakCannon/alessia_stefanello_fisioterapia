@@ -9,7 +9,7 @@
 /** The address as GOOGLE should read it — no "(PD)" parenthetical, which is how it is
  *  written for people but not what a geocoder wants. One string, so the embedded map and
  *  the "apri in Google Maps" link can never end up pointing at two different places. */
-const MAPS_QUERY = "Viale della Navigazione Interna 51, Padova PD";
+const MAPS_QUERY = "Forcellini, Padova PD";
 
 export const CONTACT = {
   name: "Alessia Stefanello",
@@ -27,14 +27,15 @@ export const CONTACT = {
   mapsQuery: MAPS_QUERY,
   /** Studio address on Google Maps — the "apri in Google Maps" link on PadovaMap. */
   mapsUrl:
-    "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(MAPS_QUERY),
+    "https://www.google.com/maps/search/?api=1&query=" +
+    encodeURIComponent(MAPS_QUERY),
 } as const;
 
 /** Section (panel) indices — the order of the top-level <Section>s in page.tsx.
  *  There is no SPORT panel: the sport beat is the *focus slab* of the muscolo panel
  *  (the client's own sequencing — see CLIENTE_TODO.md §2), so it has no index of its
- *  own. CONTATTI is the target the "Contattami" CTA scrolls to once the engine ships
- *  the jump feature (see JUMP_TO_FEATURE.md); until then the CTA opens email. */
+ *  own. CONTATTI is where the hero index's "Contattami" entry scrolls to (via
+ *  `useSectionJump`, the site-side workaround for the engine's missing jump API). */
 export const SECTION = {
   HERO: 0,
   MUSCOLO: 1,
@@ -51,7 +52,7 @@ export const SERVICES = {
     title: "Riabilitazione muscoloscheletrica",
     body:
       "Valutazione e trattamento di problematiche muscolo-tendinee e articolari. " +
-        "Un percorso costruito su misura per ridurre il dolore e restituirti movimento sia nella gestione del dolore acuto/cronico che nei casi d'infortunio.",
+      "Un percorso costruito su misura per ridurre il dolore, sia acuto che cronico, e restituirti movimento.",
     points: [
       "Terapia manuale",
       "Esercizio terapeutico personalizzato",
@@ -63,8 +64,7 @@ export const SERVICES = {
   sport: {
     eyebrow: "Focus",
     title: "Ritorno allo sport, in sicurezza",
-    body:
-      "Accompagno atleti di qualsiasi livello nel percorso post-chirurgico e post-infortunio, fino alla riatletizzazione, ritorno in campo e prevenzione delle recidive.",
+    body: "Accompagno atleti di qualsiasi livello nel percorso post-chirurgico e post-infortunio, fino alla riatletizzazione e al ritorno allo sport in sicurezza. Con un'attenzione particolare nel lavoro per la prevenzione delle recidive.",
     points: [
       "Percorso post-chirurgico",
       "Recupero post-infortunio",
@@ -79,12 +79,10 @@ export const SERVICES = {
   pelvico: {
     eyebrow: "02 — Pavimento pelvico",
     title: "Riabilitazione del pavimento pelvico",
-    body:
-      "Un supporto delicato e competente per la salute del pavimento pelvico. " +
-      "Un percorso che ti accompagna alla gestione del dolore e al recupero della funzionalità — con ascolto e riservatezza.",
+    body: "Un supporto competente per prenderti cura del pavimento pelvico. Ti accompagno, con ascolto e riservatezza, nella gestione del dolore e delle disfunzioni uro-ginecologiche.",
     points: [
-      "Percorsi pre e post parto",
-      "Disfunzioni sessuali e dolore pelvico",
+      "Percorsi di riabilitazione post-parto",
+      "Dolore pelvico e disfunzioni sessuali",
       "Problematiche di incontinenza",
     ],
     postParto: {
@@ -92,7 +90,7 @@ export const SERVICES = {
       title: "Il percorso post parto",
       body:
         "Dopo il parto il corpo chiede del tempo e una guida. Valutiamo insieme diastasi, cicatrice e " +
-          "funzionalità del pavimento pelvico. Costruiamo un ritorno graduale al movimento.",
+        "funzionalità del pavimento pelvico. Costruiamo un ritorno graduale al movimento.",
     },
   },
   domiciliare: {
@@ -100,7 +98,7 @@ export const SERVICES = {
     title: "Fisioterapia a domicilio",
     body:
       "Quando spostarsi è difficile, vengo io da te. Trattamenti a domicilio per anziani e persone " +
-        "con mobilità ridotta, nella zona del centro di Padova.",
+      "con mobilità ridotta, nella zona del centro di Padova.",
     zona: {
       eyebrow: "Focus",
       title: "Dove arrivo",
@@ -155,47 +153,112 @@ export const FORMAZIONE = {
       id: "esperienza",
       label: "Esperienza",
       items: [
-        { year: "2025 — oggi", title: "Fisioterapia muscoloscheletrica e ortopedica", place: "Kinesis Medical" },
-        { year: "2022 — oggi", title: "Libera professione — muscoloscheletrico, ortopedico, sportivo", place: "Padova" },
-        { year: "2022 — oggi", title: "Collaboratrice alla docenza — distretto toraco-lombare", place: "Università di Genova" },
-        { year: "2022 — 2024", title: "Muscoloscheletrico, ortopedico e neurologico", place: "Policlinico San Marco (VE)" },
-        { year: "2021 — 2022", title: "Muscoloscheletrico e ortopedico", place: "FisioRED (PD)" },
+        {
+          year: "2025 — oggi",
+          title: "Fisioterapia muscoloscheletrica e ortopedica",
+          place: "Kinesis Medical",
+        },
+        {
+          year: "2022 — oggi",
+          title:
+            "Libera professione — muscoloscheletrico, ortopedico, sportivo",
+          place: "Padova",
+        },
+        {
+          year: "2022 — oggi",
+          title: "Collaboratrice alla docenza — distretto toraco-lombare",
+          place: "Università di Genova",
+        },
+        {
+          year: "2022 — 2024",
+          title: "Muscoloscheletrico, ortopedico e neurologico",
+          place: "Policlinico San Marco (VE)",
+        },
+        {
+          year: "2021 — 2022",
+          title: "Muscoloscheletrico e ortopedico",
+          place: "FisioRED (PD)",
+        },
       ],
     },
     {
       id: "extra",
       label: "Esperienze extra",
       items: [
-        { year: "2026", title: "Fisioterapista ai Giochi olimpici invernali", place: "Villaggio olimpico — Milano Cortina 2026" },
-        { year: "2024", title: "Volontariato — neurologico, ortopedico ed età evolutiva", place: "Ospedale di Andavadoaka, Madagascar" },
+        {
+          year: "2026",
+          title: "Fisioterapista ai Giochi olimpici invernali",
+          place: "Villaggio olimpico — Milano Cortina 2026",
+        },
+        {
+          year: "2024",
+          title: "Volontariato — neurologico, ortopedico ed età evolutiva",
+          place: "Ospedale di Andavadoaka, Madagascar",
+        },
       ],
     },
     {
       id: "educazione",
       label: "Educazione",
       items: [
-        { year: "2020 — 2022", title: "Master in Riabilitazione dei disturbi muscoloscheletrici — 110 e lode", place: "Università di Genova" },
-        { year: "2017 — 2020", title: "Laurea triennale in Fisioterapia — 110 e lode", place: "Università di Padova" },
-        { year: "2012 — 2017", title: "Diploma di maturità scientifica", place: "Liceo Enrico Fermi (PD)" },
+        {
+          year: "2020 — 2022",
+          title:
+            "Master in Riabilitazione dei disturbi muscoloscheletrici — 110 e lode",
+          place: "Università di Genova",
+        },
+        {
+          year: "2017 — 2020",
+          title: "Laurea triennale in Fisioterapia — 110 e lode",
+          place: "Università di Padova",
+        },
+        {
+          year: "2012 — 2017",
+          title: "Diploma di maturità scientifica",
+          place: "Liceo Enrico Fermi (PD)",
+        },
       ],
     },
     {
       id: "corsi",
       label: "Corsi",
       items: [
-        { year: "2025 — 2026", title: "Master in Riabilitazione del pavimento pelvico", place: "Fisiokines" },
-        { year: "2025", title: "Tecnico di 1° livello — Strength and Conditioning", place: "NSCA · Physiovit" },
-        { year: "2024", title: "Gestione del paziente neurologico — lavoro in team", place: "Policlinico San Marco" },
-        { year: "2024", title: "La riabilitazione nella cooperazione internazionale", place: "Fisioterapisti senza frontiere" },
-        { year: "2023", title: "Evidence Based Practice: strumenti e metodi", place: "ECM · SPES" },
-        { year: "2022", title: "LCA rehab: dalla chirurgia al ritorno in campo", place: "FisioScience" },
+        {
+          year: "2025 — 2026",
+          title: "Master in Riabilitazione del pavimento pelvico",
+          place: "Fisiokines",
+        },
+        {
+          year: "2025",
+          title: "Tecnico di 1° livello — Strength and Conditioning",
+          place: "NSCA · Physiovit",
+        },
+        {
+          year: "2024",
+          title: "Gestione del paziente neurologico — lavoro in team",
+          place: "Policlinico San Marco",
+        },
+        {
+          year: "2024",
+          title: "La riabilitazione nella cooperazione internazionale",
+          place: "Fisioterapisti senza frontiere",
+        },
+        {
+          year: "2023",
+          title: "Evidence Based Practice: strumenti e metodi",
+          place: "ECM · SPES",
+        },
+        {
+          year: "2022",
+          title: "LCA rehab: dalla chirurgia al ritorno in campo",
+          place: "FisioScience",
+        },
       ],
     },
   ],
 } as const;
 
 export const HERO = {
-  kicker: "Fisioterapia a Padova",
   name: CONTACT.name,
   /** Not `CONTACT.role`: in the hero the title hangs between two gold rules
    *  (— Fisioterapista / OMPT —), and a comma inside that frame reads as a stumble.
@@ -203,7 +266,8 @@ export const HERO = {
    *  — footer, targhetta — keeps the prose form in CONTACT.role.
    *  OMPT, not OMTP: the CV's own header spells it OMPT. */
   role: "Fisioterapista / OMPT",
-  tagline: "Formazione, professionalità e ascolto al servizio della tua salute.",
+  /** The line break is the client's: the hero renders this `whitespace-pre-line`. */
+  tagline: "Formazione, professionalità e ascolto\nal servizio della tua salute.",
   scrollHint: "scorri",
 } as const;
 
@@ -225,20 +289,32 @@ export const HERO = {
  *  panel; 1350 puts them just past its arrival (it lands at 1300). It must stay below the
  *  target's PANEL_END in page.tsx or the landing scrolls straight past it. */
 export const HERO_INDEX = [
-  { n: "01", label: "Muscoloscheletrico", section: SECTION.MUSCOLO, land: 1350 },
+  {
+    n: "01",
+    label: "Muscoloscheletrico",
+    section: SECTION.MUSCOLO,
+    land: 1350,
+  },
   { n: "02", label: "Pavimento pelvico", section: SECTION.PELVICO, land: 1350 },
-  { n: "03", label: "Fisioterapia Domiciliare", section: SECTION.DOMICILIARE, land: 1350 },
+  {
+    n: "03",
+    label: "Fisioterapia Domiciliare",
+    section: SECTION.DOMICILIARE,
+    land: 1350,
+  },
 ] as const;
 
 /** Heading over the three services above. */
 export const HERO_INDEX_TITLE = "Lavoro in ambito:";
 
-/** The CV, held apart from the services (see above). No `land`: the formazione panel
- *  tells its story from its own landing, so the hook's default is right. */
-export const HERO_INDEX_EXTRA = {
-  label: "La mia formazione",
-  section: SECTION.FORMAZIONE,
-} as const;
+/** The two entries that are NOT services, held apart from them (see above): the contact
+ *  panel and the CV. No `land` on either: both panels tell their story from their own
+ *  landing, so the hook's default (900) is right — contatti hands off at 1430, formazione
+ *  later still, so neither is overshot. */
+export const HERO_INDEX_EXTRAS = [
+  { label: "Contattami", section: SECTION.CONTATTI },
+  { label: "La mia formazione", section: SECTION.FORMAZIONE },
+] as const;
 
 export const CONTACT_COPY = {
   eyebrow: "04 — Contatti",

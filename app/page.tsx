@@ -88,7 +88,7 @@ const tableReveal = [
  *  that coupling — each entry now only has to satisfy its own panel. Panel 6 has no
  *  `end`; its furthest child window (MASK_END) stands in for it. */
 const PANEL_END = [
-  600 + DWELL, // 0 hero
+  1100, // 0 hero — TELEFONO: la card oro finisce di salire a 740 (SHEET_RISE) e tiene un poco. Su desktop vale HERO_END_DESKTOP, vedi la'
   FOCUS_LANDED + PHOTO_CYCLE, // 1 muscolo + focus sport — three photos to get through
   FOCUS_LANDED + PHOTO_CYCLE, // 2 pelvico + focus post parto — two
   FOCUS_LANDED + DWELL, // 3 domiciliare — two photos, but the map is the beat here
@@ -100,16 +100,9 @@ const PANEL_END = [
 /* The shared panel box (and why it's shared) lives in site/panelBox.ts — the focus
    panels are built on the same one. `shell` is that box stacked: every panel authored
    here uses it; the three service panels get theirs from <FocusPanel>. */
-/* La deriva del gruppo del ritratto mentre l'hero se ne va. SOLO DESKTOP, e il perche' e'
-   geometrico: la` lei poggia sulla piega, quindi scendendo il taglio esce dalla videata e
-   non si vede nulla. Sul telefono il bordo inferiore della foto e' la sua VITA, appoggiata
-   sulla linea berry — e scendendo non esce da niente, entra nell'oro. Fermarla e' l'unico
-   modo di tenere l'appoggio, ed e' una decisione in JS perche' SDiv scrive la posa come
-   stile inline: nessuna classe `lg:` puo' scavalcarla. */
-const HERO_DRIFT: AnimSpec = [
-  { at: 0, y: 0 },
-  { at: 1, y: 14 },
-];
+/* Il ritratto NON si muove allo scroll, su nessun viewport. C'era una deriva verso il basso
+   (`y: 0 -> 14`, solo desktop) e se n'e' andata: un movimento di 14px senza un motivo
+   narrativo spezzava il flusso della pagina e basta. Sul telefono era gia' ferma. */
 const NO_DRIFT: AnimSpec = [];
 
 /* SOLO TELEFONO: la coda dell'hero (indirizzo e indice) entra SCORRENDO invece che al
@@ -143,7 +136,7 @@ const MOB_FADE: AnimSpec = [
 ];
 
 /* SOLO TELEFONO: LA CARD ORO CHE SALE.
-   A scroll 0 la foto e' una fascia alta 74svh e sotto resta l'oro con kicker, nome, ruolo e
+   A scroll 0 la foto e' una fascia alta 74svh e sotto resta l'oro con nome, ruolo e
    frase di posizionamento — il minimo che questo pannello deve avere sopra la piega. Il
    resto (indirizzo e indice) sta SOTTO la piega e ci arriva perche' la card sale.
 
@@ -177,6 +170,17 @@ const MOB_FADE: AnimSpec = [
    Conseguenza aritmetica da tenere presente: l'altezza FINALE della foto la decide il
    contenuto della card, non l'altezza a riposo. "3/4 a riposo" e' quindi gratis. */
 const SHEET_RISE = { start: 120, budget: 620 }; // finisce a 740, dentro i 1100 del pannello
+
+/* DESKTOP: l'hero se ne va in UN colpo di rotella. Non ha piu' niente da raccontare allo
+   scroll — la deriva del ritratto e' stata tolta e l'indirizzo e l'indice sono gia' a
+   schermo — quindi tenerlo per 1100 unita' era un'attesa e basta ("non posso dover
+   aspettare 1000 di scroll"). ScrollShell tronca ogni evento wheel a ±100, cioe' UNA tacca
+   di un mouse classico vale 100 unita': con la soglia a 100 quella tacca dissolve lo
+   "scorri" (stessa finestra, vedi sotto) e consegna al pannello 1. Sul telefono resta
+   PANEL_END[0], perche' li' la card oro DEVE salire (SHEET_RISE) e ha bisogno della corsa.
+   Un `end` diverso per viewport e' l'unico modo: Section lo registra in un effect che
+   dipende dalla soglia, quindi il cambio al ridimensionamento viene raccolto. */
+const HERO_END_DESKTOP = 100;
 const SHEET_DY = 250; // telefono ~390x844, banda 74svh
 const SHEET_DY_SHORT = 145; // short: (<=740px di altezza), banda 56svh — vedi la formula
 const mobSheet = (dy: number): AnimSpec => [
@@ -292,7 +296,7 @@ export default function Home() {
           Il leitmotiv delle sezioni — una fascia colorata che entra da destra — portato
           qui e suonato AL CARICAMENTO, non allo scroll: il pannello 0 è a schermo a
           scroll 0, quindi ogni sua entrata è una CSS animation (vedi globals.css). */}
-      <Section index={0} end={PANEL_END[0]}>
+      <Section index={0} end={desktop ? HERO_END_DESKTOP : PANEL_END[0]}>
         {/* Due override locali, e sono la stessa frase detta due volte: sul telefono questa
             colonna ECCEDE il pannello di proposito — la coda della card sta sotto la piega
             finche' la salita non la porta su.
@@ -304,8 +308,15 @@ export default function Home() {
                 l'overflow-hidden che PANEL_BOX ha gia': la coda esiste, sta fuori, e non
                 conta. Gli item non si comprimono per starci dentro — `min-height:auto` li
                 tiene alla loro altezza di contenuto, e la fascia ha comunque `shrink-0`.
-            Locali qui e non su PANEL_BOX: e' questo pannello a essere diverso, non il box. */}
-        <div className={`${shell} bg-white max-lg:h-[100svh] max-lg:justify-start lg:px-0`}>
+            Locali qui e non su PANEL_BOX: e' questo pannello a essere diverso, non il box.
+            Terzo override, su DESKTOP: `lg:py-16 lg:short:py-12` al posto del `py-24` del box.
+            La meta' oro porta cinque blocchi piu' un indice a colonna unica (~615px a 1887x907)
+            e su un 1366x768 con 96px di padding per lato ne restano 576: sfora. Con 64 ne
+            restano 640. Il compound `lg:short:` e' emesso per ultimo da Tailwind, quindi su un
+            desktop basso (<=740) vince `py-12` esattamente come gia' faceva `short:py-12`. Lo
+            scroll hint sta a `bottom-8`, fuori dal flusso, e con il contenuto centrato non lo
+            tocca (su 768 il contenuto finisce a ~700, l'hint comincia li'). */}
+        <div className={`${shell} bg-white max-lg:h-[100svh] max-lg:justify-start lg:px-0 lg:py-16 lg:short:py-12`}>
           {/* ink and not primary: these brackets now cross both halves, and blue at 22%
               disappears on the gold one */}
           <Corners color="rgba(20,33,46,0.25)" topLeft={false} />
@@ -366,31 +377,32 @@ export default function Home() {
             className="fisio-slide-in relative z-[2] max-lg:-mt-8 max-lg:h-[74svh] max-lg:w-[min(100vw,74svh)] max-lg:shrink-0 max-lg:short:-mt-5 max-lg:short:h-[56svh] max-lg:short:w-[min(100vw,56svh)] lg:absolute lg:inset-y-0 lg:right-0 lg:flex lg:w-[46vw] lg:items-end lg:justify-center lg:bg-white lg:pb-0 lg:pt-12 lg:short:pt-6"
             style={{ animationDelay: "0.22s" }}
           >
-            {/* La deriva dell'intero gruppo allo scroll — solo su desktop (vedi HERO_DRIFT).
-                Va verso il BASSO, non verso l'alto: lei poggia sul bordo inferiore della
+            {/* Il ritratto sta FERMO: niente SDiv, e' una div. Se mai tornasse una deriva,
+                verso il BASSO e non verso l'alto: lei poggia sul bordo inferiore della
                 videata, e sollevarla aprirebbe una striscia bianca sotto ai piedi.
-                Scendendo, invece, il taglio dei pantaloni esce dalla piega.
 
                 Il cap non ha più un termine in rem — era `34rem` ed era LUI a legare, non
                 l'altezza: su 1920x1080 la teneva a 544px in una fascia da 883. Ora i due
-                termini sono entrambi relativi alla videata:
-                  69svh  è l'ALTEZZA travestita da larghezza. 3:4 vuol dire 1.33x più alta
-                         che larga, quindi 69svh di larghezza sono ~92svh di altezza: piena
-                         fino in fondo, con ~8svh di aria sopra la testa. Alzalo e le tagli
-                         la testa (il pannello è overflow-hidden).
-                  39vw   guarda l'altro asse: la fascia è 46vw, quindi le lascia ~3.5vw di
-                         aria per lato. È il termine che lega sotto i 16:9 — su 1024x768
-                         risolve a 399px dentro 471px di fascia.
+                termini sono entrambi relativi alla videata, e i numeri vengono dal RITAGLIO
+                (public/foto/hero.webp, 1100x1467): il cranio sta alla riga 97, cioe' al 6.6%
+                dell'altezza — quello e' l'unico margine che conta, non l'aria della box.
+                  76svh  è l'ALTEZZA travestita da larghezza. 3:4 vuol dire 1.33x più alta
+                         che larga, quindi 76svh di larghezza sono ~101svh di altezza: la box
+                         sfora la videata in alto di ~1svh, ma sono righe TRASPARENTI sopra il
+                         cranio, che resta a ~5svh dal bordo (~45px su 907). Era 69 (92svh di
+                         altezza, cranio a ~14svh = 125px di aria: troppa). Alzalo ancora e le
+                         tagli la testa (il pannello è overflow-hidden).
+                  42vw   guarda l'altro asse: la fascia è 46vw, quindi le lascia 2vw di aria
+                         per lato (38px a 1920). È il termine che lega sui 16:9 e sotto — su
+                         1920x1080 risolve a 806px (alta 1075, cranio a ~76px), su 1366x768 a
+                         574 (cranio a ~53px), su 1024x768 a 430 dentro 471 di fascia. Era 39,
+                         e sui 16:9 legava GIA' lui: alzare solo il termine svh non l'avrebbe
+                         ingrandita di un pixel su quegli schermi.
                 Senza lo scale finale (vedi HeroPortrait) questi numeri sono la misura vera
                 a schermo, non una misura a riposo da moltiplicare. */}
-            <SDiv
-              start={0}
-              budget={600}
-              anim={desktop ? HERO_DRIFT : NO_DRIFT}
-              className="relative mx-auto max-lg:h-full max-lg:w-full lg:mx-0 lg:w-[min(69svh,39vw)]"
-            >
+            <div className="relative mx-auto max-lg:h-full max-lg:w-full lg:mx-0 lg:w-[min(76svh,42vw)]">
               <HeroPortrait />
-            </SDiv>
+            </div>
           </div>
 
           {/* IL TESTO — `self-start` perché il pannello è `flex-col items-center`, quindi
@@ -423,17 +435,20 @@ export default function Home() {
               aria-hidden="true"
               className="pointer-events-none absolute inset-x-[-50vw] bottom-[-100svh] top-0 z-0 border-t-4 border-emphasis bg-secondary lg:hidden"
             />
-            <div className="relative z-10 mx-auto max-w-[34rem] max-lg:pt-6 max-lg:short:pt-4 lg:px-10">
-              <p className="fisio-rise font-mono text-xs uppercase tracking-[0.28em] text-ink/80 sm:text-sm" style={{ animationDelay: "0.05s" }}>
-                {HERO.kicker}
-              </p>
+            {/* `xl:max-w-[40rem]`: l'indirizzo completo ("Viale … 3° piano — Padova (PD)") misura
+                ~535px a text-base piu' il pin, e in 34rem meno il `px-10` (464px) andava a capo
+                su "Padova (PD)". In 40rem ne restano 560: una riga. Solo da `xl` perche' fra
+                1024 e 1279 l'oro visibile e' 503-641px e non c'e' spazio per la colonna larga:
+                li' l'indirizzo va ancora a capo, e va bene cosi'. Niente `whitespace-nowrap`:
+                se le metriche del font non tornano deve andare a capo, non uscire dall'oro. */}
+            <div className="relative z-10 mx-auto max-w-[34rem] max-lg:pt-6 max-lg:short:pt-4 lg:px-10 xl:max-w-[40rem]">
               {/* l'unico blu su fondo oro, e può esserlo perché è testo GRANDE: 3.75:1
                   passa il minimo WCAG per il large text (3:1), non quello per il corpo */}
               {/* `clamp` e non due gradini: sotto sm il nome e' lungo 18 caratteri e il
                   costo di mandarlo a capo e' una riga intera del budget del pannello. Legato
                   alla LARGHEZZA sta su una riga da 320px in su, e il tetto e' la misura di
                   prima. */}
-              <h1 className="fisio-rise mt-3 font-display text-[clamp(1.7rem,8vw,2.6rem)] font-semibold leading-[1.02] tracking-tight text-primary sm:text-6xl lg:text-7xl" style={{ animationDelay: "0.15s" }}>
+              <h1 className="fisio-rise font-display text-[clamp(1.7rem,8vw,2.6rem)] font-semibold leading-[1.02] tracking-tight text-primary sm:text-6xl lg:text-7xl" style={{ animationDelay: "0.15s" }}>
                 {HERO.name}
               </h1>
               {/* il ruolo fra due stanghette, ora BLU: l'oro su oro sparirebbe. Un filetto
@@ -443,7 +458,10 @@ export default function Home() {
                 {HERO.role}
                 <span aria-hidden="true" className="h-px w-8 shrink-0 bg-primary sm:w-10" />
               </p>
-              <p className="fisio-rise mx-auto mt-5 max-w-md text-base leading-relaxed text-ink/85 short:mt-3 sm:text-lg" style={{ animationDelay: "0.42s" }}>
+              {/* `whitespace-pre-line`: la frase va a capo dove il cliente ha messo l'a capo
+                  (dopo "ascolto"), non dove capita alla larghezza. La prima riga e' ~330px a
+                  text-lg, quindi sta su una riga anche sul telefono. */}
+              <p className="fisio-rise mx-auto mt-5 max-w-md whitespace-pre-line text-base leading-relaxed text-ink/85 short:mt-3 sm:text-lg" style={{ animationDelay: "0.42s" }}>
                 {HERO.tagline}
               </p>
               {/* Dov'è lo studio, al posto del CTA + numero che stavano qui: chi arriva
@@ -452,7 +470,7 @@ export default function Home() {
               <SDiv
                 {...MOB_ADDRESS}
                 anim={desktop ? NO_DRIFT : MOB_FADE}
-                className="mt-6 short:mt-4"
+                className="mt-6 short:mt-4 lg:mt-8"
               >
                 <div
                   className={`flex flex-col items-center gap-1.5${desktop ? " fisio-rise" : ""}`}
@@ -473,12 +491,17 @@ export default function Home() {
               </SDiv>
               {/* l'indice della pagina — dà al pannello un bordo inferiore e una gerarchia,
                   e ogni voce scorre fino alla sua sezione (vedi useSectionJump) */}
-              <SDiv {...MOB_INDEX} anim={desktop ? NO_DRIFT : MOB_FADE} className="mt-6 short:mt-5">
+              <SDiv {...MOB_INDEX} anim={desktop ? NO_DRIFT : MOB_FADE} className="mt-6 short:mt-5 lg:mt-8">
                 <div
                   className={desktop ? "fisio-rise" : undefined}
                   style={desktop ? { animationDelay: "0.7s" } : undefined}
                 >
-                  <ServiceIndex className="mx-auto max-w-md" />
+                  {/* `lg:max-w-sm`: su desktop l'indice e' una lista a colonna unica con le
+                      righe allineate a sinistra (vedi ServiceIndex) — in 28rem le etichette
+                      finiscono a ~220px e i filetti si fermano a 384, che e' un menu; a 448
+                      le righe sembrano alla deriva sul lato sinistro di un blocco troppo largo.
+                      Sotto lg servono le due colonne, e quindi i 28rem. */}
+                  <ServiceIndex className="mx-auto max-w-md lg:max-w-sm" />
                 </div>
               </SDiv>
             </div>
@@ -486,19 +509,36 @@ export default function Home() {
 
           {/* scroll hint — visible at rest, fades as you begin. Solo da lg: sul telefono
               e' centrato in basso esattamente dove finisce l'indice, e li' non c'e' un
-              pixel da regalare. La fascia oro che esce dalla piega dice gia' "continua". */}
-          <SDiv
-            start={0}
-            budget={200}
-            anim={[
-              { at: 0, opacity: 1, y: 0 },
-              { at: 1, opacity: 0, y: 8 },
-            ]}
-            className="absolute inset-x-0 bottom-8 z-10 hidden flex-col items-center gap-1 text-ink/80 lg:flex"
-          >
-            <span className="font-mono text-[0.7rem] uppercase tracking-[0.2em]">{HERO.scrollHint}</span>
-            <span aria-hidden="true" className="text-lg leading-none">↓</span>
-          </SDiv>
+              pixel da regalare. La fascia oro che esce dalla piega dice gia' "continua".
+
+              Sta CENTRATO SULLA LAMA BERRY, non sulla videata: la lama e' la cucitura fra le
+              due meta' (oro 54vw, bianco 46vw) e stava 25px a sinistra di 54vw — centrato
+              sullo schermo il hint cadeva a 4vw dalla lama e sembrava messo li' a caso.
+              Cavalcando la cucitura poggia su tre colori (oro, berry, bianco), ed e' per
+              questo che ha un FONDO: una pillola bianca con ombra, cosi' il testo misura
+              sempre contro il bianco e non contro quello che c'e' sotto.
+
+              Tre elementi, uno per animazione — la regola del pannello 0:
+                · il wrapper esterno POSIZIONA (`left` + `-translate-x-1/2`): nessuno gli
+                  scrive un transform inline, quindi la classe regge;
+                · la SDiv DISSOLVE allo scroll (scrive transform+opacity inline);
+                · la pillola RIMBALZA (`.fisio-bounce`, CSS infinita — messa sulla SDiv
+                  scavalcherebbe per sempre quello che SDiv scrive). */}
+          <div className="pointer-events-none absolute bottom-8 left-[calc(54vw-25px)] z-10 hidden -translate-x-1/2 lg:block">
+            <SDiv
+              start={0}
+              budget={HERO_END_DESKTOP}
+              anim={[
+                { at: 0, opacity: 1, y: 0 },
+                { at: 1, opacity: 0, y: 8 },
+              ]}
+            >
+              <div className="fisio-bounce flex flex-col items-center gap-1 rounded-full bg-white px-6 py-3 text-ink/85 shadow-lg shadow-ink/15">
+                <span className="font-mono text-sm uppercase tracking-[0.22em]">{HERO.scrollHint}</span>
+                <span aria-hidden="true" className="text-2xl leading-none">↓</span>
+              </div>
+            </SDiv>
+          </div>
         </div>
       </Section>
 
