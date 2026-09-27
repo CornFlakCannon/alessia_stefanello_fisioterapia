@@ -378,8 +378,11 @@ Two is the limit. Don't take these as licence for a third.
   text. A panel using it needs `end` past `FOCUS_LANDED` + dwell.
   `side` (`"right"` default, `"left"`) mirrors the whole device — slab edge, diagonal,
   text strip and every arrival direction — through the `SIDE` table in the file; a panel
-  says one word. **This branch (`alt-focus-alternati`) is the alternated layout**: the
-  pelvico panel is the one on the left.
+  says one word. **This branch (`variante/focus-alternati`) is the alternated layout**:
+  the pelvico panel is the one on the left, and the three diagonals are ONE zigzag line
+  (`\ / \`) that continues across the panel seams during the snap glide — two constants,
+  A and B, documented in «The zigzag» in the file. The polygons are not mirrors of each
+  other any more: change one without the other and the line jogs at the seam.
 - `useViewport.ts` — `useIsDesktop` (`min-width: 1024px`, exactly where the slab becomes
   `lg:w-[55%]`) and `useIsShort` (`max-height: 740px`, the `short:` variant in JS). Both
   `useSyncExternalStore` over `matchMedia`, server snapshot `false`.

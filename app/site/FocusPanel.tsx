@@ -117,12 +117,33 @@ export type Side = "right" | "left";
  * array's identity — a literal in the render would recompile every frame).
  *
  * - `column`: the strip the text is laid out in — the side the slab does NOT cover.
- * - `slab`: which edge the slab hugs, and the diagonal on its inner edge (the polygon is
- *   the right one mirrored, x → 100% − x).
- * - `content`: the slab's inner padding, the bigger value on the diagonal side.
+ * - `slab`: which edge the slab hugs, and the diagonal on its inner edge — see «The
+ *   zigzag» below; the two polygons are NOT mirrors of each other.
+ * - `content`: the slab's inner padding, the bigger value on the diagonal side (sized to
+ *   that side's deepest bite into the slab: 12% for the right slab, 18% for the left).
  * - `slabIn` (phone): the slab arrives from off-stage on its own side.
  * - `textOut` (phone): the text makes room, moving the other way.
  * - `contentIn` (desktop): the slab is already there and its CONTENT arrives, from its side.
+ *
+ * ## The zigzag
+ * The diagonals are one line broken at the panel seams — `\` right, `/` left, `\` right —
+ * so while the snap glide slides one panel past the next, the bottom of one edge meets
+ * the top of the other at the same x. Both are measured in the PANEL's width (the slabs
+ * are `lg:w-[55%]` of it, hugging opposite edges) against two constants:
+ *
+ * - **A = 45%** — where the right slab starts (100 − 55).
+ * - **B = 51.6%** — A plus the right slab's 12% slant (0.12 · 55 = 6.6).
+ *
+ * | slab | top of edge | bottom of edge | polygon, in the slab's own % |
+ * |---|---|---|---|
+ * | right `\` | A | B | bottom-left at 12% (= (B − A) / 55) |
+ * | left `/` | B | A | top-right 93.82% (= B / 55), bottom-right 81.82% (= A / 55) |
+ *
+ * So a right panel ends at B, the left one starts at B and ends at A, and the next right
+ * one starts at A again. To move the line, change A/B and recompute the four numbers —
+ * nothing else depends on them. The text strips (`pr-/pl-[58%]`) clear the edge at every
+ * height: the right strip stops at 42% (edge ≥ 45%), the left one starts at 58% (edge
+ * ≤ 51.6%).
  */
 const SIDE: Record<
   Side,
@@ -130,7 +151,7 @@ const SIDE: Record<
 > = {
   right: {
     column: "lg:pr-[58%]",
-    slab: "right-0 lg:[clip-path:polygon(12%_0,100%_0,100%_100%,0_100%)]",
+    slab: "right-0 lg:[clip-path:polygon(0_0,100%_0,100%_100%,12%_100%)]",
     content: "lg:pl-24 lg:pr-16",
     slabIn: [
       { at: 0, x: "100%" },
@@ -147,8 +168,8 @@ const SIDE: Record<
   },
   left: {
     column: "lg:pl-[58%]",
-    slab: "left-0 lg:[clip-path:polygon(0_0,88%_0,100%_100%,0_100%)]",
-    content: "lg:pr-24 lg:pl-16",
+    slab: "left-0 lg:[clip-path:polygon(0_0,93.82%_0,81.82%_100%,0_100%)]",
+    content: "lg:pr-[18%] lg:pl-16",
     slabIn: [
       { at: 0, x: "-100%" },
       { at: 1, x: 0, ease: easeOutCubic },

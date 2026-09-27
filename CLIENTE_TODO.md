@@ -170,7 +170,8 @@ Le note del cliente dopo il secondo giro. Sotto, cosa è stato fatto.
    titoli dentro le fasce colorate (24/30 invece di 30/36), così restano un gradino sotto.
    Il nome nell'hero e nel footer non cambia.
 3. **Prova con le fasce alternate destra/sinistra.** — FATTO su questo branch
-   (`alt-focus-alternati`): muscoloscheletrica a destra, pavimento pelvico a SINISTRA,
-   domiciliare a destra. Sul telefono la fascia del pelvico entra da sinistra invece che
-   da destra. Il layout con tutte le fasce a destra resta su `sezioni-focus`; si sceglie
-   dopo averli visti entrambi.
+   (`variante/focus-alternati`): muscoloscheletrica a destra, pavimento pelvico a
+   SINISTRA, domiciliare a destra, e i tagli diagonali delle tre fasce formano UNA sola
+   linea a zig-zag (`\ / \`) che prosegue da un pannello all'altro mentre scorrono. Sul
+   telefono la fascia del pelvico entra da sinistra invece che da destra. Il layout con
+   tutte le fasce a destra resta su `main`; si sceglie dopo averli visti entrambi.
