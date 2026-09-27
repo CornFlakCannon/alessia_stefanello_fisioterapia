@@ -38,6 +38,20 @@ shape; read it with `CLIENTE_TODO.md`.
 - ⚠️ **The CV gives a different email** (`alessiastefanello@gmail.com`) from the one the
   site publishes. One of the two is wrong — see the ⚠️ block on `FORMAZIONE` in `data.ts`.
 
+## Branches
+
+Three, and only `main` ships (`.github/workflows/deploy.yml` deploys on push to `main`):
+
+| branch | what it is |
+|---|---|
+| `main` | the site as signed off: continuous scroll, every focus slab on the right. |
+| `variante/scroll-a-blocchi` | same site, **stepped** scroll: a small gesture plays the next block of content by itself and stops (a site-side stepper; the engine is untouched). |
+| `variante/focus-alternati` | same site, slabs **right · LEFT · right** with their diagonals chained into one zigzag (`\ / \`) across the panel seams. |
+
+Keep the variants current by **merging `main` into them**, never the other way round; to
+adopt a variant, merge it into `main`. The abandoned July hero idea survives only as the
+tag `archive/alt-linea-orizzontale`.
+
 ## Commands
 
 - `npm run dev` — dev server (http://localhost:3000; falls back to 3001 if busy).
