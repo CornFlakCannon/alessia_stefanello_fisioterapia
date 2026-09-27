@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Preventivo — Sito web Alessia Stefanello</title>
+<!--
+  Preventivo per il sito di Alessia. Sorgente del PDF accanto: compila i segnaposto in
+  [PARENTESI QUADRE], poi `bash build.sh` per rigenerare Preventivo_Alessia_Stefanello.pdf.
+  Cifre: desktop 250 + mobile 250 + dominio 10 = 510.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue: #004E8F;
+    --gold: #E79E33;
+    --berry: #B31270;
+    --ink: #1a1a1a;
+    --muted: #5c6470;
+    --rule: #d9dde3;
+    --paper: #ffffff;
+    --tint: #f4f7fa;
+  }
+  @page { size: A4; margin: 18mm 20mm; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  body {
+    font-family: "Inter", "Liberation Sans", "DejaVu Sans", Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.5;
+    color: var(--ink);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  @media screen {
+    body { background: #e9ecf0; padding: 24px 0; }
+    .page { width: 210mm; margin: 0 auto; background: var(--paper); padding: 18mm 20mm; box-shadow: 0 2px 20px rgba(0,0,0,.12); }
+  }
+  h1, h2 { font-family: "Fraunces", "Liberation Serif", Georgia, serif; font-weight: 600; margin: 0; color: var(--blue); }
+  h1 { font-size: 26pt; line-height: 1.1; }
+  h2 { font-size: 13pt; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--gold); display: inline-block; }
+  p { margin: 0 0 8px; }
+  .eyebrow { font-size: 8pt; text-transform: uppercase; letter-spacing: .16em; color: var(--muted); font-weight: 600; }
+  section { margin-top: 16px; }
+
+  .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding-bottom: 14px; border-bottom: 1px solid var(--rule); }
+  .head .right { text-align: right; font-size: 10pt; color: var(--muted); }
+  .parties { display: flex; gap: 40px; margin-top: 16px; font-size: 10.5pt; }
+  .parties strong { color: var(--blue); }
+
+  ul { margin: 6px 0 0; padding-left: 18px; }
+  li { margin: 0 0 2px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  td { padding: 10px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  td.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td .d { display: block; font-size: 9.5pt; color: var(--muted); }
+  tr.tot td { background: var(--blue); color: #fff; font-weight: 600; font-size: 13pt; border: 0; padding: 12px 10px; }
+
+  .note { margin-top: 12px; padding: 10px 14px; background: var(--tint); border-left: 3px solid var(--berry); font-size: 10pt; }
+
+  .sign { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 20px; }
+  .sign div { padding-top: 18px; border-top: 1px solid var(--ink); font-size: 9.5pt; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="head">
+    <div>
+      <div class="eyebrow">Preventivo</div>
+      <h1>Il tuo sito web</h1>
+    </div>
+    <div class="right">
+      Padova, 15 settembre 2026<br>
+      Valido fino al 15 ottobre 2026
+    </div>
+  </header>
+
+  <div class="parties">
+    <div><span class="eyebrow">Da</span><br><strong>[NOME COGNOME]</strong><br>[EMAIL]</div>
+    <div><span class="eyebrow">Per</span><br><strong>Alessia Stefanello</strong>, fisioterapista<br>Viale della Navigazione Interna 51, Padova</div>
+  </div>
+
+  <section>
+    <h2>Cosa c'è dentro</h2>
+    <p>Una pagina unica, da leggere scorrendo, con tutto quello che serve a chi ti cerca:</p>
+    <ul>
+      <li>Apertura con il tuo ritratto, il ruolo, l'indirizzo e l'indice dei servizi</li>
+      <li>Le tre aree: muscoloscheletrica (con il focus sport), pavimento pelvico (con il post parto), fisioterapia a domicilio (con la mappa)</li>
+      <li>Contatti con form, la tua formazione dal CV, targhetta con telefono ed email sempre a portata di tocco</li>
+      <li>Le foto dello studio, sistemate e filtrate coi colori del sito</li>
+      <li>Messa online su un dominio tuo, con HTTPS</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Costi</h2>
+    <table>
+      <tr><td>Sito, versione desktop<span class="d">Design, sviluppo, animazioni, foto</span></td><td class="n">250,00 €</td></tr>
+      <tr><td>Sito, versione mobile<span class="d">Adattamento a telefono e tablet</span></td><td class="n">250,00 €</td></tr>
+      <tr><td>Dominio, primo anno<span class="d">Poi si rinnova, più o meno la stessa cifra all'anno</span></td><td class="n">10,00 €</td></tr>
+      <tr class="tot"><td>Totale</td><td class="n">510,00 €</td></tr>
+    </table>
+    <div class="note">
+      Hosting gratuito, quindi nessun canone. Piccole modifiche ai testi dopo la messa online
+      non le conto. Prima di andare online servono le liberatorie firmate dei pazienti che
+      compaiono nelle foto.
+    </div>
+  </section>
+
+  <section>
+    <h2>Come funziona</h2>
+    <p>Il sito lo hai già visto in anteprima. Appena mi dai l'ok e le liberatorie, lo metto online
+    in pochi giorni. Pagamento con bonifico dopo la messa online; ti faccio una ricevuta per
+    prestazione occasionale (con la ritenuta d'acconto, essendo tu con partita IVA).</p>
+  </section>
+
+  <div class="sign">
+    <div>[NOME COGNOME]</div>
+    <div>Per accettazione — Alessia</div>
+  </div>
+
+</div>
+</body>
+</html>

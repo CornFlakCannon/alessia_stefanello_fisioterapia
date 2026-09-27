@@ -10,6 +10,7 @@ import type { AnimSpec } from "./widgets/anim";
 import SMask from "./widgets/SMask";
 import DevHud from "./widgets/DevHud";
 
+import { asset } from "./site/basePath";
 import { CONTACT, CONTACT_COPY, FORMAZIONE, HERO, SERVICES } from "./site/data";
 import FocusPanel, { FOCUS_LANDED } from "./site/FocusPanel";
 import { PANEL_BOX } from "./site/panelBox";
@@ -576,7 +577,7 @@ export default function Home() {
                   Olimpiadi beat signs the focus off rather than owning a panel. */}
               <div className="relative z-10 flex flex-col items-center gap-2">
                 <Image
-                  src="/olimpiadi_cortina.jpeg"
+                  src={asset("/olimpiadi_cortina.jpeg")}
                   alt="Milano Cortina 2026"
                   width={399}
                   height={501}

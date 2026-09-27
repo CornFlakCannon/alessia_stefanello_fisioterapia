@@ -69,7 +69,7 @@ export default function ContactBar() {
 
   return createPortal(
     <div ref={root} className="fixed left-3 top-3 z-[9998] max-w-[min(88vw,20rem)]">
-      <div className="flex items-center gap-1 rounded-full bg-white/90 p-1 shadow-lg shadow-primary/10 ring-1 ring-ink/10 backdrop-blur-md">
+      <div className="flex w-fit items-center gap-1 rounded-full bg-white/90 p-1 shadow-lg shadow-primary/10 ring-1 ring-ink/10 backdrop-blur-md">
         <Image
           src={PHOTOS.ritrattoTondo.src}
           alt=""

@@ -18,6 +18,8 @@
  * The two textures are decorative and carry `alt: ""` on purpose.
  */
 
+import { asset } from "./basePath";
+
 export type Photo = {
   src: string;
   width: number;
@@ -30,7 +32,7 @@ export type Photo = {
 export const PHOTOS = {
   /** Hand on the shoulder blade, patient from behind. No faces — the safest opener. */
   spalla: {
-    src: "/foto/spalla.webp",
+    src: asset("/foto/spalla.webp"),
     width: 1200,
     height: 1600,
     alt: "Alessia guida un esercizio per la spalla, una mano sulla scapola della paziente",
@@ -38,7 +40,7 @@ export const PHOTOS = {
   },
   /** Manual therapy, lumbar, patient prone on the table. */
   manuale: {
-    src: "/foto/manuale.webp",
+    src: asset("/foto/manuale.webp"),
     width: 1200,
     height: 1600,
     alt: "Terapia manuale sulla zona lombare, paziente prono sul lettino",
@@ -46,34 +48,34 @@ export const PHOTOS = {
   },
   /** Thoracic mobilisation, closer in. */
   manualeDorsale: {
-    src: "/foto/manuale-dorsale.webp",
+    src: asset("/foto/manuale-dorsale.webp"),
     width: 1200,
     height: 1600,
     alt: "Mobilizzazione della colonna dorsale",
   },
   /** Single-leg balance correction at the rack — the sportiest frame of the set. */
   equilibrio: {
-    src: "/foto/equilibrio.webp",
+    src: asset("/foto/equilibrio.webp"),
     width: 1200,
     height: 1600,
     alt: "Correzione di un esercizio di equilibrio in appoggio monopodalico, in palestra",
   },
   /** Cervical manual therapy, side view. */
   cervicale: {
-    src: "/foto/cervicale.webp",
+    src: asset("/foto/cervicale.webp"),
     width: 1200,
     height: 1600,
     alt: "Trattamento manuale del tratto cervicale",
   },
   cervicaleLargo: {
-    src: "/foto/cervicale-largo.webp",
+    src: asset("/foto/cervicale-largo.webp"),
     width: 1200,
     height: 1600,
     alt: "Trattamento manuale del tratto cervicale, inquadratura ampia dello studio",
   },
   /** The only natively portrait original. */
   spallaVerticale: {
-    src: "/foto/spalla-verticale.webp",
+    src: asset("/foto/spalla-verticale.webp"),
     width: 1200,
     height: 1600,
     alt: "Mobilizzazione della spalla su un paziente disteso",
@@ -81,14 +83,14 @@ export const PHOTOS = {
 
   /** Explaining, crouched in front of the seated lady. */
   anzianiSpiega: {
-    src: "/foto/anziani-spiega.webp",
+    src: asset("/foto/anziani-spiega.webp"),
     width: 1200,
     height: 1600,
     alt: "Alessia spiega un esercizio a una signora anziana seduta",
   },
   /** Both pairs of hands on the ball — the warmest of the three. */
   palla: {
-    src: "/foto/palla.webp",
+    src: asset("/foto/palla.webp"),
     width: 1200,
     height: 1600,
     alt: "Esercizio con la palla insieme a una signora anziana",
@@ -96,7 +98,7 @@ export const PHOTOS = {
   },
   /** Stepping onto the step, guided from the floor. The most dynamic. */
   step: {
-    src: "/foto/step.webp",
+    src: asset("/foto/step.webp"),
     width: 1200,
     height: 1600,
     alt: "Alessia guida da terra una signora anziana che sale sullo step",
@@ -105,7 +107,7 @@ export const PHOTOS = {
   /** Manual therapy on the couch, she is standing and fully in frame. The pavimento
    *  pelvico slab had NO photo at all and still wore the drawn bridge exercise. */
   pelvico: {
-    src: "/foto/pelvico.webp",
+    src: asset("/foto/pelvico.webp"),
     width: 1200,
     height: 1600,
     alt: "Alessia Stefanello durante un trattamento di terapia manuale",
@@ -113,7 +115,7 @@ export const PHOTOS = {
   /** The couch and stool, empty: no patient, no consent to collect, and it reads as the
    *  second beat after the photo above — the gesture, then the place. */
   lettino: {
-    src: "/foto/lettino.webp",
+    src: asset("/foto/lettino.webp"),
     width: 1200,
     height: 1600,
     alt: "Il lettino dello studio di fisioterapia a Padova",
@@ -121,14 +123,14 @@ export const PHOTOS = {
 
   /** Shot #4 of FOTO_BRIEF.md: she looks at the lens. Head and torso. */
   ritratto: {
-    src: "/foto/ritratto.webp",
+    src: asset("/foto/ritratto.webp"),
     width: 1200,
     height: 1600,
     alt: "Alessia Stefanello, fisioterapista",
   },
   /** Same frame, square, for the round crop in the formazione panel. */
   ritrattoTondo: {
-    src: "/foto/ritratto-tondo.webp",
+    src: asset("/foto/ritratto-tondo.webp"),
     width: 800,
     height: 800,
     alt: "Alessia Stefanello, fisioterapista",
@@ -136,7 +138,7 @@ export const PHOTOS = {
 
   /** The empty studio — a texture, never a subject. */
   studio: {
-    src: "/foto/studio.webp",
+    src: asset("/foto/studio.webp"),
     width: 1600,
     height: 1000,
     alt: "",
@@ -192,9 +194,9 @@ export const PHOTOS = {
  */
 export const HERO_PHOTO = {
   /** Desktop: 3:4, cropped tight top and bottom so she is as large as the slab allows. */
-  desktop: { src: "/foto/hero.webp", width: 1100, height: 1467 },
+  desktop: { src: asset("/foto/hero.webp"), width: 1100, height: 1467 },
   /** Phone: 1:1, a BUST — crown to just under the shoulder line, shoulders running off both
    *  sides. Square because the box crops it in width; see above. */
-  mobile: { src: "/foto/hero-mobile.webp", width: 960, height: 960 },
+  mobile: { src: asset("/foto/hero-mobile.webp"), width: 960, height: 960 },
   alt: "Alessia Stefanello, fisioterapista",
 } as const;
