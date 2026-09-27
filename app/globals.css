@@ -15,7 +15,8 @@
 
   /* Brand — from the biglietto da visita. */
   --brand-primary: #004e8f; /* deep blue  — headings, CTAs, ground */
-  --brand-secondary: #edab39; /* warm gold  — accents, hero ground */
+  --brand-secondary: #e79e33; /* warm gold  — accents, and the hero's slab (not the
+                                whole hero panel: edge-to-edge gold read as heavy) */
   --brand-emphasis: #b31270; /* magenta    — sparing highlight (Olimpiadi); matches the
                                 Milano Cortina 2026 logo's own ground exactly, so the
                                 logo sits on the berry slab with no visible box */
@@ -79,119 +80,78 @@
   animation: fisio-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
-/* ── Hero portrait arrival ────────────────────────────────────────────────────
-   The photo swings in as a card in 3D: it starts edge-on and far back, rotates
-   toward the viewer around its vertical axis, overshoots flat and settles with a
-   couple of decaying turns into its resting -3° tilt. THEN the surrounding lines
-   arrive — the offset frame first, the corner brackets after (see below).
+/* ── Hero arrival ─────────────────────────────────────────────────────────────
+   The hero takes the leitmotiv of the service panels — a coloured slab entering from
+   the right — and plays it ON LOAD. Panel 0 is on screen at scroll 0, so its entrance
+   can never be a scroll-gated reveal; it would arrive blank.
 
-   `perspective` lives on the still wrapper in HeroPortrait (the property applies to
-   an element's CHILDREN); the shorter the value, the more dramatic the 3D. That
-   wrapper's `[perspective:700px]` is the main knob for how strong this reads.
+   Four owners, one animation each (an SDiv must never carry one of these: a filled
+   `both` animation outranks the inline transform it writes, permanently):
+     0.10s  the gold half comes in from the LEFT, the berry blade from the right
+     0.22s  the white slab — and the photo inside it — covers the blade down to a strip
+            `--hero-blade` wide (below), which lands exactly on the gold/white seam. The
+            lag IS the effect: the blade has to be seen before it is covered.
 
-   On-load like the rest of the hero — NOT scroll-gated. It must sit on its own
-   element, never on an SDiv (which writes transform channels every frame).
+   There used to be a third beat, `.fisio-lift`: the portrait grew to 1.1 and switched on a
+   drop-shadow, so she read as sitting ON the page. It is gone with the shadow, and not
+   only because the shadow was dropped — a final overshoot fights the portrait's job now
+   that she is bottom-anchored and sized to fill her half, since her resting size would
+   have to be 10% under the space she is meant to occupy. Removing it is what buys the
+   extra 10%.
 
-   All four animations use `both`, so the from-state already applies during the delay
-   (no flash at load). Timings:
-     0.15s  the swing begins   (delay)
-     0.77s  it reaches flat    (= 0.15 + 1.0 × 62%) → offset frame starts
-     0.88s  corner brackets snap in, staggered 60ms apart (inline animationDelay)
-   Every stop declares the full transform, in one fixed channel order, so each
-   interval interpolates predictably and per-stop timing functions apply cleanly. */
-@keyframes fisio-arrive {
-  0% {
-    transform: translateZ(-220px) rotateY(-72deg) rotateX(8deg) rotate(5deg);
-    opacity: 0;
-    filter: blur(2px);
-    animation-timing-function: cubic-bezier(0.3, 0, 0.4, 1);
-  }
-  30% {
-    /* transform: translateZ(-120px) rotateY(-38deg) rotateX(4deg) rotate(2deg); */
-    opacity: 1;
-    /* filter: blur(0.6px); */
-    /* animation-timing-function: cubic-bezier(0.16, 0.7, 0.3, 1); */
-  }
-  62% {
-    /* swings just past flat */
-    transform: translateZ(0) rotateY(9deg) rotateX(0deg) rotate(-4.5deg);
-    filter: blur(0);
-    animation-timing-function: ease-in-out;
-  }
-  82% {
-    transform: translateZ(0) rotateY(-4deg) rotateX(0deg) rotate(-2deg);
-    animation-timing-function: ease-in-out;
-  }
-  93% {
-    transform: translateZ(0) rotateY(1.6deg) rotateX(0deg) rotate(-3.4deg);
-    animation-timing-function: ease-out;
-  }
-  100% {
-    transform: translateZ(0) rotateY(0deg) rotateX(0deg) rotate(-3deg);
-  }
-}
-.fisio-arrive {
-  transform: rotate(-3deg); /* resting pose (also the reduced-motion pose) */
-  will-change: transform;
-  animation: fisio-arrive 1s 0.15s both;
+   `both` on each, so the from-state already applies during the delay: no flash of a
+   settled hero before its own animation starts. */
+/* The strip of the berry blade the white slab leaves uncovered — the divider on the
+   gold/white seam. ONE knob: page.tsx sizes both the blade (`46vw + blade`) and the
+   text column (`54vw - blade`) against it, so the copy stays centred in the VISIBLE
+   gold whatever the value. Was 50px; the client asked for thinner (settembre 2026). */
+:root {
+  --hero-blade: 36px;
 }
 
-/* Ground shadow — lives OUTSIDE the swinging element on purpose: it stays put and
-   only widens/darkens as the card turns flat and comes forward, which is what sells
-   the depth. Narrow while the photo is edge-on, full width once it faces us. */
-@keyframes fisio-shadow {
-  0% {
-    opacity: 0.06;
-    transform: scale(0.45, 0.8);
-    animation-timing-function: cubic-bezier(0.16, 0.7, 0.3, 1);
-  }
-  62% {
-    opacity: 0.34;
-    transform: scale(1.04, 1);
-  }
-  82% {
-    opacity: 0.3;
-    transform: scale(0.98, 1);
-  }
-  100% {
-    opacity: 0.32;
-    transform: scale(1, 1);
-  }
-}
-.fisio-shadow {
-  animation: fisio-shadow 1s 0.15s both;
-}
-
-/* The offset outline slides out from under the photo once it has landed. It owns
-   its own transform, so no `translate-*` utility may be set on that element. */
-@keyframes fisio-frame-in {
+@keyframes fisio-slide-in {
   from {
-    opacity: 0;
-    transform: translate(0, 0);
+    transform: translateX(100%);
   }
   to {
-    opacity: 1;
-    transform: translate(25px, 25px);
+    transform: translateX(0);
   }
 }
-.fisio-frame-in {
-  animation: fisio-frame-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.8s both;
+.fisio-slide-in {
+  transform: translateX(0); /* resting pose (also the reduced-motion pose) */
+  animation: fisio-slide-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Corner brackets snap in one after another (stagger via inline animationDelay,
-   same technique as HeroFigure's stroke-in). */
-@keyframes fisio-corner-in {
+/* The mirror, for the gold half: it lives on the LEFT now (the portrait moved onto white
+   — see HeroPortrait), so bringing it in from the right would drag it across the whole
+   screen to land where it started. The two halves close in on each other instead. */
+@keyframes fisio-slide-left {
   from {
-    opacity: 0;
-    transform: scale(0.7);
+    transform: translateX(-100%);
   }
   to {
-    opacity: 1;
-    transform: scale(1);
+    transform: translateX(0);
   }
 }
-.fisio-corner-in {
-  animation: fisio-corner-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) 0.88s both;
+.fisio-slide-left {
+  transform: translateX(0);
+  animation: fisio-slide-left 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* The hero's scroll hint: the classic small up-and-down, forever. Its own element (a
+   pill INSIDE the SDiv that fades it out on scroll), because SDiv writes `transform`
+   inline and a running animation would outrank it for good. */
+@keyframes fisio-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.fisio-bounce {
+  animation: fisio-bounce 1.6s ease-in-out infinite;
 }
 
 /* Respect reduced-motion: show everything settled, skip the entrance animations. */
@@ -204,28 +164,14 @@
     opacity: 1;
     animation: none;
   }
-  /* The portrait is shown already arrived: settled pose, frame and brackets in place. */
-  .fisio-arrive {
+  /* The hero is shown already arrived: both halves home. */
+  .fisio-slide-in,
+  .fisio-slide-left {
     animation: none;
-    transform: rotate(-3deg);
+    transform: translateX(0);
   }
-  .fisio-shadow {
+  .fisio-bounce {
     animation: none;
-    opacity: 0.32;
-  }
-  .fisio-frame-in {
-    animation: none;
-    opacity: 1;
-    transform: translate(14px, 14px);
-  }
-  .fisio-corner-in {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-  /* The travelling mascot is motion by definition — hide it for opt-out users. */
-  .fisio-travel {
-    display: none;
   }
 }
 

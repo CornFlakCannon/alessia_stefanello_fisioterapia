@@ -1,140 +1,105 @@
-'use client';
-
-import Image from "next/image";
-import { easeInCubic } from "../_scroll/easing";
-import SDiv from "../widgets/SDiv";
-
 /**
- * The hero portrait — Alessia's photo inside the "biglietto da visita" line motif:
- * an offset thin frame behind it plus four corner brackets, same grammar as the
- * panel-level `Corners` in page.tsx.
+ * The hero portrait — Alessia, cut out, standing on the gold slab.
  *
- * ## The arrival
- * The photo swings in as a card in 3D (`.fisio-arrive`, see globals.css: edge-on and
- * far back → turns toward the viewer → settles with decaying overshoots). Three
- * structural details make the depth work:
+ * ## What it is
+ * A single still with a real alpha channel (see `HERO_PHOTO` in photos.ts and the script
+ * that keys it). There is no background in the file, so what sits behind her IS the
+ * slab's own CSS gold: nothing to colour-match, no seam to measure. That is the whole
+ * reason this stopped being a `<video>` — the old source was a clip on a wall that could
+ * not be keyed, so its background had to be composited in at build time and then made to
+ * agree with `--brand-secondary` to within a level or two.
  *
- * 1. the animation lives HERE, not on the enclosing `<SDiv>` — SDiv writes
- *    `translate`/`opacity` inline every frame, so a CSS animation on that same
- *    element would fight it. Separate elements let the photo turn *and* parallax;
- * 2. `perspective` sits on the outer (still) wrapper, since the property applies to
- *    an element's CHILDREN — it's what makes the rotation read as 3D rather than a
- *    flat squash. Shorter value = more dramatic;
- * 3. the shadow is a sibling OUTSIDE the turning element, so it stays put and just
- *    widens as the card comes forward.
+ * ## `<picture>`, and why not `next/image`
+ * The phone gets a DIFFERENT PICTURE, not a different crop: a bust, face first (the client's
+ * own words). That is art direction — a media-conditioned source — and `next/image` has no
+ * way to express it. `<picture>` does, and fetches exactly one of the two. The derivatives
+ * are already sized and encoded for their slots by our own script, so the optimiser has
+ * nothing left to add here.
  *
- * The frame line and the brackets sit INSIDE the turning element so they inherit its
- * resting -3° rotation and stay aligned; they're transparent until the photo is flat,
- * then arrive in their own beat (`.fisio-frame-in` / `.fisio-corner-in`).
+ * `width`/`height` sit on BOTH the `<source>` and the `<img>` because the two framings
+ * have different ratios (3:4 and 1:1); without them the desktop branch would reserve the
+ * phone's box and shift on load.
  *
- * ## The departure
- * On scroll each part leaves on its OWN window (see the constants below): the corners
- * fly out diagonally one after another, the offset frame drifts further out and dims,
- * the photo lifts. Page.tsx keeps a small whole-group drift under all of it — DOM
- * nesting composes the two, so a part's travel ADDS to the group's.
+ * ## The two branches size themselves in OPPOSITE ways, and the classes say so
+ * On desktop the box is width-driven and the image keeps its own height (`lg:h-auto`): she
+ * is a figure standing in a slab. On phones the box has a FIXED HEIGHT — a 74svh band across
+ * the whole viewport — and the image fills it (`max-lg:h-full max-lg:object-cover`), so her
+ * shoulders run off both sides. That is what the client asked for and it is why the phone
+ * source is a bust.
  *
- * Two rules that shape the markup, both learned the hard way:
+ * It is also the one thing here that can fail silently. `object-cover` crops whichever axis
+ * the container has spare, so a container WIDER than it is tall would crop the HEIGHT — the
+ * top of her head. Below `lg` sit tablets and short desktop windows (900x600 is ratio 2.03),
+ * so the guarantee cannot be "phones are portrait". It is arithmetic instead, and it takes
+ * two halves that must be kept in step: the source is 1:1 (`MOB_RATIO` in
+ * `scripts/hero-cutout.mjs`) and the box is capped at `w-[min(100vw,74svh)]` in `page.tsx`,
+ * i.e. never wider than it is tall. Container ratio <= source ratio ⇒ cover can only eat
+ * WIDTH. Every device therefore sees the vertical composition the script chose — the air
+ * over her crown, the cut under the shoulders — and differs only in how much shoulder is
+ * left. Change either half alone and she is decapitated somewhere you are not looking.
  *
- * - **one element per animation owner.** The scroll layer (an `<SDiv>` wrapper) and
- *   the entrance layer (a `<span>` with the CSS animation) are always separate
- *   elements. A filled (`both`) CSS animation outranks inline styles in the cascade
- *   permanently, so its `opacity: 1` would beat everything SDiv writes;
- * - **SDiv takes no `style`/`aria-*`.** Its props are the scroll window + `anim` +
- *   `className` and nothing else — anything else is dropped on the floor, silently
- *   (TS doesn't check JSX spreads or hyphenated attributes). So the `animationDelay`
- *   stagger and `aria-hidden` live on the inner span.
+ * ## She stands on the bottom edge of the screen
+ * On desktop the portrait is bottom-anchored, not centred: the source is cut across her
+ * thighs, and butting that cut against the fold turns it from a crop into a BASE — she
+ * continues past the frame instead of ending in mid-air. Everything about her size follows
+ * from that (see the cap in page.tsx), and it is also why the scroll drift moves her DOWN
+ * rather than up: lifting a bottom-anchored figure opens a strip of white under her feet,
+ * while sinking pushes the cut past the fold where nothing shows.
  *
- * These SDivs carry no `index`: rendered inside the hero `<Section index={0}>` they
- * inherit it, like PadovaMap's rings inherit the domiciliare panel's.
+ * On phones she does not move at all, and for a different reason: there the gold is a CARD
+ * that rises over her as you scroll (`SHEET_RISE` in page.tsx), so the motion in that half
+ * of the screen is already spoken for. Her bottom edge is the card's berry rule at rest, and
+ * by the end of the panel that rule has climbed to about her neck — the card's content is
+ * what decides where it stops, not her. Adding a drift on top of that would be two things
+ * moving against each other, so `HERO_DRIFT` is desktop-only.
+ *
+ * ## The motion is on load, and it is CSS
+ * Panel 0 is on screen at scroll 0, so its entrance can never be a scroll-gated reveal —
+ * it would arrive blank. She simply rides in with her slab (`.fisio-slide-in`, owned by
+ * the slab in page.tsx); the portrait itself carries no animation of its own, which is
+ * also why nothing here fights the scroll layer (a filled `both` CSS animation outranks
+ * inline styles permanently, so it would beat whatever `SDiv` writes).
+ *
+ * There WAS one: `.fisio-lift` grew her to 1.1 and switched on a `drop-shadow`, so she
+ * read as sitting ON the page. Both are gone — the shadow because the client asked, and
+ * the scale with it. A final overshoot is in direct conflict with a portrait that is
+ * bottom-anchored and sized to fill its half: her resting size would have to be 10% under
+ * the space she is meant to occupy. Dropping it is what pays for the extra 10%.
  */
-
-/** Scroll window (index-0 units) over which the portrait comes apart as the hero
- *  leaves. Must finish well inside the hero's ceiling (PANEL_END[0] = 1100 in
- *  page.tsx) or the beat never completes before the panel hands off. */
-const DRIFT_START = 60;
-const DRIFT_BUDGET = 420;
-/** Scroll units each successive corner waits — the scroll-side twin of the
- *  on-load `animationDelay` stagger. */
-const DRIFT_STAGGER = 45;
-/** How far a corner flies out on each axis (px). */
-const SPREAD = 26;
-
-/** The four brackets: where they sit, which borders they draw, where they fly. */
-const CORNERS = [
-  { pos: "-left-2 -top-2",     edge: "border-l-2 border-t-2", dx: -SPREAD, dy: -SPREAD },
-  { pos: "-right-2 -top-2",    edge: "border-r-2 border-t-2", dx:  SPREAD, dy: -SPREAD },
-  { pos: "-bottom-2 -left-2",  edge: "border-b-2 border-l-2", dx: -SPREAD, dy:  SPREAD },
-  { pos: "-bottom-2 -right-2", edge: "border-b-2 border-r-2", dx:  SPREAD, dy:  SPREAD },
-] as const;
+import { HERO_PHOTO } from "./photos";
 
 export default function HeroPortrait({ className = "" }: { className?: string }) {
   return (
-    <div className={`relative [perspective:700px] ${className}`}>
-      {/* ground shadow — never turns with the photo, only widens under it */}
-      <span
-        aria-hidden="true"
-        className="fisio-shadow pointer-events-none absolute inset-x-4 -bottom-2 -z-10 h-5 rounded-[50%] bg-primary/30 blur-lg"
-      />
-
-      <div className="fisio-arrive relative">
-        {/* offset outline — the "design line". The SDiv drifts it away on scroll; the
-            span keeps the CSS slide-out, whose final translate(25px,25px) IS the
-            resting offset, so no translate-* utility may go on it. */}
-        <SDiv
-          start={DRIFT_START}
-          budget={DRIFT_BUDGET}
-          anim={[
-            { at: 0, x: 0, y: 0, opacity: 1 },
-            { at: 1, x: 18, y: 18, opacity: 0.2, ease: easeInCubic },
-          ]}
-          className="pointer-events-none absolute inset-0 -z-10"
-        >
-          <span
-            aria-hidden="true"
-            className="fisio-frame-in block h-full w-full border-2 border-primary/35"
-          />
-        </SDiv>
-
-        {/* the photo still sets the card's box, so this SDiv stays in flow */}
-        <SDiv
-          start={DRIFT_START}
-          budget={DRIFT_BUDGET}
-          anim={[
-            { at: 0, y: 0, scale: 1 },
-            { at: 1, y: -28, scale: 0.98, ease: easeInCubic },
-          ]}
-        >
-          <Image
-            src="/fotoalessia.png"
-            alt="Alessia Stefanello, fisioterapista"
-            width={448}
-            height={637}
-            priority
-            className="h-auto w-full object-cover shadow-xl shadow-primary/20"
-          />
-        </SDiv>
-
-        {/* corner brackets, just outside the photo's edges: they snap in one after
-            another on load, then fly out diagonally in the same order on scroll */}
-        {CORNERS.map(({ pos, edge, dx, dy }, i) => (
-          <SDiv
-            key={pos}
-            start={DRIFT_START + i * DRIFT_STAGGER}
-            budget={DRIFT_BUDGET}
-            anim={[
-              { at: 0, x: 0, y: 0, opacity: 1 },
-              { at: 1, x: dx, y: dy, opacity: 0, ease: easeInCubic },
-            ]}
-            className={`pointer-events-none absolute h-8 w-8 ${pos}`}
-          >
-            <span
-              aria-hidden="true"
-              className={`fisio-corner-in block h-full w-full border-primary ${edge}`}
-              style={{ animationDelay: `${0.88 + i * 0.2}s` }}
-            />
-          </SDiv>
-        ))}
-      </div>
+    /* `max-lg:h-full` HERE and on the <picture> below, not only on the <img>: on phones the
+       height has to stay DEFINITE all the way down from the 74svh band in page.tsx, and a
+       percentage height resolves against the nearest block container — one link in the chain
+       left at `auto` and every link below it computes to auto too, so the image falls back to
+       its intrinsic square and leaves a third of the band empty. The <picture> also needs
+       `block`: an inline box in the middle breaks the chain the same way. On desktop every
+       ancestor is auto-height, so all of these compute to auto and change nothing. */
+    <div className={`relative max-lg:h-full ${className}`}>
+      <picture className="block max-lg:h-full">
+        <source
+          media="(min-width: 1024px)"
+          srcSet={HERO_PHOTO.desktop.src}
+          width={HERO_PHOTO.desktop.width}
+          height={HERO_PHOTO.desktop.height}
+        />
+        {/* A bare <img>, and lint is fine with it: `no-img-element` exempts one inside
+            a <picture>, which is exactly the art-direction case next/image cannot cover. */}
+        <img
+          src={HERO_PHOTO.mobile.src}
+          alt={HERO_PHOTO.alt}
+          width={HERO_PHOTO.mobile.width}
+          height={HERO_PHOTO.mobile.height}
+          fetchPriority="high"
+          decoding="async"
+          /* h-auto on desktop, cover inside a fixed-height band on phones — see the
+             docblock: the square source and page.tsx's width cap are what make the
+             second one safe. */
+          className="block w-full max-lg:h-full max-lg:object-cover lg:h-auto"
+        />
+      </picture>
     </div>
   );
 }

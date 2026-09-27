@@ -2,7 +2,7 @@
 
 import { useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
-import { useScrollFrame } from "@/app/_scroll";
+import { readIndexPos, useScrollFrame, useScrollStore } from "@/app/_scroll";
 import { useCopyOnClick } from "./useCopyOnClick";
 
 /** A store that never emits: its client snapshot is `true`, its server snapshot
@@ -12,7 +12,7 @@ const NEVER = () => () => {};
 /**
  * Dev-only heads-up overlay: the scroll loop's rAF frames-per-second; the live
  * per-section scroll level (`scroll` — the integral a section's `anim`
- * `budget`/`start`/`end` are measured against; resets each section); the live
+ * `budget`/`start`/`end` are measured against, read straight off the engine); the live
  * GLOBAL scroll level (`global` — the never-resetting cumulative integral a
  * `rawAnim`'s `at` is measured against, so scroll to a moment and read the number
  * straight off as the `at`); and the active section index. Pinned to the top-right
@@ -34,8 +34,15 @@ export default function DevHud() {
   const frames = useRef(0);
   const windowStart = useRef(0);
   const lastSection = useRef(-1);
-  const scrollLevel = useRef(0); // per-section scroll integral, mirrors useSequenceProgress
   const globalLevel = useRef(0); // never-resetting cumulative integral, mirrors globalScroll (rawAnim `at`)
+
+  // `scroll` is READ from the engine, not mirrored. A local mirror used to reset to 0 on
+  // every section change and integrate with only a floor at 0 — while the engine RETAINS
+  // each index's position across changes and clamps it to that index's ceiling. The two
+  // agreed on a first visit scrolling forward (which is when you author against it) and
+  // disagreed exactly where you go looking when something is wrong: past a panel's
+  // ceiling, and on re-entering a panel you have already seen.
+  const store = useScrollStore();
 
   // Click to copy the point's `x`/`y`; Alt-click to copy the element's size.
   useCopyOnClick();
@@ -48,18 +55,13 @@ export default function DevHud() {
   useScrollFrame((s) => {
     frames.current++;
 
-    // Reset the scroll integral when the active section changes — each section
-    // measures its position from 0 (see useSequenceProgress).
     if (s.sectionIndex !== lastSection.current) {
       lastSection.current = s.sectionIndex;
-      scrollLevel.current = 0;
       if (sectionRef.current) sectionRef.current.textContent = `s${s.sectionIndex}`;
     }
 
-    // Integrate this tick's delta, floored at 0. `scrollLevel` is the per-section
-    // integral (reset above); `globalLevel` never resets — the cumulative value a
-    // rawAnim's `at` is measured against (mirrors globalScroll across the whole page).
-    scrollLevel.current = Math.max(0, scrollLevel.current + s.accumulator);
+    // `globalLevel` never resets — the cumulative value a rawAnim's `at` is measured
+    // against (mirrors globalScroll across the whole page).
     globalLevel.current = Math.max(0, globalLevel.current + s.accumulator);
 
     // Recompute FPS ~4×/sec over the elapsed window so the readouts are legible.
@@ -68,7 +70,7 @@ export default function DevHud() {
     if (elapsed >= 250) {
       const fps = Math.round((frames.current * 1000) / elapsed);
       if (fpsRef.current) fpsRef.current.textContent = `${fps} fps`;
-      if (scrollRef.current) scrollRef.current.textContent = `scroll ${Math.round(scrollLevel.current)}`;
+      if (scrollRef.current) scrollRef.current.textContent = `scroll ${Math.round(readIndexPos(store, s.sectionIndex))}`;
       if (globalRef.current) globalRef.current.textContent = `global ${Math.round(globalLevel.current)}`;
       frames.current = 0;
       windowStart.current = s.time;
