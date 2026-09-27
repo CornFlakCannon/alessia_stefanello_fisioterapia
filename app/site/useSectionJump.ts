@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from "react";
-import { useScrollStore } from "../_scroll";
+import { readIndexPos, useScrollStore } from "../_scroll";
+import { driveTo } from "./driveTo";
 
 /**
  * "Scroll to section N" — the site-side workaround for the engine seam documented in
@@ -22,25 +23,18 @@ import { useScrollStore } from "../_scroll";
  * exact same input it sees from a real wheel. We are a very fast, very determined user.
  *
  * ## Mechanics
- * `ScrollShell` listens for `wheel` on the scroll container and clamps each event to
- * ±100 (anti-fling), so one frame's travel is dispatched as `ceil(units / 100)` synthetic
- * events. They are dispatched on the element that was clicked — it lives inside the
- * container, and wheel events bubble, so they land in the shell's handler with no
- * querySelector and no reference to engine internals.
+ * The feeding itself lives in `./driveTo` (shared with `StepScroller` on the
+ * `variante/scroll-a-blocchi` branch). A jump is one drive to a `(section, position)`:
+ *   forward  — the target section at `land` units in, so its `snap` glide finishes and
+ *              its reveals play (it would otherwise arrive at pos 0, mid-glide);
+ *   backward — the target section a little below where it was left (it comes back at
+ *              its ceiling, fully revealed but sitting right on the hand-off edge).
  *
- * `advanceSection` moves at most ONE section per frame, so the loop is frame-paced by
- * nature: it feeds, waits a frame, re-reads `store.state.sectionIndex`, and repeats.
- * Reading that field is the whole coupling to the engine — a public, per-frame value.
- *
- * Two phases:
- *   travel — feed until the active index is the target;
- *   land   — going forward the target arrives at pos 0 (mid `snap` glide, reveals not
- *            started), so keep feeding LAND units to seat it. Going backward it arrives
- *            at its ceiling (already fully revealed, but sitting right on the hand-off
- *            edge), so back off a little instead.
- *
- * A real wheel or touch anywhere aborts the jump (`e.isTrusted` — our own synthetic
- * events don't cancel us), so the user is never fighting an animation they can't stop.
+ * A real wheel or pointerdown anywhere aborts the jump (`e.isTrusted` — our own events
+ * don't), so the user is never fighting an animation they can't stop. With the stepper
+ * mounted a real wheel never reaches the listener below (it is swallowed in the capture
+ * phase), and it is the stepper's own drive that ends the jump instead: one drive per
+ * store, and a new one supersedes the old.
  *
  * When the engine ships `useScrollNav().jumpTo()`, this file's body is the only thing
  * that changes; callers keep calling `jumpTo(index, el)`.
@@ -49,106 +43,51 @@ import { useScrollStore } from "../_scroll";
 /** Scroll units fed per frame while travelling. THE speed knob: a panel costs ~1100-2200
  *  units, so 70 crosses one in roughly 320ms. Higher = snappier, less legible. */
 const UNITS_PER_FRAME = 70;
-/** Under `prefers-reduced-motion` the travel itself is the motion — get it over with. */
-const REDUCED_UNITS_PER_FRAME = 400;
-/** Default units fed into the target after arriving forward: enough to finish the snap
+/** Under `prefers-reduced-motion` the travel itself is the motion — get it over with.
+ *  200 is the ceiling, not a taste: see `driveTo`'s «Pace». */
+const REDUCED_UNITS_PER_FRAME = 200;
+/** Default units into the target after arriving forward: enough to finish the snap
  *  glide (SNAP = 320 in page.tsx) and play the staggered reveals (the last ends at ~860).
  *  A panel whose story is STAGED wants more than this — the three service panels only
  *  start sliding their focus slab in at 960 — so `jumpTo` takes a per-call override and
  *  HERO_INDEX carries one per entry. Whatever the value, it must stay below the target's
- *  own PANEL_END or the landing scrolls straight past the panel it just travelled to. */
+ *  own PANEL_END or the landing scrolls straight past the panel it just travelled to
+ *  (the driver stops on the overshoot rather than chase it). */
 const LAND = 900;
-/** Units fed back after arriving backward, to sit off the hand-off edge without
- *  unwinding the panel's reveals (which finish ~500 units below its threshold). */
+/** Units below where a section was left, when arriving backward, to sit off the hand-off
+ *  edge without unwinding the panel's reveals (which finish ~500 units below its
+ *  threshold). */
 const BACK_OFF = 250;
-/** Travel budget per section crossed, in frames. A section costs ~20 frames at the
- *  speed above, so this is 3x headroom — and it's what stops a jump to a section that
- *  can't be reached (an index that doesn't exist, a panel that never hands off) from
- *  scrolling the page to the bottom instead of giving up. */
-const FRAMES_PER_SECTION = 60;
-/** Hard stop, in frames (~10s at 60fps) — a jump must never become a permanent loop. */
-const MAX_FRAMES = 600;
-/** ScrollShell's per-event clamp; we split a frame's travel into events this size. */
-const WHEEL_CLAMP = 100;
 
 export default function useSectionJump(): {
   jumpTo: (target: number, from: Element, land?: number) => void;
 } {
   const store = useScrollStore();
-  /** Cancels the jump currently in flight (at most one), so a second click — or an
-   *  unmount — never leaves two rAF loops feeding the accumulator against each other. */
+  /** Ends the jump this hook started, if it is still in flight — on unmount. */
   const cancelRef = useRef<(() => void) | null>(null);
 
   useEffect(() => () => cancelRef.current?.(), []);
 
   const jumpTo = useCallback(
     (target: number, from: Element, land = LAND) => {
-      cancelRef.current?.();
-
       const origin = store.state.sectionIndex;
       if (origin === target) return;
-      const dir = target > origin ? 1 : -1;
-      const landUnits = dir > 0 ? land : BACK_OFF;
+      const pos = target > origin ? land : Math.max(0, readIndexPos(store, target) - BACK_OFF);
       const step = window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? REDUCED_UNITS_PER_FRAME
         : UNITS_PER_FRAME;
 
-      let raf = 0;
-      let frames = 0;
-      let fed = 0; // units fed during the landing phase
-      let arrived = false; // travel done, now seating the target panel
-
-      // Declared before `stop` so it can be removed by it; both only ever run after the
-      // pair is fully initialised (from a listener or a frame, never during setup).
       function abort(e: Event) {
-        if (e.isTrusted) stop();
+        if (e.isTrusted) cancelRef.current?.();
       }
-      function stop() {
-        cancelAnimationFrame(raf);
+      window.addEventListener("wheel", abort, { passive: true });
+      window.addEventListener("pointerdown", abort, { passive: true });
+
+      cancelRef.current = driveTo(store, from, { index: target, pos }, step, () => {
         window.removeEventListener("wheel", abort);
         window.removeEventListener("pointerdown", abort);
         cancelRef.current = null;
-      }
-
-      /** One frame's worth of travel, split into events the shell won't clamp away. */
-      const feed = (units: number) => {
-        const n = Math.ceil(Math.abs(units) / WHEEL_CLAMP);
-        const each = units / n;
-        for (let i = 0; i < n; i++) {
-          from.dispatchEvent(new WheelEvent("wheel", { deltaY: each, bubbles: true, cancelable: true }));
-        }
-      };
-
-      const tick = () => {
-        if (++frames > MAX_FRAMES) return stop();
-        const index = store.state.sectionIndex;
-
-        if (!arrived) {
-          if (index !== target) {
-            // Unreachable target (or a panel that won't hand off): give up rather than
-            // keep feeding the page forward forever.
-            if (frames > (Math.abs(target - origin) + 1) * FRAMES_PER_SECTION) return stop();
-            feed(dir * step);
-            raf = requestAnimationFrame(tick);
-            return;
-          }
-          arrived = true;
-        }
-
-        // Landing. If the index moved off the target we overshot (LAND too big for this
-        // panel's budget) — bail rather than chase it and run away down the page.
-        if (index !== target) return stop();
-        const units = Math.min(step, landUnits - fed);
-        if (units <= 0) return stop();
-        feed(dir * units);
-        fed += units;
-        raf = requestAnimationFrame(tick);
-      };
-
-      window.addEventListener("wheel", abort, { passive: true });
-      window.addEventListener("pointerdown", abort, { passive: true });
-      cancelRef.current = stop;
-      raf = requestAnimationFrame(tick);
+      });
     },
     [store],
   );

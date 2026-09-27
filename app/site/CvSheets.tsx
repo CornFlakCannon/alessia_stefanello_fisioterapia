@@ -3,6 +3,7 @@
 import SDiv from "@/app/widgets/SDiv";
 import { easeOutCubic } from "@/app/_scroll/easing";
 import type { AnimSpec } from "@/app/widgets/anim";
+import { Stop } from "./useStops";
 import { useIsDesktop, useIsShort } from "./useViewport";
 
 /**
@@ -128,6 +129,16 @@ const windowFor = (i: number, n: number) => ({
   budget: PAGE_SPAN,
 });
 
+/** Where the i-th sheet is home — a stop of the stepped scroll (`useStops.ts`): the
+ *  sheets cover each other, so each one has to be held still to be read. Sheet 0 is home
+ *  from the start and is held at `PAGE_IN`, the last moment before sheet 1 moves — by
+ *  then the panel's own reveals (~860) have finished too. */
+const stopFor = (i: number, n: number) => {
+  if (i === 0) return PAGE_IN;
+  const w = windowFor(i, n);
+  return w.start + w.budget;
+};
+
 function Sheet({ page }: { page: CvPage }) {
   return (
     <div className="flex h-full flex-col rounded-2xl bg-white px-7 py-6 ring-1 ring-primary/10 short:px-5 short:py-3">
@@ -182,6 +193,10 @@ export default function CvSheets({ pages }: { pages: readonly CvPage[] }) {
           ),
         )}
       </div>
+
+      {sheets.map((page, i) => (
+        <Stop key={page.id} at={stopFor(i, n)} />
+      ))}
 
       {/* Quante pagine sono, e a che punto siamo. Non cliccabile: la pagina si racconta
           scorrendo, e un controllo qui dentro riaprirebbe il seam tap-vs-swipe. */}

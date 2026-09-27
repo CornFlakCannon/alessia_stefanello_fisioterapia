@@ -445,6 +445,37 @@ right cap depends on how long the host's panels are.
 
 One knock-on to note for a consumer: a site that drives the engine by dispatching
 synthetic wheel events (this one does — `app/site/useSectionJump.ts`) is subject to the
-same cap. `UNITS_PER_FRAME = 70` is well under it, but `REDUCED_UNITS_PER_FRAME = 400` is
-not, so a jump under `prefers-reduced-motion` now runs at 200/frame — about twice as long,
-still far inside that hook's own `MAX_FRAMES` budget.
+same cap. `UNITS_PER_FRAME = 70` is well under it; `REDUCED_UNITS_PER_FRAME` was 400 and
+is now 200 — the cap is also a correctness bound for any driver that MEASURES where the
+page is each frame (`app/site/driveTo.ts`, on the `variante/scroll-a-blocchi` branch):
+units the shell queues for later are units such a driver will feed a second time.
+
+
+## Seam 5 — a stepped ("a blocchi") scroll mode (site-side on `variante/scroll-a-blocchi`)
+
+The engine only knows continuous scroll: every unit of input becomes progress. The variant
+branch wants the page to move in **blocks** — one gesture plays the next block by itself
+and stops — and builds it outside the engine, like the jump:
+
+- `app/site/useStops.ts` — a registry of stops, `(section, position)`, declared with
+  `<Stop at>` / `useStop(at)` in the section's own units (via the public `useSection()`).
+- `app/site/driveTo.ts` — the jump's feed loop, generalised: drive to a `(section,
+  position)` by dispatching synthetic wheel events, one drive in flight per store.
+- `app/site/StepScroller.tsx` — takes TRUSTED wheel and pointermove events away from the
+  shell (window, capture phase, `stopPropagation`) and turns one gesture into one drive.
+
+### What it costs, and what the library version would remove
+The shell's own input handling is bypassed rather than configured, which is why the site
+has to know the shell's per-event clamp (±100) and per-frame cap (200) — both copied into
+`driveTo`. A library version would put it where the input already arrives:
+
+```tsx
+<ScrollShell mode="step" stops={…} stepPace={30} quietMs={220} swipePx={30}>
+```
+
+— in the rAF loop, replace "accumulate and consume" with "on a new gesture, set a target
+stop and feed toward it at `stepPace`", using the same `advanceSection`/`integrateIndexPos`
+path so hand-offs, snap glides and the global counter behave exactly as they do now. Stops
+could keep the site's shape (registered from inside sections) or be derived from `Section`
+props (`<Section stops={[860, 2050]}>`). With that in the engine, `driveTo` shrinks back to
+the `jumpTo` of the main proposal and `StepScroller` disappears.

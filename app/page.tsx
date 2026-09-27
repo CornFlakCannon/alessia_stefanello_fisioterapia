@@ -22,6 +22,8 @@ import ContactForm from "./site/ContactForm";
 import CvSheets, { sheetsEnd } from "./site/CvSheets";
 import ServiceIndex from "./site/ServiceIndex";
 import ContactBar from "./site/ContactBar";
+import StepScroller from "./site/StepScroller";
+import { Stop } from "./site/useStops";
 import { useIsDesktop, useIsShort } from "./site/useViewport";
 import PhotoSlab from "./site/PhotoSlab";
 import DuotonePhoto from "./site/DuotonePhoto";
@@ -47,7 +49,9 @@ const rev = (i: number) => ({ start: SNAP + 30 + i * 70, budget: 300 });
 /** Section hand-off point for a snap panel whose furthest reveal is rev(lastRev):
  *  that reveal's window end + a DWELL buffer, so the panel holds fully revealed
  *  before snapping to the next. */
-const holdEnd = (lastRev: number) => rev(lastRev).start + rev(lastRev).budget + DWELL;
+const holdEnd = (lastRev: number) => revEnd(lastRev) + DWELL;
+/** Where the i-th reveal is fully played — what a stop (`<Stop>`) after it waits for. */
+const revEnd = (i: number) => rev(i).start + rev(i).budget;
 
 /* The slab's photos are the thing that moves on the service panels now. On desktop the
    slab is already home when the panel lands (see FocusPanel), so they start cycling
@@ -298,6 +302,10 @@ export default function Home() {
           qui e suonato AL CARICAMENTO, non allo scroll: il pannello 0 è a schermo a
           scroll 0, quindi ogni sua entrata è una CSS animation (vedi globals.css). */}
       <Section index={0} end={desktop ? HERO_END_DESKTOP : PANEL_END[0]}>
+        <StepScroller />
+        {/* Stop: sul telefono la card oro sale (SHEET_RISE) — un blocco. Su desktop
+            l'hero non ha niente da raccontare, e il primo gesto porta al pannello 1. */}
+        {!desktop && <Stop at={SHEET_RISE.start + SHEET_RISE.budget} />}
         {/* Due override locali, e sono la stessa frase detta due volte: sul telefono questa
             colonna ECCEDE il pannello di proposito — la coda della card sta sotto la piega
             finche' la salita non la porta su.
@@ -550,6 +558,9 @@ export default function Home() {
           focus di questo. Il device sta in FocusPanel — qui si autora solo il
           contenuto delle due metà. */}
       <Section index={1} snap={SNAP} end={PANEL_END[1]}>
+        {/* Due blocchi: il testo, poi il focus con tutte e tre le foto. */}
+        <Stop at={revEnd(3)} />
+        <Stop at={photoWindow(PANEL_END[1]).end} />
         <FocusPanel
           ground="bg-white"
           slab="bg-emphasis text-white"
@@ -611,6 +622,8 @@ export default function Home() {
 
       {/* ── 2 · PAVIMENTO PELVICO (+ focus post parto) ────────────────────── */}
       <Section index={2} snap={SNAP} end={PANEL_END[2]}>
+        <Stop at={revEnd(3)} />
+        <Stop at={photoWindow(PANEL_END[2]).end} />
         <FocusPanel
           ground="bg-mist"
           slab="bg-primary text-white"
@@ -656,6 +669,8 @@ export default function Home() {
 
       {/* ── 3 · ANZIANI / DOMICILIARE (+ focus mappa) ─────────────────────── */}
       <Section index={3} snap={SNAP} end={PANEL_END[3]}>
+        <Stop at={revEnd(3)} />
+        <Stop at={photoWindow(PANEL_END[3]).end} />
         <FocusPanel
           ground="bg-white"
           slab="bg-secondary text-primary"
@@ -710,6 +725,8 @@ export default function Home() {
 
       {/* ── 4 · CONTATTAMI ───────────────────────────────────────────────── */}
       <Section index={4} snap={SNAP} end={PANEL_END[4]}>
+        {/* Un blocco: tutto, form compreso. */}
+        <Stop at={revEnd(4)} />
         <div className={`${shell} bg-white`}>
           {/* Lo studio dietro al form: "vieni qui" detto dall'ambiente invece che a
               parole, e ora abbastanza presente da vedersi davvero. */}
@@ -747,6 +764,7 @@ export default function Home() {
           verificare le credenziali le trova qui. Le voci sono quelle vere del CV; il
           pannello le sfoglia invece di allungarsi (vedi CvSheets). */}
       <Section index={5} snap={SNAP} end={PANEL_END[5]}>
+        {/* I blocchi di questo pannello sono i fogli del CV: li dichiara CvSheets. */}
         <div className={`${shell} bg-mist`}>
           {/* Resta un sussurro, e diverso da quello dei contatti: questo pannello ha
               già il ritratto tondo, due immagini alla stessa voce si darebbero fastidio. */}
@@ -793,6 +811,7 @@ export default function Home() {
 
       {/* ── 6 · FOOTER ───────────────────────────────────────────────────── */}
       <Section index={6} snap={SNAP}>
+        <Stop at={MASK_END} />
         <div className={`${shell} bg-primary text-white`}>
           <Corners color="rgba(255,255,255,0.35)" topLeft={false} />
 

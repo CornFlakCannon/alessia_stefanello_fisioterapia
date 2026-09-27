@@ -567,7 +567,37 @@ Two is the limit. Don't take these as licence for a third.
   hiding a physiotherapist's phone number behind a click would be decluttering the wrong
   thing.
 
-### Four engine seams the site works around (see `JUMP_TO_FEATURE.md`)
+### This branch: scroll a blocchi (`StepScroller`)
+
+`variante/scroll-a-blocchi` moves the page in **blocks**: one small gesture plays the next
+block of content by itself and stops. Nothing in the engine changed — it is seam 1's
+technique turned into a scroll mode (written up as seam 5 in `JUMP_TO_FEATURE.md`).
+
+- **Stops** (`useStops.ts`) are where a block ends: `<Stop at={…}/>` inside a `<Section>`,
+  in that section's own units. `page.tsx` declares them under each `<Section>` opening
+  tag; `CvSheets` registers one per sheet itself (it alone knows how many it deals). Current
+  blocks: hero (phone only: the gold card's rise) · each service panel ① text ② focus +
+  photos · contatti ① everything · formazione one per CV sheet · footer. A stop must sit
+  below its panel's `PANEL_END`.
+- **`driveTo.ts`** is the one feed loop — `useSectionJump` is now built on it too. One drive
+  in flight per store; a new one supersedes the old, so a gesture during a jump takes over.
+  Its pace must stay ≤ `MAX_FRAME_DELTA` (200): it measures where the page is, so units the
+  shell queues would be fed twice.
+- **`StepScroller.tsx`** (mounted inside panel 0, renders a hidden span to dispatch from)
+  swallows TRUSTED `wheel` and `pointermove` on `window` in the capture phase. `pointerdown`
+  is left alone, and it is `stopPropagation`, never `stopImmediatePropagation`: that is
+  what keeps `ContactForm`'s `useTapVsSwipe` (also a window capture listener) working.
+- **Knobs**, all in `StepScroller.tsx`: `STEP_UNITS_PER_FRAME` (pace a block plays at),
+  `QUIET_MS` (silence that ends a wheel gesture — one trackpad flick must be one step),
+  `SWIPE_PX` (finger travel that makes a touch a step).
+
+Verified headlessly (Chrome over CDP, trusted input): every wheel notch and every swipe
+lands exactly on the next stop; a 40-event decaying trackpad flick is one step; backward
+retraces; a tap on a form field still focuses it and a swipe starting on the textarea
+steps without focusing; a hero-index jump followed by a notch continues from where the
+jump landed.
+
+### Four engine seams the site works around (see `JUMP_TO_FEATURE.md`; seam 5, the stepped mode, is above)
 
 1. **No scroll-to-section API.** The hero's `ServiceIndex` jumps via
    **`app/site/useSectionJump.ts`** — a site-side workaround that drives the engine **from
