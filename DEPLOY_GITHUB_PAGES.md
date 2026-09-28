@@ -16,7 +16,7 @@ Cosa è già predisposto nel repo:
   un giorno si pubblicasse da branch invece che via Actions; costa zero tenerlo).
 - `.github/workflows/deploy.yml` — build + deploy. Sceglie il `basePath` da solo: se
   esiste `public/CNAME` (dominio proprio) il sito sta alla radice, altrimenti sotto
-  `/fisio-ale`. Non c'è niente da cambiare a mano quando arriva il dominio.
+  `/alessia_stefanello_fisioterapia`. Non c'è niente da cambiare a mano quando arriva il dominio.
 
 ---
 
@@ -29,11 +29,25 @@ Privacy). Gli originali in `FOTO_ORIGINALI/` sono gitignorati e non finiscono on
 
 Rendere pubblico: *Settings → General → Danger Zone → Change visibility → Public*.
 
-## 1. Il lavoro è su `main`
+## 1. Cosa va online: i tre branch, uno accanto all'altro
 
-Fatto: `sezioni-focus` è stato unito a `main` (27/09), e il workflow parte solo da `main`.
-Le due varianti di design (`variante/scroll-a-blocchi`, `variante/focus-alternati`) NON
-vanno online: per pubblicarne una, si unisce il suo branch in `main`.
+Il workflow pubblica **tutti e tre** i branch in un solo deploy, così la cliente può
+confrontarli con tre link invece di aspettare uno scambio:
+
+| percorso | branch |
+|---|---|
+| `/` | `main` — il sito |
+| `/scroll-a-blocchi/` | `variante/scroll-a-blocchi` |
+| `/focus-alternati/` | `variante/focus-alternati` |
+
+Un push su uno qualunque dei tre ricostruisce tutti e tre dalle loro punte. Le varianti
+sono escluse dall'indicizzazione (`robots.txt` generato dal workflow). L'ambiente
+`github-pages` accetta deploy da `main` e da `variante/*` (*Settings → Environments →
+github-pages → Deployment branches*): senza la seconda regola un push su una variante
+fallisce al passo *deploy*.
+
+Scelta la versione: si unisce il suo branch in `main` e si tolgono le varianti dal ciclo
+`for` di `deploy.yml`.
 
 ## 2. Attivare Pages
 
@@ -42,7 +56,7 @@ vanno online: per pubblicarne una, si unisce il suo branch in `main`.
 si segue nel tab *Actions*. Al termine il sito è su
 
 ```
-https://cornflakcannon.github.io/fisio-ale/
+https://cornflakcannon.github.io/alessia_stefanello_fisioterapia/
 ```
 
 Se il workflow era già partito prima di questa impostazione, rilancialo da *Actions →
@@ -87,7 +101,8 @@ Deploy to GitHub Pages → Run workflow*.
 
 ## 4. Dopo
 
-- **Aggiornare il sito** = push su `main`. Un push su un altro branch non pubblica niente.
+- **Aggiornare il sito** = push su `main` (o su una variante, per la sua anteprima). Un
+  push su un altro branch non pubblica niente.
 - **Tornare indietro** = `git revert <commit>` e push (oppure *Actions → Re-run* di un
   deploy precedente).
 - **Anteprima identica alla produzione, in locale**:
@@ -96,9 +111,9 @@ Deploy to GitHub Pages → Run workflow*.
   npm run build && npx serve out
   ```
 
-  Per provare la variante sotto `/fisio-ale`:
-  `NEXT_PUBLIC_BASE_PATH=/fisio-ale npm run build`, poi servire la cartella che
-  *contiene* `out` rinominata `fisio-ale`.
+  Per provare la variante sotto `/alessia_stefanello_fisioterapia`:
+  `NEXT_PUBLIC_BASE_PATH=/alessia_stefanello_fisioterapia npm run build`, poi servire la cartella che
+  *contiene* `out` rinominata `alessia_stefanello_fisioterapia`.
 - **Costi**: hosting 0 €, dominio ~5 €/anno. Nessun limite pratico per un sito di
   questa taglia (Pages: 1 GB, 100 GB di banda al mese).
 - `npm run dev` non cambia: `output: "export"` agisce solo su `next build`.
