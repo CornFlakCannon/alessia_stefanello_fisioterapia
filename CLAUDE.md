@@ -40,7 +40,9 @@ shape; read it with `CLIENTE_TODO.md`.
 
 ## Branches
 
-Three, and only `main` ships (`.github/workflows/deploy.yml` deploys on push to `main`):
+Three, and **all three are online** side by side for the client to compare —
+`.github/workflows/deploy.yml` builds `main` at `/` and each variant at `/<name>/`
+(`/scroll-a-blocchi/`, `/focus-alternati/`) on a push to any of them:
 
 | branch | what it is |
 |---|---|
