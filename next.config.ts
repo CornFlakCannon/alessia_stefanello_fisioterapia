@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   /* Static export: the site is a single page with no server side (form is a mailto:,
-     map is an iframe), so `next build` writes plain HTML+assets to `out/`, which GitHub
+     map is a static image), so `next build` writes plain HTML+assets to `out/`, which GitHub
      Pages serves as-is. See DEPLOY_GITHUB_PAGES.md. */
   output: "export",
   /* No image optimizer on a static host. Costs nothing here: every photo is already a

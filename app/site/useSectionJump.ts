@@ -23,8 +23,8 @@ import { driveTo } from "./driveTo";
  * exact same input it sees from a real wheel. We are a very fast, very determined user.
  *
  * ## Mechanics
- * The feeding itself lives in `./driveTo` (shared with `StepScroller` on the
- * `variante/scroll-a-blocchi` branch). A jump is one drive to a `(section, position)`:
+ * The feeding itself lives in `./driveTo` (shared with `StepScroller`, the stepped
+ * scroll). A jump is one drive to a `(section, position)`:
  *   forward  — the target section at `land` units in, so its `snap` glide finishes and
  *              its reveals play (it would otherwise arrive at pos 0, mid-glide);
  *   backward — the target section a little below where it was left (it comes back at

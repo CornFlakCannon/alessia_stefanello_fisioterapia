@@ -447,14 +447,14 @@ One knock-on to note for a consumer: a site that drives the engine by dispatchin
 synthetic wheel events (this one does — `app/site/useSectionJump.ts`) is subject to the
 same cap. `UNITS_PER_FRAME = 70` is well under it; `REDUCED_UNITS_PER_FRAME` was 400 and
 is now 200 — the cap is also a correctness bound for any driver that MEASURES where the
-page is each frame (`app/site/driveTo.ts`, on the `variante/scroll-a-blocchi` branch):
+page is each frame (`app/site/driveTo.ts`):
 units the shell queues for later are units such a driver will feed a second time.
 
 
-## Seam 5 — a stepped ("a blocchi") scroll mode (site-side on `variante/scroll-a-blocchi`)
+## Seam 5 — a stepped ("a blocchi") scroll mode (site-side, the site's scroll mode since October 2026)
 
-The engine only knows continuous scroll: every unit of input becomes progress. The variant
-branch wants the page to move in **blocks** — one gesture plays the next block by itself
+The engine only knows continuous scroll: every unit of input becomes progress. The site
+wants the page to move in **blocks** — one gesture plays the next block by itself
 and stops — and builds it outside the engine, like the jump:
 
 - `app/site/useStops.ts` — a registry of stops, `(section, position)`, declared with

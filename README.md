@@ -1,5 +1,5 @@
 Sito di Alessia Stefanello, fisioterapista (Padova). Guida al progetto: `CLAUDE.md`.
-Branch: `main` (il sito, l'unico che va online) · `variante/scroll-a-blocchi` · `variante/focus-alternati` — vedi «Branches» in `CLAUDE.md`.
+Branch: `main` è il sito (scroll a blocchi) ed è l'unico che va online — vedi «Branches» in `CLAUDE.md`. Pubblicazione e dominio: `DEPLOY_GITHUB_PAGES.md`.
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 import { Section } from "./_scroll";
 import { easeInCubic, easeOutCubic } from "./_scroll/easing";
@@ -11,7 +12,7 @@ import SMask from "./widgets/SMask";
 import DevHud from "./widgets/DevHud";
 
 import { asset } from "./site/basePath";
-import { CONTACT, CONTACT_COPY, FORMAZIONE, HERO, SERVICES } from "./site/data";
+import { CONTACT, CONTACT_COPY, FORMAZIONE, HERO, LEGAL, SERVICES } from "./site/data";
 import FocusPanel, { FOCUS_LANDED } from "./site/FocusPanel";
 import { PANEL_BOX } from "./site/panelBox";
 import Logo from "./site/Logo";
@@ -698,9 +699,7 @@ export default function Home() {
 
               {/* Una card appoggiata sulla fascia, non il piatto forte: la fascia ha gia'
                   le sue foto, e il box chiaro con l'ombra e' cio' che la stacca da sotto.
-                  Il cap `short:` sale da 12rem a 16rem — a 12 i controlli dell'embed
-                  (zoom, fullscreen, pegman, il marchio Google) coprivano la mappa invece
-                  di stare in un angolo, ed e' quello che il cliente ha visto sul telefono. */}
+                  Il cap `short:` e' 16rem e non meno: sotto, la mappa non si legge. */}
               <PadovaMap className="relative z-10 max-w-[25rem] shadow-xl shadow-primary/20 short:max-w-[16rem]" />
             </>
           }
@@ -865,6 +864,12 @@ export default function Home() {
               </div>
               <p className="mt-10 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-white/60">
                 © {year} {CONTACT.name} · Fisioterapia · Padova
+              </p>
+              <p className="mt-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-white/60">
+                P. IVA {LEGAL.piva} · {LEGAL.albo} ·{" "}
+                <Link href="/privacy" className="underline underline-offset-2 hover:text-white">
+                  Privacy
+                </Link>
               </p>
             </SDiv>
           </div>

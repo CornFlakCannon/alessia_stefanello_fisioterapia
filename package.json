@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "photos": "node scripts/crop-photos.mjs && node scripts/hero-cutout.mjs"
+    "photos": "node scripts/crop-photos.mjs && node scripts/hero-cutout.mjs && node scripts/seo-images.mjs"
   },
   "dependencies": {
     "next": "16.2.10",

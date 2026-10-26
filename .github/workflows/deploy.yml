@@ -1,14 +1,10 @@
-# Publishes the static export to GitHub Pages — all three branches at once, side by side:
-#   /                      ← main (the site)
-#   /scroll-a-blocchi/     ← variante/scroll-a-blocchi
-#   /focus-alternati/      ← variante/focus-alternati
-# A push to any of them rebuilds all three from their current tips, so the links never
-# disagree. Setup and the custom-domain steps are in DEPLOY_GITHUB_PAGES.md.
+# Publishes the static export to GitHub Pages on every push to main.
+# Setup and the custom-domain steps are in DEPLOY_GITHUB_PAGES.md.
 name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main, "variante/*"]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -16,7 +12,7 @@ permissions:
   pages: write
   id-token: write
 
-# One deploy at a time; a newer push cancels the one still queued (it rebuilds everything).
+# One deploy at a time; a newer push cancels the one still queued.
 concurrency:
   group: pages
   cancel-in-progress: true
@@ -25,35 +21,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Always main at the root, whichever branch triggered the run.
       - uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - name: Build main + variants
+      - run: npm ci
+      - name: Build
         run: |
-          set -euo pipefail
           # Mount point: the domain root once public/CNAME exists (custom domain),
           # /<repo> on <user>.github.io before that. Nothing to flip by hand.
           root=""; [ -f public/CNAME ] || root="/${GITHUB_REPOSITORY#*/}"
-          build() { (cd "$1" && npm ci && NEXT_PUBLIC_BASE_PATH="$root$2" npm run build); }
-
-          build . ""
-          mkdir site && cp -r out/. site/
-          for v in scroll-a-blocchi focus-alternati; do
-            git worktree add "../$v" "origin/variante/$v"
-            build "../$v" "/$v"
-            cp -r "../$v/out" "site/$v"
-          done
-          # Only the real site gets indexed.
-          printf 'User-agent: *\nDisallow: /scroll-a-blocchi/\nDisallow: /focus-alternati/\n' > site/robots.txt
+          NEXT_PUBLIC_BASE_PATH="$root" npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          path: out
 
   deploy:
     needs: build

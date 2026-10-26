@@ -145,15 +145,18 @@ stato fatto.
 ## ⚠️ Da chiedere ad Alessia prima di pubblicare
 
 - **L'email.** Il CV riporta `alessiastefanello@gmail.com`, il sito pubblica
-  `alessiastefanello.fisio@gmail.com`. Quale delle due?
+  `alessiastefanello.fisio@gmail.com`. Quale delle due? (Le liberatorie firmate indicano la
+  `.fisio` come indirizzo per ritirare il consenso: quella deve funzionare in ogni caso.)
 - **Alcuni refusi nel CV**, resi qui nella forma che sembra corretta ma da confermare:
   *Kisesis medical* → Kinesis? · *Collaboratirce* → Collaboratrice · *Laura Triennale* →
   Laurea · *Strenght* → Strength · *NCSA* → NSCA? · *Phisiovit* → Physiovit?
 - **Le Skills del CV** (lingue, database scientifici, soft skill) sono rimaste fuori dal
   sito: sono quello che un CV dice a chi assume, non quello su cui decide un paziente.
   Se le vuole, si aggiunge una quinta pagina.
-- **Il consenso dei pazienti** resta il punto aperto di sempre: nelle foto ci sono persone
-  riconoscibili, serve la liberatoria firmata di ognuna prima di andare online.
+- ~~**Il consenso dei pazienti**~~ — FATTO: le quattro liberatorie sono firmate (24/10/2026),
+  una per ogni persona fotografata, con sito, social e stampa spuntati. Le scansioni stanno
+  in `LIBERATORIE_FIRMATE/`, fuori dal repo. Su una la data è scritta 24/**08**: da far
+  correggere e siglare, non cambia il consenso.
 
 ---
 
@@ -173,3 +176,21 @@ Le note del cliente dopo il secondo giro. Sotto, cosa è stato fatto.
    `alt-focus-alternati`: muscoloscheletrica a destra, pavimento pelvico a SINISTRA,
    domiciliare a destra. Il layout attuale resta questo branch; si sceglie dopo averli
    visti entrambi.
+
+---
+
+# Quarto giro (ottobre 2026)
+
+1. **La scelta tra le tre versioni.** — FATTO: la cliente ha scelto lo **scroll a
+   blocchi**, che ora è `main` e l'unica versione online. Le fasce alternate
+   (`variante/focus-alternati`) restano nel repo ma non vengono più pubblicate.
+2. **Le liberatorie.** — FATTO: firmate tutte e quattro, vedi sopra.
+3. **SEO.** — FATTO lato sito: titolo e descrizione, anteprima dei link (WhatsApp,
+   Facebook) con la sua foto, dati strutturati da studio di fisioterapia, sitemap, e la
+   favicon, che era ancora quella di Next.js (ora è il suo viso, finché non c'è il logo).
+   Da Alessia:
+   - il **CAP** dello studio: manca sul sito e nei dati strutturati, e il profilo Google lo
+     chiede (al civico 75 della stessa via risulta 35129, ma è da confermare);
+   - il **Profilo dell'attività su Google**, col suo account: pesa più del sito per farsi
+     trovare in zona (passi in `DEPLOY_GITHUB_PAGES.md` §5);
+   - i link ai suoi profili social professionali, se ne ha.

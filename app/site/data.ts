@@ -6,10 +6,14 @@
  * Contact details come from the biglietto da visita.
  */
 
-/** The address as GOOGLE should read it — no "(PD)" parenthetical, which is how it is
- *  written for people but not what a geocoder wants. One string, so the embedded map and
- *  the "apri in Google Maps" link can never end up pointing at two different places. */
+/** What the "apri in Google Maps" link searches for. The static map picture is centred on
+ *  the same place (scripts/static-map.mjs) — change one, change the other. */
 const MAPS_QUERY = "Forcellini, Padova PD";
+
+/** Split out because the structured data for search engines (`seo.ts`) wants them as
+ *  separate fields; the page shows them joined, as `city`. */
+const LOCALITY = "Padova";
+const PROVINCE = "PD";
 
 export const CONTACT = {
   name: "Alessia Stefanello",
@@ -20,15 +24,24 @@ export const CONTACT = {
   address: {
     line1: "Viale della Navigazione Interna 51",
     line2: "scala 8, 3° piano",
-    city: "Padova (PD)",
+    city: `${LOCALITY} (${PROVINCE})`,
+    locality: LOCALITY,
+    province: PROVINCE,
   },
   note: "Solo su prenotazione",
-  /** What PadovaMap's embed geocodes (see MAPS_QUERY above). */
-  mapsQuery: MAPS_QUERY,
   /** Studio address on Google Maps — the "apri in Google Maps" link on PadovaMap. */
   mapsUrl:
     "https://www.google.com/maps/search/?api=1&query=" +
     encodeURIComponent(MAPS_QUERY),
+} as const;
+
+/** What the law wants on a professional's site: the VAT number (art. 35 DPR 633/72) and,
+ *  for a health professional, the registration with the Ordine. Shown in the footer and
+ *  on /privacy.
+ */
+export const LEGAL = {
+  piva: "04636750277",
+  albo: "Ordine dei Fisioterapisti di Venezia, Padova, Rovigo — albo n. 1721",
 } as const;
 
 /** Section (panel) indices — the order of the top-level <Section>s in page.tsx.
@@ -140,7 +153,9 @@ export const SERVICES = {
  *     "Strenght and Conditioning", "NCSA" (NSCA?), "Phisiovit" (Physiovit?). Rendered here
  *     in their corrected form on the assumption they are slips in the PDF.
  *   - the CV's header gives `alessiastefanello@gmail.com`; the site publishes
- *     `alessiastefanello.fisio@gmail.com` (CONTACT above). One of the two is wrong.
+ *     `alessiastefanello.fisio@gmail.com` (CONTACT above). One of the two is wrong. The
+ *     signed photo releases name the `.fisio` one as where to withdraw consent, so it must
+ *     stay live either way.
  */
 export const FORMAZIONE = {
   eyebrow: "05 — Formazione",

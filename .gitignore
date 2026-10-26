@@ -42,3 +42,6 @@ next-env.d.ts
 
 # original camera files + source video (see scripts/crop-photos.mjs)
 /FOTO_ORIGINALI/
+
+# signed photo releases: names, birth dates, phone numbers. This repo is public — never commit them.
+/LIBERATORIE_FIRMATE/

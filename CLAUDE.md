@@ -14,6 +14,14 @@ and the *Olimpiadi* signature as its focus) · pavimento pelvico/post parto (+ *
 focus) · anziani & fisioterapia a domicilio, Padova centro (+ *mappa* focus). Then the
 contact form, a *formazione/CV* panel, and the footer.
 
+`LIBERATORIA_FOTO.md` is the text of the photo release; `node scripts/liberatorie.mjs`
+turns it into one Word file per photographed person, with their photos printed on it
+(`docs/liberatorie/`). The grouping lives in that script. **All four are signed**
+(24/10/2026, every box ticked: site, social, print), so every photo on the page is covered.
+The scans sit in `LIBERATORIE_FIRMATE/`, which is gitignored: they carry names, birth dates
+and phone numbers, and this repo is public. A new photo with a new person in it needs a new
+group in the script and a signed sheet *before* it ships.
+
 `CLIENTE_TODO.md` holds the client's own notes and, under each, what was actually done —
 read it before changing the page's structure. `FOTO_BRIEF.md` is the shooting brief for
 the studio photos, written to be forwarded to Alessia as-is.
@@ -37,22 +45,24 @@ shape; read it with `CLIENTE_TODO.md`.
   a face is recognised and a mark is not, so it wears `PHOTOS.ritrattoTondo`.)
 - ⚠️ **The CV gives a different email** (`alessiastefanello@gmail.com`) from the one the
   site publishes. One of the two is wrong — see the ⚠️ block on `FORMAZIONE` in `data.ts`.
+  The signed photo releases print `alessiastefanello.fisio@gmail.com` as the address for
+  withdrawing consent, so that one must work whatever the answer is.
 
 ## Branches
 
-Three, and **all three are online** side by side for the client to compare —
-`.github/workflows/deploy.yml` builds `main` at `/` and each variant at `/<name>/`
-(`/scroll-a-blocchi/`, `/focus-alternati/`) on a push to any of them:
+**`main` is the site, and the only thing online** — `.github/workflows/deploy.yml` builds
+it on every push. Its domain is `alessiastefanellofisioterapista.it` (registered on Aruba; attaching it:
+`DEPLOY_GITHUB_PAGES.md` §3). In October 2026 the client compared three versions side by side and chose
+the **stepped scroll** ("scroll a blocchi"): a small gesture plays the next block of content
+by itself and stops (see «Stepped scroll» below). `main` was fast-forwarded to it.
 
-| branch | what it is |
+| branch | status |
 |---|---|
-| `main` | the site as signed off: continuous scroll, every focus slab on the right. |
-| `variante/scroll-a-blocchi` | same site, **stepped** scroll: a small gesture plays the next block of content by itself and stops (a site-side stepper; the engine is untouched). |
-| `variante/focus-alternati` | same site, slabs **right · LEFT · right** with their diagonals chained into one zigzag (`\ / \`) across the panel seams. |
+| `main` | the site: stepped scroll, every focus slab on the right. |
+| `variante/scroll-a-blocchi` | merged into `main` (October 2026); no longer deployed or updated. |
+| `variante/focus-alternati` | the rejected alternative: slabs **right · LEFT · right**, diagonals chained into one zigzag (`\ / \`). Not deployed. |
 
-Keep the variants current by **merging `main` into them**, never the other way round; to
-adopt a variant, merge it into `main`. The abandoned July hero idea survives only as the
-tag `archive/alt-linea-orizzontale`.
+The abandoned July hero idea survives only as the tag `archive/alt-linea-orizzontale`.
 
 ## Commands
 
@@ -60,7 +70,8 @@ tag `archive/alt-linea-orizzontale`.
 - `npx tsc --noEmit` — typecheck. `npx eslint .` — lint.
 - `npm run photos` — rebuild every image derivative from the originals (see «Photos»):
   `crop-photos.mjs` for the camera stills, then `hero-cutout.mjs` for the hero's alpha
-  cut-out. Only needed when a crop changes or a new original arrives; outputs are committed.
+  cut-out, then `seo-images.mjs` for the link preview and the icons. Only needed when a
+  crop changes or a new original arrives; outputs are committed.
 - `node scripts/check-contrast.mjs` — WCAG ratios of the text over a photographic ground,
   worst pixel. Run it after changing any dose on the contatti panel and paste the table
   into `PanelTexture`'s docblock. `--sweep` prints a grid of texture × card opacities.
@@ -545,17 +556,37 @@ Two is the limit. Don't take these as licence for a third.
   is called ONCE in the parent, since it keeps "at most one jump in flight" in a ref.
 - `HeroFigure.tsx` — hand-authored SVG line figure (approximation of the biglietto da
   visita; swap for the real asset when available). Only the footer uses it now.
-- `PadovaMap.tsx` — a Google Maps `<iframe>` embed (no library, no API key), an **inset
-  card** on the gold slab rather than the slab's main event. **No radius any more**: the
-  dashed ring forced the camera to frame ~120 km of Veneto to fit, and at that zoom
-  nothing on the map was legible — "non si vede dove punta". It now uses the
-  `?q=<address>&output=embed` form, which geocodes and drops a real pin on the studio's
-  door (`CONTACT.mapsQuery`, shared with the "apri in Google Maps" link so the two can
-  never disagree); how far she travels is said in words on the panel. The iframe is
-  `pointer-events-none` on purpose: a gesture inside an iframe never reaches `ScrollShell`.
-  The embed's own controls cannot be hidden, so decluttering the phone means **not
-  shrinking the card** (`short:max-w-[16rem]`, was 12rem) and keeping our own pill above
-  `sm`.
+- `PadovaMap.tsx` — a **static picture** of a map (`public/foto/mappa.webp`, built from
+  OpenStreetMap tiles by `scripts/static-map.mjs`) with a pin, an **inset card** on the
+  gold slab. It was a Google Maps `<iframe>`: an embed sets Google's cookies and sends the
+  visitor's IP on load, which obliges a cookie banner. **Do not bring an embed back** — the
+  site has no banner precisely because it loads nothing from third parties, and `/privacy`
+  says so in words. The "Apri in Google Maps" pill opens the real map in a new tab. The
+  "© OpenStreetMap" credit is a licence requirement (ODbL), not decoration. The picture is
+  centred on Forcellini, like the link's `MAPS_QUERY` — not on the studio's door, whose
+  only OpenStreetMap node is ~600 m off the street it names (see the script's docblock).
+- `app/privacy/page.tsx` — the privacy notice, a plain scrolling page **outside** the
+  scroll engine, linked from the footer. Every sentence in it is a claim about the code
+  (no cookies, no analytics, self-hosted fonts, static map, `mailto:` form): change one,
+  change the page in the same commit.
+- `LEGAL` in `data.ts` — P. IVA and Ordine registration, shown in the footer and on
+  `/privacy`.
+- `seo.ts` — what the site tells search engines and link previews: `SITE_URL`, title and
+  description, and the schema.org JSON-LD (`Physiotherapy`, a LocalBusiness subtype) that
+  `layout.tsx` prints on every page; `app/robots.ts` and `app/sitemap.ts` read it too.
+  **`SITE_URL` comes from `public/CNAME`**, the file the deploy workflow already tests for
+  the base path, so committing the domain moves canonical URLs, sitemap and base path
+  together. It reads the filesystem: import it from server files only — never from
+  `page.tsx`, which is a client component.
+  Two Next quirks under a base path, i.e. only before the domain: `metadataBase` must be the
+  bare ORIGIN (Next adds the base path to `opengraph-image.jpg` by itself, so a base path
+  there too doubles it — which is why the canonicals are written out in full); and the home
+  page gets no `favicon.ico` link, because Next only recognises a favicon whose URL starts
+  with `/favicon.ico` (`icon.png` covers it).
+  The preview image and icons (`app/opengraph-image.jpg`, `icon.png`, `apple-icon.png`,
+  `favicon.ico`) are built by `scripts/seo-images.mjs` from the portrait original. The
+  icon is her face until the real logo exists. What is left to do OFF the site — Search
+  Console, the Google Business Profile — is in `DEPLOY_GITHUB_PAGES.md` §5.
 - `ContactForm.tsx` — **one minimal 3-field form** (Nome · Telefono · Messaggio), same on
   every viewport; submit opens a prefilled `mailto:` (no backend, see `contact.ts`). The
   wider 7-field shape survives only as `AppointmentFields` in `contact.ts`, which
@@ -569,9 +600,9 @@ Two is the limit. Don't take these as licence for a third.
   hiding a physiotherapist's phone number behind a click would be decluttering the wrong
   thing.
 
-### This branch: scroll a blocchi (`StepScroller`)
+### Stepped scroll — "scroll a blocchi" (`StepScroller`)
 
-`variante/scroll-a-blocchi` moves the page in **blocks**: one small gesture plays the next
+The page moves in **blocks**: one small gesture plays the next
 block of content by itself and stops. Nothing in the engine changed — it is seam 1's
 technique turned into a scroll mode (written up as seam 5 in `JUMP_TO_FEATURE.md`).
 
