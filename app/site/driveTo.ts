@@ -16,8 +16,8 @@ import { readIndexPos, type ScrollStore } from "../_scroll";
  *
  * ## Mechanics
  * Each frame: compare where the page is to the target (section first, then position),
- * and feed at most `unitsPerFrame` toward it — never more than what is left inside the
- * target section, so it lands on the number rather than past it. `ScrollShell` clamps
+ * and feed at most one frame's worth of `unitsPerSecond` toward it — never more than what
+ * is left inside the target section, so it lands on the number rather than past it. `ScrollShell` clamps
  * every wheel event to ±100, so a frame's feed is split into events that size,
  * dispatched on `from` (any element inside the scroll container — wheel bubbles to the
  * shell's listener). Hand-offs cost nothing special: going forward, feeding past a
@@ -25,7 +25,12 @@ import { readIndexPos, type ScrollStore } from "../_scroll";
  * returns it to the previous one at the position it was left at.
  *
  * ## Pace
- * `unitsPerFrame` must stay at or under `ScrollShell`'s `MAX_FRAME_DELTA` (200). Past
+ * In units per SECOND, scaled by each frame's real duration. It used to be a fixed amount
+ * per frame, which made every block play 2.4x faster on a 144Hz monitor than on a 60Hz
+ * one — the engine's own smoothing is time-based, so this was the only piece of the
+ * motion that depended on the refresh rate.
+ *
+ * A frame never feeds more than `MAX_FEED`, `ScrollShell`'s `MAX_FRAME_DELTA` (200). Past
  * it the shell queues the excess for later frames, while this loop measures where the
  * page IS — so it would feed the same remainder twice and overshoot the target.
  *
@@ -35,7 +40,7 @@ import { readIndexPos, type ScrollStore } from "../_scroll";
  *   threshold would otherwise ping-pong across the hand-off forever.
  * - **Stalled**: nothing moved for `STALL_FRAMES` frames — a target beyond the page's
  *   last panel, or a position above a section's ceiling.
- * - **Hard cap**: `MAX_FRAMES`, whatever happens.
+ * - **Hard cap**: `MAX_MS`, whatever happens.
  * - **Superseded**: at most ONE drive is in flight per store; starting another cancels
  *   it, so a jump and a step (or two clicks) never feed against each other.
  */
@@ -44,12 +49,14 @@ export type Target = { index: number; pos: number };
 
 /** ScrollShell's per-event clamp; a frame's travel is split into events this size. */
 const WHEEL_CLAMP = 100;
+/** ScrollShell's `MAX_FRAME_DELTA`: the most one frame may feed (see «Pace»). */
+const MAX_FEED = 200;
 /** Close enough, in scroll units. The engine integrates floats, so exact is not a thing. */
 const ARRIVED = 1;
 /** Frames with no movement before a drive gives up. */
 const STALL_FRAMES = 20;
-/** Hard stop, in frames (~10s at 60fps) — a drive must never become a permanent loop. */
-const MAX_FRAMES = 600;
+/** Hard stop, in ms — a drive must never become a permanent loop. */
+const MAX_MS = 10_000;
 
 /** The drive currently in flight, per store (see «Superseded»). */
 const IN_FLIGHT = new WeakMap<ScrollStore, () => void>();
@@ -78,13 +85,14 @@ export function driveTo(
   store: ScrollStore,
   from: Element,
   target: Target,
-  unitsPerFrame: number,
+  unitsPerSecond: number,
   onDone?: () => void,
 ): () => void {
   cancelDrive(store);
 
   let raf = 0;
-  let frames = 0;
+  let t0 = 0; // first frame's timestamp
+  let prevT = 0;
   let still = 0;
   let dir = 0; // the direction of the first feed; a flip means we overshot
   let last = currentPoint(store);
@@ -104,8 +112,11 @@ export function driveTo(
     }
   };
 
-  const tick = () => {
-    if (++frames > MAX_FRAMES) return stop();
+  const tick = (t: number) => {
+    if (!t0) t0 = prevT = t - 1000 / 60; // the first frame feeds one 60Hz frame's worth
+    if (t - t0 > MAX_MS) return stop();
+    const pace = Math.min(MAX_FEED, (unitsPerSecond * (t - prevT)) / 1000);
+    prevT = t;
     const now = currentPoint(store);
 
     still = now.index === last.index && Math.abs(now.pos - last.pos) < 0.01 ? still + 1 : 0;
@@ -115,11 +126,11 @@ export function driveTo(
 
     let units: number;
     if (now.index !== target.index) {
-      units = Math.sign(target.index - now.index) * unitsPerFrame;
+      units = Math.sign(target.index - now.index) * pace;
     } else {
       const left = target.pos - now.pos;
       if (Math.abs(left) < ARRIVED) return stop();
-      units = Math.sign(left) * Math.min(unitsPerFrame, Math.abs(left));
+      units = Math.sign(left) * Math.min(pace, Math.abs(left));
     }
 
     const d = Math.sign(units);

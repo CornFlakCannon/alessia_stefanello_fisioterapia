@@ -84,8 +84,8 @@ import { useIsDesktop } from "./useViewport";
 export const FOCUS_IN = 960;
 /** How much scroll the arrival takes end-to-end. */
 export const FOCUS_SPAN = 340;
-/** Where the focus is home — the earliest a panel can be considered "told", and what a
- *  jump's `land` in HERO_INDEX aims just past. */
+/** Where the focus is home — the earliest a panel can be considered "told". A stop of the
+ *  stepped scroll (page.tsx declares it), and where a jump from HERO_INDEX lands. */
 export const FOCUS_LANDED = FOCUS_IN + FOCUS_SPAN;
 /** PHONE ONLY: how far the text block slides left as the slab arrives. A share of the
  *  viewport, because it is applied to the full-width wrapper and a `%` translate resolves

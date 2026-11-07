@@ -298,24 +298,24 @@ export const HERO = {
  *  entry scrolls to (`useSectionJump`), which is why SECTION above is a real dependency
  *  and not just documentation.
  *
- *  `land` is how far into the target panel the jump keeps scrolling after arriving.
- *  The three service panels tell a staged story — the focus content only starts entering
- *  at 960 — so landing at the hook's default (900) would drop the visitor on half a
- *  panel; 1350 puts them just past its arrival (it lands at 1300). It must stay below the
- *  target's PANEL_END in page.tsx or the landing scrolls straight past it. */
+ *  `stop` is which of the target panel's stops the jump lands on, counted from 1 — the
+ *  page moves in blocks, so a jump lands where N gestures would have left it, never
+ *  between two. A service panel's stops are: its text, its focus, then one per photo
+ *  after the first. 2 lands on the panel fully told (text and focus home, first photo);
+ *  1 would land before the focus arrives. */
 export const HERO_INDEX = [
   {
     n: "01",
     label: "Muscoloscheletrico",
     section: SECTION.MUSCOLO,
-    land: 1350,
+    stop: 2,
   },
-  { n: "02", label: "Pavimento pelvico", section: SECTION.PELVICO, land: 1350 },
+  { n: "02", label: "Pavimento pelvico", section: SECTION.PELVICO, stop: 2 },
   {
     n: "03",
     label: "Fisioterapia Domiciliare",
     section: SECTION.DOMICILIARE,
-    land: 1350,
+    stop: 2,
   },
 ] as const;
 
@@ -323,9 +323,8 @@ export const HERO_INDEX = [
 export const HERO_INDEX_TITLE = "Lavoro in ambito:";
 
 /** The two entries that are NOT services, held apart from them (see above): the contact
- *  panel and the CV. No `land` on either: both panels tell their story from their own
- *  landing, so the hook's default (900) is right — contatti hands off at 1430, formazione
- *  later still, so neither is overshot. */
+ *  panel and the CV. No `stop` on either: the hook's default is the panel's first stop —
+ *  contatti fully revealed, formazione on its first CV sheet. */
 export const HERO_INDEX_EXTRAS = [
   { label: "Contattami", section: SECTION.CONTATTI },
   { label: "La mia formazione", section: SECTION.FORMAZIONE },

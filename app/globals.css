@@ -38,6 +38,16 @@
   --font-contact: var(--font-quicksand);
 }
 
+/* Tailwind v4's preflight leaves buttons on the default arrow (v3 gave them a hand), so
+   the hero's index, the contact badge's toggle and the form's submit all looked inert.
+   This is the rule the v4 upgrade guide gives for restoring it. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 /* Hide the scrollbar while keeping the element scrollable. */
 @utility no-scrollbar {
   &::-webkit-scrollbar {

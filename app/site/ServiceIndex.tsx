@@ -18,9 +18,10 @@ import useSectionJump from "./useSectionJump";
  * The engine has no jump API and is off limits, so `useSectionJump` drives it from its own
  * input — see that file for why. `e.currentTarget` is load-bearing: the hook dispatches
  * its synthetic wheel events ON the clicked element so they bubble to the shell's
- * container listener. The travel is visible (the page fast-scrolls through the panels in
- * between) rather than a cut: on a scroll-told page a teleport reads as a bug, and it
- * keeps every scroll-driven animation on the way in phase.
+ * container listener. The page SLIDES to the panel, as if it came right after the hero:
+ * the panels in between are taken out of the layout for the trip (see the hook). Not a
+ * cut — on a scroll-told page a teleport reads as a bug — and not the whole site scrolling
+ * past either, which is what it used to do.
  *
  * ## One column on desktop, two on phones
  * On desktop the services are a LIST: one per row, the ordinal in a fixed-width column so
@@ -63,21 +64,21 @@ function Entry({
   n,
   label,
   section,
-  land,
+  stop,
   align = "center",
 }: {
-  jumpTo: (target: number, from: Element, land?: number) => void;
+  jumpTo: (target: number, from: Element, stop?: number) => void;
   n?: string;
   label: string;
   section: number;
-  land?: number;
+  stop?: number;
   align?: "start" | "center";
 }) {
   const start = align === "start";
   return (
     <button
       type="button"
-      onClick={(e) => jumpTo(section, e.currentTarget, land)}
+      onClick={(e) => jumpTo(section, e.currentTarget, stop)}
       aria-label={`Vai alla sezione ${label}`}
       className={`group flex w-full items-baseline justify-center gap-2 py-1.5 transition-transform hover:translate-x-0.5 focus-visible:translate-x-0.5 focus-visible:outline-none${
         start ? " lg:justify-start lg:gap-3 lg:py-2" : ""
@@ -109,7 +110,7 @@ export default function ServiceIndex({ className = "" }: { className?: string })
         {HERO_INDEX_TITLE}
       </p>
       <ul className="mt-1.5 grid grid-cols-2 gap-x-6 gap-y-1 short:mt-1 short:gap-y-0.5 lg:grid-cols-1 lg:gap-y-0">
-        {HERO_INDEX.map(({ n, label, section, land }, i) => (
+        {HERO_INDEX.map(({ n, label, section, stop }, i) => (
           <li
             key={n}
             /* Phone grid only: an ODD count leaves the last entry alone on its row, and
@@ -121,7 +122,7 @@ export default function ServiceIndex({ className = "" }: { className?: string })
               odd && i === HERO_INDEX.length - 1 ? " max-lg:col-span-2" : ""
             }`}
           >
-            <Entry jumpTo={jumpTo} n={n} label={label} section={section} land={land} align="start" />
+            <Entry jumpTo={jumpTo} n={n} label={label} section={section} stop={stop} align="start" />
           </li>
         ))}
       </ul>

@@ -59,6 +59,19 @@ function compare(a: Target, b: Target): number {
 const SAME = 20;
 
 /**
+ * The positions of section `index`'s stops, in order, counting stops closer than `SAME`
+ * as one — exactly the places a gesture can leave that panel resting. Where a jump into
+ * the panel lands (`useSectionJump`): anywhere else would be the middle of a block.
+ */
+export function stopsIn(store: ScrollStore, index: number): number[] {
+  const pos = [...registry(store).values()]
+    .filter((s) => s.index === index)
+    .map((s) => s.pos)
+    .sort((a, b) => a - b);
+  return pos.filter((p, i) => i === 0 || p - pos[i - 1] > SAME);
+}
+
+/**
  * The stop to go to from `here`, one gesture in direction `dir`. Forward past the last
  * stop there is nowhere to go (`null`); backward past the first, the top of the page.
  */

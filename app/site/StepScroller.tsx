@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useScrollStore } from "../_scroll";
-import { currentPoint, driveTo } from "./driveTo";
+import { currentPoint, driveTo, isDriving } from "./driveTo";
 import { nextStop } from "./useStops";
 
 /**
@@ -46,11 +46,13 @@ import { nextStop } from "./useStops";
  * must be mounted inside a `<Section>`.
  */
 
-/** Scroll units fed per frame while a block plays — THE pace knob. The longest block
- *  (a service panel's focus + photos, ~1300 units) takes ~0.7s at 30. */
-const STEP_UNITS_PER_FRAME = 30;
-/** Under `prefers-reduced-motion`: get the motion over with. */
-const REDUCED_UNITS_PER_FRAME = 200;
+/** Scroll units per second while a block plays — THE pace knob. Per second, not per
+ *  frame, so a block takes as long on a 144Hz monitor as on a 60Hz phone (see driveTo's
+ *  «Pace»). At 1800 a photo's dissolve (PHOTO_STEP in page.tsx, 800 units) takes ~0.45s
+ *  and a panel's arrival with its text (~860) about half a second. */
+const STEP_UNITS_PER_SECOND = 1800;
+/** Under `prefers-reduced-motion`: get the motion over with (driveTo caps a frame at 200). */
+const REDUCED_UNITS_PER_SECOND = 12_000;
 /** A wheel gesture ends after this much silence (ms). Raise it if a trackpad flick takes
  *  two steps; lower it if deliberate notches feel ignored. */
 const QUIET_MS = 220;
@@ -65,17 +67,13 @@ export default function StepScroller() {
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let stepping = false; // our own step is still playing
     let lastWheel = -Infinity;
 
     const step = (dir: 1 | -1) => {
       const from = anchor.current;
       const target = nextStop(store, currentPoint(store), dir);
       if (!from || !target) return;
-      stepping = true;
-      driveTo(store, from, target, reduced.matches ? REDUCED_UNITS_PER_FRAME : STEP_UNITS_PER_FRAME, () => {
-        stepping = false;
-      });
+      driveTo(store, from, target, reduced.matches ? REDUCED_UNITS_PER_SECOND : STEP_UNITS_PER_SECOND);
     };
 
     const onWheel = (e: WheelEvent) => {
@@ -87,7 +85,9 @@ export default function StepScroller() {
       if (Math.abs(e.deltaY) < MIN_WHEEL) return;
       const quiet = e.timeStamp - lastWheel > QUIET_MS;
       lastWheel = e.timeStamp;
-      if (stepping || !quiet) return;
+      // A step still playing, or a hero-index jump in flight: the gesture is swallowed.
+      // Stopping a jump halfway would leave the engine inside a panel it collapsed.
+      if (isDriving(store) || !quiet) return;
       step(e.deltaY > 0 ? 1 : -1);
     };
 
@@ -98,7 +98,7 @@ export default function StepScroller() {
     const onPointerMove = (e: PointerEvent) => {
       if (!e.isTrusted || e.pointerType === "mouse") return;
       e.stopPropagation();
-      if (touchY === null || stepping) return;
+      if (touchY === null || isDriving(store)) return;
       const travel = touchY - e.clientY; // finger up = content forward, like native
       if (Math.abs(travel) < SWIPE_PX) return;
       touchY = null;

@@ -260,17 +260,21 @@ form than the one signed off.
 none fades out. A photo at full opacity covers the one beneath, so there is never a frame
 where two half-transparent layers let the slab colour show through as a brightness dip.
 
-Its window used to be squeezed into whatever a scrubbed figure left over, starting only at
-1360. It now runs `photoWindow(PANEL_END[i])` — from the moment the panel is seated
-(`SNAP`) to a beat before it hands off — because on desktop the slab is already home when
-the panel lands, so the photos ARE what it wears from the first frame ("teniamola già in
-view e cicliamo solamente le foto con lo scroll").
+**One photo, one block.** The first photo is what the slab wears from the panel's
+arrival; every photo after it is one gesture of the stepped scroll — it fades in, and the
+scroll stops on it fully in. `PhotoSlab` registers those stops itself (it alone knows when
+each photo has landed, as `CvSheets` does for sheets). The run is `photoRun(photos)` in
+`page.tsx`: from `FOCUS_LANDED`, one `PHOTO_STEP` (800) per photo after the first, and the
+panel's `PANEL_END` is that plus `PHOTO_TAIL`. So a service panel is text · focus · photo ·
+photo, a gesture each.
 
-`PHOTO_CYCLE` in `page.tsx` is how much scroll a panel keeps *after* its focus has landed:
-the dissolve's pace, and the reason those panels are long. It is now free to change —
-`PANEL_END` used to feed the mascot's `JOURNEY` through prefix sums, so shortening one
-panel silently re-timed the whole page. The mascot is gone and so is that coupling; each
-entry answers only to its own panel.
+It used to start dissolving as soon as the panel was seated, with ONE stop at the end of
+the run: the gesture that brought the focus in also played every dissolve, and the middle
+photo of three was gone before it could be seen. Don't merge the blocks back.
+
+`PHOTO_STEP` is the dissolve's duration: on the stepped scroll, units are time
+(`STEP_UNITS_PER_SECOND` in `StepScroller`, 1800/s). Panel lengths are free to change —
+the mascot whose `JOURNEY` used to sum them is gone.
 
 ## The scroll engine — DO NOT MODIFY
 
@@ -592,6 +596,11 @@ Two is the limit. Don't take these as licence for a third.
   wider 7-field shape survives only as `AppointmentFields` in `contact.ts`, which
   `appointmentMailto` composes and filters — add a field to the form and the email picks
   it up with no other change. The form must stay short: panel 4 has to fit `100svh`.
+- `BackToTop.tsx` — the "torna su" button, bottom-right, hidden on the hero. A trip to
+  the hero's very top (`jumpTo(0, el, 0)` — `stop` 0 = the panel's top), so on a phone the
+  gold card comes back down. **Mounted inside the hero's `<Section>`, `fixed`, NOT
+  portaled**: the jump's synthetic wheel events are dispatched on the clicked element and
+  only reach the shell by bubbling through its container.
 - `ContactBar.tsx` — the quick-contact badge, **portaled to `<body>`** (like DevHud) so it
   escapes the panel layout while still living under the scroll context — and, being
   outside the shell's container, its pointer events never meet the wheel hijack. It is now
@@ -609,18 +618,22 @@ technique turned into a scroll mode (written up as seam 5 in `JUMP_TO_FEATURE.md
 - **Stops** (`useStops.ts`) are where a block ends: `<Stop at={…}/>` inside a `<Section>`,
   in that section's own units. `page.tsx` declares them under each `<Section>` opening
   tag; `CvSheets` registers one per sheet itself (it alone knows how many it deals). Current
-  blocks: hero (phone only: the gold card's rise) · each service panel ① text ② focus +
-  photos · contatti ① everything · formazione one per CV sheet · footer. A stop must sit
+  blocks: hero (phone only: the gold card's rise) · each service panel ① text ② focus
+  ③… one per photo after the first (registered by `PhotoSlab`) · contatti ① everything ·
+  formazione one per CV sheet · footer. A stop must sit
   below its panel's `PANEL_END`.
 - **`driveTo.ts`** is the one feed loop — `useSectionJump` is now built on it too. One drive
-  in flight per store; a new one supersedes the old, so a gesture during a jump takes over.
-  Its pace must stay ≤ `MAX_FRAME_DELTA` (200): it measures where the page is, so units the
-  shell queues would be fed twice.
+  in flight per store; a new one supersedes the old. The stepper ignores gestures while
+  any drive is in flight (`isDriving`), a hero-index jump included.
+  Its pace is in units per **second**, scaled by each frame's duration — it was per frame,
+  which played every block 2.4x faster on a 144Hz monitor. A frame never feeds more than
+  `MAX_FRAME_DELTA` (200): it measures where the page is, so units the shell queues would
+  be fed twice.
 - **`StepScroller.tsx`** (mounted inside panel 0, renders a hidden span to dispatch from)
   swallows TRUSTED `wheel` and `pointermove` on `window` in the capture phase. `pointerdown`
   is left alone, and it is `stopPropagation`, never `stopImmediatePropagation`: that is
   what keeps `ContactForm`'s `useTapVsSwipe` (also a window capture listener) working.
-- **Knobs**, all in `StepScroller.tsx`: `STEP_UNITS_PER_FRAME` (pace a block plays at),
+- **Knobs**, all in `StepScroller.tsx`: `STEP_UNITS_PER_SECOND` (pace a block plays at),
   `QUIET_MS` (silence that ends a wheel gesture — one trackpad flick must be one step),
   `SWIPE_PX` (finger travel that makes a touch a step).
 
@@ -636,8 +649,22 @@ jump landed.
    **`app/site/useSectionJump.ts`** — a site-side workaround that drives the engine **from
    its own input**: a rAF loop dispatching synthetic `wheel` events on the clicked element
    (they bubble to the shell's container listener), watching the public
-   `store.state.sectionIndex` until it reaches the target, then feeding `LAND` more units
-   so the panel seats and its reveals play. No engine file is touched.
+   `store.state.sectionIndex` until it reaches the target, then landing on one of the
+   target panel's **stops** (`HERO_INDEX`'s `stop`, counted from 1; `stopsIn` in
+   `useStops.ts`) — never a unit count, which on a stepped page lands between two blocks.
+   No engine file is touched.
+   **The page slides straight to the panel**, in either direction (the index forward,
+   `BackToTop` back to the hero): for the trip the panels in between are collapsed to zero
+   height (inline style on the section divs), so the engine — which reads `offsetTop`
+   every frame — glides there directly. The one rule is that whatever is on screen stays
+   put through every collapse/restore: the engine's glide runs on a float it never reads
+   back, so whenever a layout change moves what is on screen, the hook writes `scrollTop`
+   itself (a microtask after the engine's frame) with a copy of the engine's glide started
+   that far off, until the engine catches up. Forward that is only needed at the restore;
+   backward from the click. One trip per store — a new click takes the old trip over.
+   Its constants mirror `ScrollShell`'s `SCROLL_HALF_LIFE` (200), dt cap (64ms) and 0.5px
+   snap — **change them together**. Verified headlessly by sampling every frame: no panel
+   in between is ever on screen, no pixel jolt, both directions, desktop and phone.
    Why not just write the positions (what the `JUMP_TO_FEATURE.md` patch does): the
    **global** scroll counter only advances from the accumulator, and every `rawAnim` is
    measured against it. Feeding the accumulator keeps section, snap glide, reveals and

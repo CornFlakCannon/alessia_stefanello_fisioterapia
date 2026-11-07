@@ -5,6 +5,7 @@ import { easeOutCubic } from "@/app/_scroll/easing";
 import SDiv from "@/app/widgets/SDiv";
 import DuotonePhoto from "./DuotonePhoto";
 import type { Photo } from "./photos";
+import { Stop } from "./useStops";
 
 /**
  * The photographic ground of a `FocusPanel` slab: N studio photos, filtered with the
@@ -17,14 +18,27 @@ import type { Photo } from "./photos";
  * through as a dip in brightness. The cost is that all N stay in the tree; they are
  * 100-200 KB WebP, which is cheaper than the flicker.
  *
- * ## The windows
- * The caller passes ONE window (`start`/`end`) — normally the window the panel already
- * had spare. Each photo gets `span / n` of it, but a `KEN_SPAN` multiplier stretches its
- * own budget past that share, so its scale is still easing while the next one arrives:
- * two layers in motion at once is what keeps it from reading as a slideshow.
+ * ## One photo, one block
+ * The page moves in blocks (`StepScroller`), and every photo after the first IS one: a
+ * gesture fades it in, and the scroll stops on it fully in. So this component registers
+ * those stops itself — like `CvSheets` with its sheets, it is the only one that knows
+ * when each photo has landed.
  *
- * The first photo is opaque at `at: 0` — the slab is riding in from the right at that
- * moment and must never arrive empty.
+ * That is the fix for the bug this shipped with: the panel had ONE stop at the end of
+ * the run, so the gesture that brought the focus in also played every dissolve, and the
+ * middle photo of three was on screen for a fraction of a second.
+ *
+ * The first photo is opaque at `at: 0` — the slab is on screen (desktop) or riding in
+ * (phone) before the run starts, and must never be empty. It is what the slab wears
+ * through the panel's earlier blocks, so the run (`start`) should begin once those have
+ * played — on a service panel, when the focus is home.
+ *
+ * ## The windows
+ * `start` → `end` is split into one block per photo AFTER the first. Photo i fades in
+ * over exactly its block and is opaque at that block's end, where its stop is. Its scale
+ * (the ken-burns) runs `KEN_SPAN` blocks, so it is still easing while the next one
+ * arrives: two layers in motion at once is what keeps it from reading as a slideshow.
+ * The first photo's ken-burns runs with the second's arrival.
  *
  * ## Placement
  * `absolute inset-0 z-0`, which resolves against the slab's PADDING box: it bleeds under
@@ -34,10 +48,8 @@ import type { Photo } from "./photos";
 
 /** Start scale of the ken-burns — small enough that the crop stays as framed. */
 const KEN = 1.08;
-/** Each photo's window, as a multiple of its share: >1 keeps it moving under the next. */
+/** A photo's ken-burns, in blocks: >1 keeps it moving under the next. */
 const KEN_SPAN = 1.8;
-/** Share of a photo's own window spent fading in. */
-const FADE = 0.32;
 
 export default function PhotoSlab({
   photos,
@@ -56,18 +68,22 @@ export default function PhotoSlab({
   /** Must match the slab's text colour: `multiply` under light text, `screen` under
    *  dark. DuotonePhoto explains why this is a contrast decision, not a taste one. */
   blend?: "multiply" | "screen";
-  /** Section-local scroll window the whole run occupies. */
+  /** Section-local scroll window of the run: from where the second photo starts
+   *  arriving to where the last is fully in. */
   start: number;
   end: number;
   sizes?: string;
 }) {
   // Compiled once per anim identity inside SDiv, so keep these arrays stable.
   const layers = useMemo(() => {
-    const hold = (end - start) / photos.length;
+    const block = (end - start) / Math.max(1, photos.length - 1);
     return photos.map((photo, i) => ({
       photo,
-      start: start + i * hold,
-      budget: hold * KEN_SPAN,
+      // Photo i arrives during block i-1; the first one zooms alongside the second.
+      start: start + Math.max(0, i - 1) * block,
+      budget: block * KEN_SPAN,
+      /** Where this photo is fully in — its stop. None for the first: it always is. */
+      landed: i === 0 ? null : start + i * block,
       anim:
         i === 0
           ? [
@@ -76,7 +92,7 @@ export default function PhotoSlab({
             ]
           : [
               { at: 0, opacity: 0, scale: KEN },
-              { at: FADE, opacity: 1, ease: easeOutCubic },
+              { at: 1 / KEN_SPAN, opacity: 1, ease: easeOutCubic },
               { at: 1, scale: 1, ease: easeOutCubic },
             ],
     }));
@@ -84,6 +100,7 @@ export default function PhotoSlab({
 
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0">
+      {layers.map((layer) => layer.landed !== null && <Stop key={layer.photo.src} at={layer.landed} />)}
       {layers.map((layer) => (
         <SDiv
           key={layer.photo.src}

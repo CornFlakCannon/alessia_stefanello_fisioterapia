@@ -24,6 +24,7 @@ import CvSheets, { sheetsEnd } from "./site/CvSheets";
 import ServiceIndex from "./site/ServiceIndex";
 import ContactBar from "./site/ContactBar";
 import StepScroller from "./site/StepScroller";
+import BackToTop from "./site/BackToTop";
 import { Stop } from "./site/useStops";
 import { useIsDesktop, useIsShort } from "./site/useViewport";
 import PhotoSlab from "./site/PhotoSlab";
@@ -54,19 +55,36 @@ const holdEnd = (lastRev: number) => revEnd(lastRev) + DWELL;
 /** Where the i-th reveal is fully played — what a stop (`<Stop>`) after it waits for. */
 const revEnd = (i: number) => rev(i).start + rev(i).budget;
 
-/* The slab's photos are the thing that moves on the service panels now. On desktop the
-   slab is already home when the panel lands (see FocusPanel), so they start cycling
-   straight away — "teniamola gia' in view e cicliamo solamente le foto con lo scroll"
-   (NUOVA_TODO.md). They used to be squeezed into what a scrubbed figure left over, which
-   is why they only began at 1360.
+/* The slab's photos are what moves on the service panels once their story is told — "teniamola
+   gia' in view e cicliamo solamente le foto con lo scroll" (NUOVA_TODO.md). A service
+   panel is four kinds of block, one gesture each: its text; its focus; then one per
+   photo after the first, which the slab has been wearing all along (PhotoSlab registers
+   those stops itself).
 
-   PHOTO_CYCLE is how much scroll a panel keeps AFTER its focus has landed, i.e. how slow
-   the dissolve is. It is the panel's whole reason to be long: raise it for a more
-   leisurely read, lower it to make the page shorter. */
-const PHOTO_CYCLE = 900;
-/** The photo window for a panel: from the moment it is seated to a beat before it hands
- *  off, so the last photo is not still fading as the next panel takes over. */
-const photoWindow = (panelEnd: number) => ({ start: SNAP, end: panelEnd - 150 });
+   The photos used to start cycling as soon as the panel was seated, with one stop at the
+   end of the run. So the gesture that brought the focus in ALSO played every dissolve,
+   and on the three-photo panel the middle one was gone before it could be seen. Now
+   nothing dissolves until the focus is home, and each photo gets a gesture of its own.
+
+   PHOTO_STEP is one photo's block: on the stepped scroll, the scroll it costs IS how
+   long its dissolve plays (STEP_UNITS_PER_SECOND in StepScroller). */
+const PHOTO_STEP = 800;
+/** Scroll between the last photo landing and the hand-off: the last stop must sit below
+ *  the panel's `end`, and the next gesture leaves on this beat. */
+const PHOTO_TAIL = 150;
+/** A service panel's photo run: from the focus landing, one PHOTO_STEP per photo after
+ *  the first. */
+const photoRun = (photos: readonly Photo[]) => ({
+  start: FOCUS_LANDED,
+  end: FOCUS_LANDED + (photos.length - 1) * PHOTO_STEP,
+});
+/* In story order, and module constants because PhotoSlab memoises on the array's
+   identity. Muscolo: valutazione, terapia manuale, ritorno al gesto sportivo. Pelvico: il
+   gesto prima, poi il luogo — il lettino vuoto e' anche l'unico scatto dello studio senza
+   pazienti dentro. */
+const MUSCOLO_PHOTOS = [PHOTOS.spalla, PHOTOS.manuale, PHOTOS.equilibrio];
+const PELVICO_PHOTOS = [PHOTOS.pelvico, PHOTOS.lettino];
+const DOMICILIARE_PHOTOS = [PHOTOS.palla, PHOTOS.step];
 
 /* Circular wipe for the footer contact table: an SMask spotlight circle whose LEFT edge
    sits just past the box's left and grows rightward, so it ends fully open (a plain
@@ -95,9 +113,9 @@ const tableReveal = [
  *  `end`; its furthest child window (MASK_END) stands in for it. */
 const PANEL_END = [
   1100, // 0 hero — TELEFONO: la card oro finisce di salire a 740 (SHEET_RISE) e tiene un poco. Su desktop vale HERO_END_DESKTOP, vedi la'
-  FOCUS_LANDED + PHOTO_CYCLE, // 1 muscolo + focus sport — three photos to get through
-  FOCUS_LANDED + PHOTO_CYCLE, // 2 pelvico + focus post parto — two
-  FOCUS_LANDED + DWELL, // 3 domiciliare — two photos, but the map is the beat here
+  photoRun(MUSCOLO_PHOTOS).end + PHOTO_TAIL, // 1 muscolo + focus sport — three photos
+  photoRun(PELVICO_PHOTOS).end + PHOTO_TAIL, // 2 pelvico + focus post parto — two
+  photoRun(DOMICILIARE_PHOTOS).end + PHOTO_TAIL, // 3 domiciliare + mappa — two
   holdEnd(4), // 4 contatti (rev(4) is the form)
   sheetsEnd() + DWELL, // 5 formazione — span fisso, i fogli si spartiscono quello
   MASK_END, // 6 footer
@@ -304,6 +322,9 @@ export default function Home() {
           scroll 0, quindi ogni sua entrata è una CSS animation (vedi globals.css). */}
       <Section index={0} end={desktop ? HERO_END_DESKTOP : PANEL_END[0]}>
         <StepScroller />
+        {/* `fixed`, quindi in angolo su ogni pannello: sta qui solo perche' i suoi
+            eventi devono passare dal container dello shell (vedi BackToTop). */}
+        <BackToTop />
         {/* Stop: sul telefono la card oro sale (SHEET_RISE) — un blocco. Su desktop
             l'hero non ha niente da raccontare, e il primo gesto porta al pannello 1. */}
         {!desktop && <Stop at={SHEET_RISE.start + SHEET_RISE.budget} />}
@@ -559,21 +580,21 @@ export default function Home() {
           focus di questo. Il device sta in FocusPanel — qui si autora solo il
           contenuto delle due metà. */}
       <Section index={1} snap={SNAP} end={PANEL_END[1]}>
-        {/* Due blocchi: il testo, poi il focus con tutte e tre le foto. */}
+        {/* Blocchi: il testo, il focus, poi una foto per gesto (le fermate delle foto
+            le dichiara PhotoSlab). */}
         <Stop at={revEnd(3)} />
-        <Stop at={photoWindow(PANEL_END[1]).end} />
+        <Stop at={FOCUS_LANDED} />
         <FocusPanel
           ground="bg-white"
           slab="bg-emphasis text-white"
           backdrop={
             /* Quello che la fascia indossa mentre il testo e' ancora fuori scena: su
-               desktop e' l'unica cosa che si vede all'arrivo del pannello. Ordine del
-               racconto: valutazione, terapia manuale, ritorno al gesto sportivo. */
+               desktop e' l'unica cosa che si vede all'arrivo del pannello. */
             <PhotoSlab
-              photos={[PHOTOS.spalla, PHOTOS.manuale, PHOTOS.equilibrio]}
+              photos={MUSCOLO_PHOTOS}
               tint="emphasis"
               intensity={0.42}
-              {...photoWindow(PANEL_END[1])}
+              {...photoRun(MUSCOLO_PHOTOS)}
             />
           }
           focus={
@@ -624,21 +645,20 @@ export default function Home() {
       {/* ── 2 · PAVIMENTO PELVICO (+ focus post parto) ────────────────────── */}
       <Section index={2} snap={SNAP} end={PANEL_END[2]}>
         <Stop at={revEnd(3)} />
-        <Stop at={photoWindow(PANEL_END[2]).end} />
+        <Stop at={FOCUS_LANDED} />
         <FocusPanel
           ground="bg-mist"
           slab="bg-primary text-white"
           backdrop={
             /* Finalmente due foto anche qui: era l'unica fascia senza, e teneva ancora
-               il disegno animato del ponte. Il gesto prima, poi il luogo — e il lettino
-               vuoto e' anche l'unico scatto dello studio senza pazienti dentro.
-               `multiply` (il default) perche' il testo sopra e' bianco: vedi la tabella
-               di contrasto in DuotonePhoto prima di cambiarlo. */
+               il disegno animato del ponte. `multiply` (il default) perche' il testo
+               sopra e' bianco: vedi la tabella di contrasto in DuotonePhoto prima di
+               cambiarlo. */
             <PhotoSlab
-              photos={[PHOTOS.pelvico, PHOTOS.lettino]}
+              photos={PELVICO_PHOTOS}
               tint="primary"
               intensity={0.42}
-              {...photoWindow(PANEL_END[2])}
+              {...photoRun(PELVICO_PHOTOS)}
             />
           }
           focus={
@@ -671,7 +691,7 @@ export default function Home() {
       {/* ── 3 · ANZIANI / DOMICILIARE (+ focus mappa) ─────────────────────── */}
       <Section index={3} snap={SNAP} end={PANEL_END[3]}>
         <Stop at={revEnd(3)} />
-        <Stop at={photoWindow(PANEL_END[3]).end} />
+        <Stop at={FOCUS_LANDED} />
         <FocusPanel
           ground="bg-white"
           slab="bg-secondary text-primary"
@@ -682,11 +702,11 @@ export default function Home() {
                and that is what buys the low `intensity`: the photo can carry the slab
                here more than it does on the fuchsia one. */
             <PhotoSlab
-              photos={[PHOTOS.palla, PHOTOS.step]}
+              photos={DOMICILIARE_PHOTOS}
               tint="secondary"
               intensity={0.3}
               blend="screen"
-              {...photoWindow(PANEL_END[3])}
+              {...photoRun(DOMICILIARE_PHOTOS)}
             />
           }
           focus={
